@@ -1,0 +1,179 @@
+@import "tailwindcss";
+
+/* ── Design tokens ──────────────────────────────── */
+:root {
+  --bg-page:        #0F0F1A;
+  --bg-card:        #161628;
+  --bg-elevated:    #1E1E38;
+  --bg-hover:       #252545;
+  --border:         #2A2A4A;
+  --border-focus:   #6C63FF;
+
+  --accent-primary:   #6C63FF;
+  --accent-secondary: #A855F7;
+  --accent-teal:      #10B981;
+  --accent-teal-2:    #06B6D4;
+  --accent-coral:     #F97316;
+  --accent-red:       #EF4444;
+  --accent-amber:     #F59E0B;
+
+  --text-primary:   #E8E6FF;
+  --text-secondary: #9D9AB8;
+  --text-muted:     #5C5A7A;
+
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  16px;
+  --radius-xl:  24px;
+}
+
+/* ── Base reset ─────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Gradient utilities ─────────────────────────── */
+.grad-purple { background: linear-gradient(135deg, #6C63FF, #A855F7); }
+.grad-teal   { background: linear-gradient(135deg, #10B981, #06B6D4); }
+.grad-coral  { background: linear-gradient(135deg, #F97316, #EF4444); }
+.grad-amber  { background: linear-gradient(135deg, #F59E0B, #EF9F27); }
+
+.grad-purple-text {
+  background: linear-gradient(135deg, #6C63FF, #A855F7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.grad-teal-text {
+  background: linear-gradient(135deg, #10B981, #06B6D4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Scrollbar ──────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-card); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── Focus ring ─────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* ── Selection ──────────────────────────────────── */
+::selection {
+  background: rgba(108, 99, 255, 0.3);
+  color: var(--text-primary);
+}
+
+/* ── Card base ──────────────────────────────────── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.card-elevated {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+/* ── Purple glow (hover effect) ─────────────────── */
+.glow-purple {
+  box-shadow: 0 0 0 0 rgba(108, 99, 255, 0);
+  transition: box-shadow 0.2s ease;
+}
+.glow-purple:hover {
+  box-shadow: 0 0 20px rgba(108, 99, 255, 0.25);
+}
+
+/* ── Skeleton shimmer ───────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-card) 25%,
+    var(--bg-hover) 50%,
+    var(--bg-card) 75%
+  );
+  background-size: 600px 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: var(--radius-md);
+}
+
+/* ── Input base ─────────────────────────────────── */
+.input-base {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  padding: 10px 14px;
+  font-size: 14px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+}
+.input-base::placeholder { color: var(--text-muted); }
+.input-base:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.15);
+}
+
+/* ── Button base ─────────────────────────────────── */
+.btn-primary {
+  background: linear-gradient(135deg, #6C63FF, #A855F7);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 11px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+.btn-primary:hover:not(:disabled) {
+  opacity: 0.92;
+  transform: scale(1.01);
+  box-shadow: 0 4px 20px rgba(108, 99, 255, 0.4);
+}
+.btn-primary:active:not(:disabled) { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.btn-ghost:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--border-focus);
+}
