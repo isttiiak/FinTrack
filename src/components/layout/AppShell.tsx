@@ -5,7 +5,6 @@ import Sidebar from './Sidebar'
 import MobileNav from './MobileNav'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
-import { pageTransition } from '@/lib/animations'
 
 export default function AppShell() {
   const isDemo = useDemoStore((s) => s.isDemo)
@@ -43,20 +42,9 @@ export default function AppShell() {
           <div style={{ width: 36 }} />
         </header>
 
-        {/* Page content */}
+        {/* Page content — each page handles its own entrance animation */}
         <main className="app-content">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={typeof window !== 'undefined' ? window.location.pathname : ''}
-              variants={pageTransition}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              style={{ height: '100%' }}
-            >
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
+          <Outlet />
         </main>
       </div>
 
@@ -129,8 +117,11 @@ export default function AppShell() {
           flex: 1;
           padding: 24px;
           overflow-y: auto;
+          overflow-x: hidden;
+          min-width: 0;
         }
-        @media (max-width: 768px) { .app-content { padding: 16px; } }
+        @media (max-width: 768px) { .app-content { padding: 14px; } }
+        @media (max-width: 400px) { .app-content { padding: 10px; } }
       `}</style>
     </div>
   )

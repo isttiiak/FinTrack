@@ -1,6 +1,6 @@
 import { Link, useRouterState } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
-import { LayoutDashboard, Receipt, Users, BarChart3, Menu } from 'lucide-react'
+import { LayoutDashboard, Receipt, Users, BarChart3, TrendingUp, Menu } from 'lucide-react'
 import { useUIStore } from '@/stores/uiStore'
 import { cn } from '@/lib/utils'
 
@@ -8,7 +8,8 @@ const NAV_ITEMS = [
   { to: '/dashboard',  label: 'Home',     icon: LayoutDashboard },
   { to: '/expenses',   label: 'Expenses', icon: Receipt },
   { to: '/ledger',     label: 'Ledger',   icon: Users },
-  { to: '/analytics',  label: 'Analytics', icon: BarChart3 },
+  { to: '/investments', label: 'Invest',    icon: TrendingUp },
+  { to: '/analytics',   label: 'Analytics', icon: BarChart3 },
 ] as const
 
 export default function MobileNav() {
@@ -40,18 +41,18 @@ export default function MobileNav() {
           position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
           background: var(--bg-card);
           border-top: 1px solid var(--border);
-          padding: 8px 0 env(safe-area-inset-bottom, 8px);
+          padding: 6px 0 env(safe-area-inset-bottom, 6px);
         }
         @media (max-width: 768px) { .mobile-nav { display: flex; } }
 
         .mobile-nav-item {
           position: relative; flex: 1;
-          display: flex; flex-direction: column; align-items: center; gap: 3px;
-          padding: 6px 4px;
-          font-size: 10px; font-weight: 500;
+          display: flex; flex-direction: column; align-items: center; gap: 2px;
+          padding: 4px 2px;
+          font-size: 9px; font-weight: 500;
           color: var(--text-muted); text-decoration: none;
           background: none; border: none; cursor: pointer;
-          transition: color 0.15s;
+          transition: color 0.15s; min-width: 0; overflow: hidden;
         }
         .mobile-nav-item-active { color: var(--accent-primary); }
         .mobile-nav-menu-btn { color: var(--text-muted); }
