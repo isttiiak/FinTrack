@@ -18,10 +18,11 @@ import { useUIStore } from '@/stores/uiStore'
 import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
-  { to: '/dashboard',  label: 'Dashboard',  icon: LayoutDashboard },
-  { to: '/expenses',   label: 'Expenses',   icon: Receipt },
-  { to: '/ledger',     label: 'Lent & Debt', icon: Users },
-  { to: '/analytics',  label: 'Analytics',  icon: BarChart3 },
+  { to: '/dashboard',   label: 'Dashboard',   icon: LayoutDashboard },
+  { to: '/expenses',    label: 'Expenses',    icon: Receipt },
+  { to: '/ledger',      label: 'Lent & Debt', icon: Users },
+  { to: '/investments', label: 'Investments', icon: TrendingUp },
+  { to: '/analytics',   label: 'Analytics',   icon: BarChart3 },
 ] as const
 
 const BOTTOM_ITEMS = [
