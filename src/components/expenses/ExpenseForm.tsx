@@ -11,6 +11,7 @@ import { toISODateString } from '@/lib/utils'
 import { scaleIn } from '@/lib/animations'
 import { cn } from '@/lib/utils'
 import type { Transaction } from '@/types/expense.types'
+import CategoryCombobox from '@/components/expenses/CategoryCombobox'
 
 const schema = z.object({
   type:           z.enum(['Expense', 'Income']),
@@ -87,12 +88,6 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
     onClose()
   }
 
-  const groupedCategories = filteredCategories.reduce<Record<string, typeof filteredCategories>>((acc, cat) => {
-    if (!acc[cat.main_group]) acc[cat.main_group] = []
-    acc[cat.main_group].push(cat)
-    return acc
-  }, {})
-
   return (
     <div className="expense-form-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <motion.div
@@ -136,7 +131,7 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
 
           {/* Amount */}
           <div className="ef-field">
-            <label className="ef-label">Amount (৳)</label>
+            <label className="ef-label">Amount (৳) <span className="req">*</span></label>
             <input
               {...register('amount', { valueAsNumber: true })}
               type="number"
@@ -150,23 +145,20 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
 
           {/* Category */}
           <div className="ef-field">
-            <label className="ef-label">Category</label>
-            <div className="ef-select-wrap">
-              <select
-                {...register('category_id')}
-                className={cn('ef-select', errors.category_id && 'ef-input-error')}
-              >
-                <option value="">Select category…</option>
-                {Object.entries(groupedCategories).map(([group, cats]) => (
-                  <optgroup key={group} label={group}>
-                    {cats.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-              <ChevronDown className="ef-select-icon" size={15} />
-            </div>
+            <label className="ef-label">Category <span className="req">*</span></label>
+            <Controller
+              control={control}
+              name="category_id"
+              render={({ field }) => (
+                <CategoryCombobox
+                  value={field.value}
+                  onChange={field.onChange}
+                  categories={filteredCategories}
+                  txnType={selectedType}
+                  error={!!errors.category_id}
+                />
+              )}
+            />
             {errors.category_id && <p className="ef-error">{errors.category_id.message}</p>}
           </div>
 
@@ -183,7 +175,7 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
 
           {/* Date */}
           <div className="ef-field">
-            <label className="ef-label">Date</label>
+            <label className="ef-label">Date <span className="req">*</span></label>
             <input
               {...register('txn_date')}
               type="date"
@@ -258,9 +250,10 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
           background: var(--bg-elevated);
           border: 1px solid var(--border);
           border-radius: 20px;
-          padding: 24px;
+          padding: 20px;
           box-shadow: 0 24px 60px rgba(0,0,0,0.5);
         }
+        @media (max-width: 400px) { .expense-form-panel { padding: 14px; } }
 
         .ef-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
         .ef-title { font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0; }
@@ -313,6 +306,7 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
         .ef-select-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
 
         .ef-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        @media (max-width: 400px) { .ef-row { grid-template-columns: 1fr; } }
 
         .ef-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
         .ef-submit { min-width: 110px; min-height: 40px; display: flex; align-items: center; justify-content: center; }
