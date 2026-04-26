@@ -23,7 +23,7 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "profiles_own_data" ON public.profiles
   FOR ALL USING (auth.uid() = id);
 
--- Trigger: auto-create profile on sign-up
+-- Trigger: auto-create profile + seed categories on sign-up
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -38,6 +38,10 @@ BEGIN
     NEW.raw_user_meta_data->>'avatar_url'
   )
   ON CONFLICT (id) DO NOTHING;
+
+  -- Seed default categories for the new user
+  PERFORM public.seed_default_categories(NEW.id);
+
   RETURN NEW;
 END;
 $$;
@@ -183,6 +187,48 @@ CREATE POLICY "ledger_payments_own_data" ON public.ledger_payments
 
 CREATE INDEX idx_ledger_payments_ledger ON public.ledger_payments(ledger_id);
 CREATE INDEX idx_ledger_payments_user   ON public.ledger_payments(user_id);
+
+-- ── Investments ──────────────────────────────────────────────
+CREATE TABLE public.investments (
+  id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id          uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  name             text NOT NULL,
+  category         text CHECK (category IN (
+    'Real Estate','Shared Business','Garments','Farming',
+    'Stocks','Crypto','Fixed Deposit','Savings Bond','Other'
+  )),
+  company_name     text,
+  committed_amount numeric(12,2),
+  start_date       date,
+  end_date         date,
+  market_value     numeric(12,2),
+  doc_link         text,
+  notes            text,
+  created_at       timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.investments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "investments_own_data" ON public.investments
+  FOR ALL USING (auth.uid() = user_id);
+CREATE INDEX idx_investments_user ON public.investments(user_id);
+
+-- ── Investment returns ────────────────────────────────────────
+CREATE TABLE public.investment_returns (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  investment_id uuid NOT NULL REFERENCES public.investments(id) ON DELETE CASCADE,
+  user_id       uuid NOT NULL REFERENCES public.profiles(id)    ON DELETE CASCADE,
+  amount        numeric(12,2) NOT NULL CHECK (amount > 0),
+  return_date   date NOT NULL,
+  return_type   text CHECK (return_type IN ('Profit','Capital Return','Dividend','Rent','Other')),
+  notes         text,
+  created_at    timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.investment_returns ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "investment_returns_own_data" ON public.investment_returns
+  FOR ALL USING (auth.uid() = user_id);
+CREATE INDEX idx_inv_returns_investment ON public.investment_returns(investment_id);
+CREATE INDEX idx_inv_returns_user       ON public.investment_returns(user_id);
 
 -- ── Seed default categories for a new user ───────────────────
 -- Called from the app layer after sign-up (not a trigger, keeps SQL simple)
