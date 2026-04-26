@@ -1,10 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
-  <rect width="48" height="48" rx="12" fill="url(#grad)"/>
-  <text x="50%" y="56%" dominant-baseline="middle" text-anchor="middle" font-family="system-ui,sans-serif" font-size="22" font-weight="700" fill="#E8E6FF">৳</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
   <defs>
-    <linearGradient id="grad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+    <linearGradient id="grad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
       <stop stop-color="#6C63FF"/>
       <stop offset="1" stop-color="#A855F7"/>
     </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="0" y2="32" gradientUnits="userSpaceOnUse">
+      <stop stop-color="white" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="white" stop-opacity="0"/>
+    </linearGradient>
   </defs>
+  <rect width="64" height="64" rx="15" fill="url(#grad)"/>
+  <rect width="64" height="34" rx="15" fill="url(#shine)"/>
+  <text
+    x="32" y="46"
+    text-anchor="middle"
+    font-family="system-ui,-apple-system,'Segoe UI',sans-serif"
+    font-size="38"
+    font-weight="700"
+    fill="#FFFFFF"
+    opacity="0.95"
+  >৳</text>
 </svg>

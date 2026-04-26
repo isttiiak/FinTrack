@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Plus, TrendingUp, Wallet, BarChart3, ChevronDown, ChevronUp,
-  Edit2, Trash2, ExternalLink, PlusCircle, CreditCard, ArrowUpRight, ArrowDownRight, ChevronRight,
+  Plus, TrendingUp, Wallet, BarChart3,
+  Edit2, ExternalLink, PlusCircle, CreditCard,
 } from 'lucide-react'
+import DeleteButton from '@/components/common/DeleteButton'
 import { useNavigate } from '@tanstack/react-router'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { useInvestments, useDeleteInvestment, useDeleteReturn, useDeleteInvestmentPayment } from '@/hooks/useInvestments'
+import { useInvestments, useDeleteInvestment } from '@/hooks/useInvestments'
 import InvestmentForm from '@/components/investments/InvestmentForm'
 import ReturnForm from '@/components/investments/ReturnForm'
 import InvestmentPaymentForm from '@/components/investments/InvestmentPaymentForm'
@@ -22,31 +23,18 @@ const CATEGORY_ICONS: Record<string, string> = {
   'Fixed Deposit': '🏦', 'Savings Bond': '📄', 'Other': '💼',
 }
 
-const RETURN_TYPE_COLORS: Record<string, string> = {
-  'Profit': 'var(--accent-teal)',
-  'Capital Return': 'var(--accent-primary)',
-  'Dividend': '#F59E0B',
-  'Rent': '#06B6D4',
-  'Other': 'var(--text-muted)',
-}
+
 
 export default function InvestmentsPage() {
   const { data: investments = [], isLoading } = useInvestments()
   const { mutate: deleteInvestment } = useDeleteInvestment()
-  const { mutate: deleteReturn } = useDeleteReturn()
 
   const navigate = useNavigate()
-  const { mutate: deleteInvPayment } = useDeleteInvestmentPayment()
   const [activeTab, setActiveTab] = useState<InvTab>('portfolio')
   const [showForm, setShowForm] = useState(false)
   const [editingInv, setEditingInv] = useState<Investment | null>(null)
   const [loggingReturnFor, setLoggingReturnFor] = useState<Investment | null>(null)
   const [loggingPaymentFor, setLoggingPaymentFor] = useState<Investment | null>(null)
-  const [expanded, setExpanded] = useState<Set<string>>(new Set())
-
-  function toggleExpand(id: string) {
-    setExpanded((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
-  }
 
   // Portfolio summary
   const totalCommitted  = investments.reduce((s, i) => s + (i.committed_amount ?? 0), 0)
@@ -151,9 +139,6 @@ export default function InvestmentsPage() {
       ) : activeTab === 'portfolio' ? (
         <motion.div className="inv-list" variants={staggerContainer} initial="initial" animate="animate">
           {investments.map((inv) => {
-            const isExpanded = expanded.has(inv.id)
-            const hasReturns = (inv.returns?.length ?? 0) > 0
-            const hasPayments = (inv.payments?.length ?? 0) > 0
             const remainingToPay = inv.committed_amount != null && inv.total_paid != null
               ? Math.max(0, inv.committed_amount - inv.total_paid)
               : null
@@ -164,8 +149,14 @@ export default function InvestmentsPage() {
               : 0
 
             return (
-              <motion.div key={inv.id} className="inv-card" variants={staggerItem} layout>
-                {/* Card header */}
+              <motion.div
+                key={inv.id}
+                className="inv-card"
+                variants={staggerItem}
+                layout
+                onClick={() => navigate({ to: '/investments/$investmentId', params: { investmentId: inv.id } })}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="inv-card-header">
                   <div className="inv-card-icon">
                     {CATEGORY_ICONS[inv.category ?? ''] ?? '💼'}
@@ -174,12 +165,8 @@ export default function InvestmentsPage() {
                   <div className="inv-card-info">
                     <div className="inv-card-name-row">
                       <span className="inv-card-name">{inv.name}</span>
-                      {inv.category && (
-                        <span className="inv-card-cat">{inv.category}</span>
-                      )}
-                      {inv.company_name && (
-                        <span className="inv-card-company">{inv.company_name}</span>
-                      )}
+                      {inv.category && <span className="inv-card-cat">{inv.category}</span>}
+                      {inv.company_name && <span className="inv-card-company">{inv.company_name}</span>}
                     </div>
 
                     <div className="inv-card-meta">
@@ -217,7 +204,7 @@ export default function InvestmentsPage() {
                   </div>
 
                   {/* ROI + actions */}
-                  <div className="inv-card-right">
+                  <div className="inv-card-right" onClick={(e) => e.stopPropagation()}>
                     {roi !== undefined && (
                       <div className={`inv-roi ${roi >= 0 ? 'inv-roi-pos' : 'inv-roi-neg'}`}>
                         <span className="inv-roi-pct">{roi >= 0 ? '+' : ''}{roi.toFixed(1)}%</span>
@@ -226,40 +213,31 @@ export default function InvestmentsPage() {
                     )}
                     <div className="inv-card-actions">
                       <button
-                        className="inv-action-btn inv-action-view"
-                        onClick={() => navigate({ to: '/investments/$investmentId', params: { investmentId: inv.id } })}
-                        data-tooltip="View full details"
-                      >
-                        <ChevronRight size={13} />
-                      </button>
-                      <button
                         className="inv-action-btn inv-action-pay"
-                        onClick={() => setLoggingPaymentFor(inv)}
-                        data-tooltip="Log installment payment (money you put in)"
+                        onClick={(e) => { e.stopPropagation(); setLoggingPaymentFor(inv) }}
+                        data-tooltip="Log installment payment"
                       >
                         <CreditCard size={13} />
                       </button>
                       <button
                         className="inv-action-btn inv-action-return"
-                        onClick={() => setLoggingReturnFor(inv)}
-                        data-tooltip="Log return (money you received back)"
+                        onClick={(e) => { e.stopPropagation(); setLoggingReturnFor(inv) }}
+                        data-tooltip="Log return received"
                       >
                         <PlusCircle size={13} />
                       </button>
                       <button
                         className="inv-action-btn inv-action-edit"
-                        onClick={() => setEditingInv(inv)}
+                        onClick={(e) => { e.stopPropagation(); setEditingInv(inv) }}
                         data-tooltip="Edit investment"
                       >
                         <Edit2 size={13} />
                       </button>
-                      <button
+                      <DeleteButton
+                        onConfirm={() => deleteInvestment(inv.id)}
                         className="inv-action-btn inv-action-del"
-                        onClick={() => deleteInvestment(inv.id)}
-                        data-tooltip="Delete investment"
-                      >
-                        <Trash2 size={13} />
-                      </button>
+                        iconSize={13}
+                      />
                       {inv.doc_link && (
                         <a
                           href={inv.doc_link}
@@ -267,82 +245,14 @@ export default function InvestmentsPage() {
                           rel="noopener noreferrer"
                           className="inv-action-btn inv-action-doc"
                           data-tooltip="Open document"
+                          onClick={(e) => e.stopPropagation()}
                         >
                           <ExternalLink size={13} />
                         </a>
                       )}
-                      {(hasReturns || (inv.payments?.length ?? 0) > 0) && (
-                        <button
-                          className="inv-action-btn inv-action-expand"
-                          onClick={() => toggleExpand(inv.id)}
-                          data-tooltip={isExpanded ? 'Collapse history' : 'View payment & return history'}
-                        >
-                          {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-                        </button>
-                      )}
                     </div>
                   </div>
                 </div>
-
-                {/* Payments + Returns history */}
-                <AnimatePresence>
-                  {isExpanded && (hasReturns || hasPayments) && (
-                    <motion.div
-                      className="inv-returns"
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      {hasPayments && (
-                        <>
-                          <div className="inv-returns-header">
-                            <ArrowUpRight size={11} style={{ color: 'var(--accent-coral)' }} /> Payments out (instalments)
-                          </div>
-                          {inv.payments!.map((pay) => (
-                            <div key={pay.id} className="inv-return-row">
-                              <div className="inv-ret-dot" style={{ background: 'var(--accent-coral)' }} />
-                              <div className="inv-ret-info">
-                                <span className="inv-ret-amount" style={{ color: 'var(--accent-coral)' }}>−{formatCurrency(pay.amount)}</span>
-                                <span className="inv-ret-date">{formatDate(pay.payment_date)}</span>
-                                <span className="inv-ret-type" style={{ color: 'var(--text-muted)', background: 'rgba(249,115,22,0.1)' }}>Payment out</span>
-                                {pay.notes && <span className="inv-ret-notes">{pay.notes}</span>}
-                              </div>
-                              <button className="inv-ret-del" onClick={() => deleteInvPayment(pay.id)} data-tooltip="Delete payment">
-                                <Trash2 size={12} />
-                              </button>
-                            </div>
-                          ))}
-                        </>
-                      )}
-                      {hasReturns && (
-                        <>
-                          <div className="inv-returns-header" style={{ marginTop: hasPayments ? 6 : 0 }}>
-                            <ArrowDownRight size={11} style={{ color: 'var(--accent-teal)' }} /> Returns received
-                          </div>
-                          {inv.returns!.map((ret) => (
-                            <div key={ret.id} className="inv-return-row">
-                              <div className="inv-ret-dot" style={{ background: RETURN_TYPE_COLORS[ret.return_type ?? ''] ?? 'var(--text-muted)' }} />
-                              <div className="inv-ret-info">
-                                <span className="inv-ret-amount">+{formatCurrency(ret.amount)}</span>
-                                <span className="inv-ret-date">{formatDate(ret.return_date)}</span>
-                                {ret.return_type && (
-                                  <span className="inv-ret-type" style={{ color: RETURN_TYPE_COLORS[ret.return_type] }}>
-                                    {ret.return_type}
-                                  </span>
-                                )}
-                                {ret.notes && <span className="inv-ret-notes">{ret.notes}</span>}
-                              </div>
-                              <button className="inv-ret-del" onClick={() => deleteReturn(ret.id)} data-tooltip="Delete return">
-                                <Trash2 size={12} />
-                              </button>
-                            </div>
-                          ))}
-                        </>
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </motion.div>
             )
           })}
@@ -472,8 +382,6 @@ export default function InvestmentsPage() {
           cursor: pointer; transition: background 0.12s, color 0.12s;
           text-decoration: none;
         }
-        .inv-action-view { color: var(--text-secondary); }
-        .inv-action-view:hover { background: rgba(108,99,255,0.1); color: var(--accent-primary); border-color: rgba(108,99,255,0.25); }
         .inv-action-pay { color: var(--accent-coral); }
         .inv-action-pay:hover { background: rgba(249,115,22,0.12); border-color: rgba(249,115,22,0.3); }
         .inv-action-return { color: var(--accent-teal); }
@@ -484,33 +392,6 @@ export default function InvestmentsPage() {
         .inv-action-del:hover { background: rgba(239,68,68,0.1); color: var(--accent-red); border-color: rgba(239,68,68,0.3); }
         .inv-action-doc { color: var(--accent-primary); }
         .inv-action-doc:hover { background: rgba(108,99,255,0.12); }
-        .inv-action-expand { color: var(--text-muted); }
-        .inv-action-expand:hover { background: var(--bg-hover); color: var(--text-primary); }
-
-        /* Returns history */
-        .inv-returns { border-top: 1px solid var(--border); background: rgba(0,0,0,0.15); overflow: hidden; }
-        .inv-returns-header {
-          font-size: 10px; font-weight: 600; color: var(--text-muted);
-          text-transform: uppercase; letter-spacing: 0.07em;
-          padding: 8px 16px 4px;
-        }
-        .inv-return-row {
-          display: flex; align-items: center; gap: 10px;
-          padding: 8px 16px; border-bottom: 1px solid rgba(42,42,74,0.4);
-        }
-        .inv-return-row:last-child { border-bottom: none; }
-        .inv-ret-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-        .inv-ret-info { flex: 1; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .inv-ret-amount { font-size: 13px; font-weight: 600; color: var(--accent-teal); }
-        .inv-ret-date { font-size: 12px; color: var(--text-muted); }
-        .inv-ret-type { font-size: 11px; font-weight: 500; padding: 1px 7px; border-radius: 20px; background: var(--bg-hover); }
-        .inv-ret-notes { font-size: 11px; color: var(--text-muted); font-style: italic; }
-        .inv-ret-del {
-          width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0;
-          display: flex; align-items: center; justify-content: center;
-          background: none; border: none; color: var(--text-muted); cursor: pointer;
-        }
-        .inv-ret-del:hover { color: var(--accent-red); background: rgba(239,68,68,0.1); }
       `}</style>
     </motion.div>
   )

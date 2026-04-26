@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { useParams, useNavigate } from '@tanstack/react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  ArrowLeft, Plus, Edit2, Trash2, ExternalLink,
+  ArrowLeft, Plus, Edit2, ExternalLink,
   ChevronDown, ChevronUp, CreditCard,
 } from 'lucide-react'
+import DeleteButton from '@/components/common/DeleteButton'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { usePerson, useDeleteLedgerEntry, useDeletePayment } from '@/hooks/useLedger'
@@ -220,13 +221,11 @@ export default function PersonDetailPage() {
                     >
                       <Edit2 size={13} />
                     </button>
-                    <button
+                    <DeleteButton
+                      onConfirm={() => handleDeleteEntry(entry.id)}
                       className="pd-action-btn pd-del-btn"
-                      onClick={() => handleDeleteEntry(entry.id)}
-                      data-tooltip="Delete entry"
-                    >
-                      <Trash2 size={13} />
-                    </button>
+                      iconSize={13}
+                    />
                     {(entry.payments?.length ?? 0) > 0 && (
                       <button
                         className="pd-action-btn pd-expand-btn"
@@ -258,13 +257,11 @@ export default function PersonDetailPage() {
                             {pay.payment_method && <span className="pd-pay-method">{pay.payment_method}</span>}
                             {pay.notes && <span className="pd-pay-notes">{pay.notes}</span>}
                           </div>
-                          <button
+                          <DeleteButton
+                            onConfirm={() => handleDeletePayment(pay.id)}
                             className="pd-pay-del"
-                            onClick={() => handleDeletePayment(pay.id)}
-                            title="Remove payment"
-                          >
-                            <Trash2 size={12} />
-                          </button>
+                            iconSize={12}
+                          />
                         </div>
                       ))}
                     </motion.div>

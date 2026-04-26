@@ -13,7 +13,13 @@ export function useNoSpendStreak(transactions: Transaction[]) {
     let streak = 0
     const today = new Date()
 
-    for (let i = 0; i < 365; i++) {
+    // Count back from today; stop at earliest known transaction date (no hard cap)
+    const earliest = transactions.length > 0
+      ? transactions.reduce((min, t) => (t.txn_date < min ? t.txn_date : min), toISODateString(today))
+      : toISODateString(today)
+    const maxDays = Math.ceil((today.getTime() - new Date(earliest).getTime()) / (1000 * 60 * 60 * 24)) + 2
+
+    for (let i = 0; i < maxDays; i++) {
       const d = new Date(today)
       d.setDate(d.getDate() - i)
       const key = toISODateString(d)

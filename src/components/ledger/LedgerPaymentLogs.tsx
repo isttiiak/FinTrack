@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Filter, Edit2, Check } from 'lucide-react'
+import DeleteButton from '@/components/common/DeleteButton'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { useDeletePayment, useUpdatePayment } from '@/hooks/useLedger'
 import { useDemoStore } from '@/stores/demoStore'
@@ -288,13 +289,17 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
                       <Edit2 size={12} />
                     </button>
                   )}
-                  <button
-                    className="lpl-del-btn"
-                    onClick={() => editing?.id === row.id ? setEditing(null) : handleDelete(row.id)}
-                    data-tooltip={editing?.id === row.id ? 'Cancel edit' : 'Delete this payment'}
-                  >
-                    <X size={12} />
-                  </button>
+                  {editing?.id === row.id ? (
+                    <button
+                      className="lpl-del-btn"
+                      onClick={() => setEditing(null)}
+                      data-tooltip="Cancel edit"
+                    >
+                      <X size={12} />
+                    </button>
+                  ) : (
+                    <DeleteButton onConfirm={() => handleDelete(row.id)} className="lpl-del-btn" iconSize={12} />
+                  )}
                 </div>
               </motion.div>
             )

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Edit2, Trash2 } from 'lucide-react'
+import { Edit2 } from 'lucide-react'
+import DeleteButton from '@/components/common/DeleteButton'
 import type { Transaction } from '@/types/expense.types'
 import { formatCurrency } from '@/lib/utils'
 import { useDeleteExpense } from '@/hooks/useExpenses'
@@ -95,13 +96,11 @@ export default function ExpenseCard({ txn, onEdit }: ExpenseCardProps) {
                   >
                     <Edit2 size={13} />
                   </button>
-                  <button
+                  <DeleteButton
+                    onConfirm={handleDelete}
                     className="expense-action-btn expense-action-delete"
-                    onClick={handleDelete}
-                    title="Delete"
-                  >
-                    <Trash2 size={13} />
-                  </button>
+                    iconSize={13}
+                  />
                 </motion.div>
               )}
             </AnimatePresence>

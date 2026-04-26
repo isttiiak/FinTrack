@@ -85,12 +85,12 @@ export default function LedgerPage() {
         <motion.div className="ledger-summary-grid" variants={staggerContainer} initial="initial" animate="animate">
           <motion.div className="ledger-sum-card ledger-sum-lent" variants={staggerItem}>
             <div className="ledger-sum-icon"><TrendingUp size={18} /></div>
-            <div className="ledger-sum-label">They owe you</div>
+            <div className="ledger-sum-label">Total lent out</div>
             <div className="ledger-sum-value">{formatCurrency(totalOutstandingLent)}</div>
           </motion.div>
           <motion.div className="ledger-sum-card ledger-sum-debt" variants={staggerItem}>
             <div className="ledger-sum-icon"><TrendingDown size={18} /></div>
-            <div className="ledger-sum-label">You owe them</div>
+            <div className="ledger-sum-label">Total borrowed</div>
             <div className="ledger-sum-value">{formatCurrency(totalOutstandingDebt)}</div>
           </motion.div>
           <motion.div className={`ledger-sum-card ${netPosition >= 0 ? 'ledger-sum-net-positive' : 'ledger-sum-net-negative'}`} variants={staggerItem}>
@@ -103,7 +103,7 @@ export default function LedgerPage() {
 
       {/* Tabs */}
       <div className="ledger-tabs">
-        {([['all', 'All'], ['lent', '💸 They owe me'], ['debt', '🏦 I owe them'], ['summary', '📊 Summary'], ['logs', '💳 Payment logs']] as [Tab, string][]).map(([t, label]) => (
+        {([['all', 'All'], ['lent', '💸 Lent'], ['debt', '🏦 Debt'], ['summary', '📊 Summary'], ['logs', '💳 Payment logs']] as [Tab, string][]).map(([t, label]) => (
           <button
             key={t}
             className={`ledger-tab ${activeTab === t ? 'ledger-tab-active' : ''}`}

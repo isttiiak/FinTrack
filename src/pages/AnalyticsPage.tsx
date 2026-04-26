@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   ResponsiveContainer,
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts'
-import { staggerContainer, staggerItem } from '@/lib/animations'
+import { Sparkles, AlertCircle } from 'lucide-react'
+import { staggerContainer, staggerItem, fadeUp } from '@/lib/animations'
 import { formatCurrency, toISODateString } from '@/lib/utils'
 import { useExpenses } from '@/hooks/useExpenses'
 import { useBudgets } from '@/hooks/useBudgets'
@@ -38,7 +39,7 @@ const TOOLTIP_STYLE = {
   labelStyle: { color: '#9D9AB8', marginBottom: 4 },
 }
 
-type Tab = 'overview' | 'habits'
+type Tab = 'overview' | 'habits' | 'ai'
 
 export default function AnalyticsPage() {
   const [tab, setTab] = useState<Tab>('overview')
@@ -186,6 +187,9 @@ export default function AnalyticsPage() {
         </button>
         <button className={`analytics-tab ${tab === 'habits' ? 'analytics-tab-active' : ''}`} onClick={() => setTab('habits')}>
           📅 Habits &amp; Budget
+        </button>
+        <button className={`analytics-tab ${tab === 'ai' ? 'analytics-tab-active analytics-tab-ai' : ''}`} onClick={() => setTab('ai')}>
+          ✨ AI Insights
         </button>
       </motion.div>
 
@@ -375,6 +379,18 @@ export default function AnalyticsPage() {
         </motion.div>
       )}
 
+      {tab === 'ai' && (
+        <AIInsightsTab
+          trendData={trendData}
+          categoryData={categoryData}
+          budgetData={budgetData}
+          thisExpense={thisExpense}
+          thisIncome={thisIncome}
+          selectedMonth={selectedMonth}
+          streak={streak}
+        />
+      )}
+
       <style>{`
         .analytics-page { max-width: 960px; }
         .analytics-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; gap: 16px; flex-wrap: wrap; }
@@ -466,6 +482,190 @@ export default function AnalyticsPage() {
         .analytics-top-day-bar-wrap { flex: 1; height: 6px; border-radius: 3px; background: var(--bg-elevated); overflow: hidden; }
         .analytics-top-day-bar { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
         .analytics-top-day-amount { font-size: 12px; font-weight: 600; color: var(--text-primary); flex-shrink: 0; width: 70px; text-align: right; }
+
+        .analytics-tab-ai { background: linear-gradient(135deg,#6C63FF,#A855F7) !important; }
+      `}</style>
+    </motion.div>
+  )
+}
+
+// ── AI Insights tab ───────────────────────────────────────────────────────────
+
+interface AIInsightsTabProps {
+  trendData: { month: string; Expense: number; Income: number }[]
+  categoryData: { name: string; value: number }[]
+  budgetData: { name: string; Budget: number; Actual: number }[]
+  thisExpense: number
+  thisIncome: number
+  selectedMonth: string
+  streak: number
+}
+
+function AIInsightsTab({
+  trendData, categoryData, budgetData, thisExpense, thisIncome, selectedMonth, streak,
+}: AIInsightsTabProps) {
+  const [insights, setInsights] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const aiEnabled = localStorage.getItem('ai_insights_enabled') === 'true'
+  const apiKey = localStorage.getItem('gemini_api_key') ?? ''
+
+  async function analyze() {
+    if (!apiKey) { setError('No API key set. Enable AI Insights in Settings and add your Gemini API key.'); return }
+    setLoading(true); setError(null); setInsights(null)
+
+    const topCats = categoryData.slice(0, 5).map((c) => `${c.name}: ${formatCurrency(c.value)}`).join(', ')
+    const trendSummary = trendData.slice(-3).map((d) => `${d.month} — Expense: ${formatCurrency(d.Expense)}, Income: ${formatCurrency(d.Income)}`).join('; ')
+    const overBudget = budgetData.filter((b) => b.Actual > b.Budget).map((b) => b.name).join(', ')
+
+    const prompt = `You are a personal finance advisor. Analyze this spending data and give 4–5 concise, actionable bullet points. Be specific. Keep total under 180 words.
+
+Month: ${selectedMonth}
+This month — Spent: ${formatCurrency(thisExpense)}, Income: ${formatCurrency(thisIncome)}, Saved: ${formatCurrency(Math.max(0, thisIncome - thisExpense))}
+No-spend streak: ${streak} days
+Top categories: ${topCats || 'No data'}
+Recent 3-month trend: ${trendSummary || 'No data'}
+Over budget: ${overBudget || 'None'}
+
+Provide insights as a markdown bullet list.`
+
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+        },
+      )
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body?.error?.message ?? `HTTP ${res.status}`)
+      }
+      const data = await res.json()
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? 'No response received.'
+      setInsights(text)
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Unknown error'
+      setError(`Analysis failed: ${msg}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!aiEnabled) {
+    return (
+      <motion.div
+        className="analytics-card analytics-ai-disabled"
+        variants={fadeUp} initial="initial" animate="animate"
+      >
+        <Sparkles size={28} style={{ color: 'var(--accent-primary)', marginBottom: 12 }} />
+        <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 6px' }}>AI Insights not enabled</p>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
+          Enable AI Insights in <strong>Settings → AI Insights</strong> and add your free Google Gemini API key.
+        </p>
+      </motion.div>
+    )
+  }
+
+  return (
+    <motion.div variants={fadeUp} initial="initial" animate="animate" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div className="analytics-card">
+        <div className="analytics-ai-header">
+          <div>
+            <h3 className="analytics-card-title" style={{ marginBottom: 4 }}>
+              <Sparkles size={16} style={{ color: '#A855F7' }} /> AI Spending Analysis
+            </h3>
+            <p style={{ font: '13px/1.4 inherit', color: 'var(--text-secondary)', margin: 0 }}>
+              Powered by Google Gemini. Click Analyze to get personalized insights for {selectedMonth}.
+            </p>
+          </div>
+          <button
+            className="analytics-ai-btn"
+            onClick={analyze}
+            disabled={loading}
+          >
+            {loading
+              ? <><span className="analytics-ai-spinner" /> Analyzing…</>
+              : <><Sparkles size={14} /> Analyze</>}
+          </button>
+        </div>
+
+        <AnimatePresence mode="wait">
+          {loading && (
+            <motion.div
+              key="loading"
+              className="analytics-ai-loading"
+              variants={fadeUp} initial="initial" animate="animate" exit={{ opacity: 0 }}
+            >
+              <span className="analytics-ai-spinner-lg" />
+              <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>Calling Gemini API…</span>
+            </motion.div>
+          )}
+
+          {error && !loading && (
+            <motion.div
+              key="error"
+              className="analytics-ai-error"
+              variants={fadeUp} initial="initial" animate="animate"
+            >
+              <AlertCircle size={15} /> {error}
+            </motion.div>
+          )}
+
+          {insights && !loading && (
+            <motion.div
+              key="insights"
+              className="analytics-ai-insights"
+              variants={fadeUp} initial="initial" animate="animate"
+            >
+              {insights.split('\n').filter(Boolean).map((line, i) => (
+                <p key={i} className="analytics-ai-line"
+                  style={{ paddingLeft: line.startsWith('-') || line.startsWith('•') ? 0 : undefined }}>
+                  {line.replace(/^\*\s*/, '• ').replace(/^-\s*/, '• ')}
+                </p>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      <style>{`
+        .analytics-ai-disabled {
+          display: flex; flex-direction: column; align-items: center;
+          padding: 48px 24px; text-align: center;
+        }
+        .analytics-ai-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+        .analytics-ai-btn {
+          display: flex; align-items: center; gap: 6px;
+          padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer;
+          background: linear-gradient(135deg,#6C63FF,#A855F7); border: none; color: #fff;
+          transition: opacity 0.15s; white-space: nowrap; flex-shrink: 0;
+        }
+        .analytics-ai-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .analytics-ai-spinner {
+          display: inline-block; width: 13px; height: 13px;
+          border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
+          border-radius: 50%; animation: ai-spin 0.7s linear infinite;
+        }
+        .analytics-ai-spinner-lg {
+          display: inline-block; width: 20px; height: 20px;
+          border: 2px solid rgba(108,99,255,0.2); border-top-color: var(--accent-primary);
+          border-radius: 50%; animation: ai-spin 0.7s linear infinite;
+        }
+        @keyframes ai-spin { to { transform: rotate(360deg); } }
+        .analytics-ai-loading { display: flex; align-items: center; gap: 12px; padding: 24px 0; }
+        .analytics-ai-error {
+          display: flex; align-items: center; gap: 8px;
+          padding: 12px 14px; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2);
+          border-radius: 10px; font-size: 13px; color: var(--accent-red);
+        }
+        .analytics-ai-insights { display: flex; flex-direction: column; gap: 6px; }
+        .analytics-ai-line {
+          font-size: 14px; color: var(--text-secondary); margin: 0; line-height: 1.55;
+          padding: 6px 10px; border-radius: 8px; background: var(--bg-elevated);
+        }
       `}</style>
     </motion.div>
   )

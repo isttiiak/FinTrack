@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Filter, ArrowUpRight, ArrowDownRight, Edit2, Check } from 'lucide-react'
+import DeleteButton from '@/components/common/DeleteButton'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { useDeleteInvestmentPayment, useDeleteReturn, useUpdateInvestmentPayment, useUpdateReturn } from '@/hooks/useInvestments'
 import { fadeUp } from '@/lib/animations'
@@ -249,17 +250,17 @@ export default function InvestmentTransactionLogs({ investments }: { investments
                   <Edit2 size={12} />
                 </button>
               )}
-              <button
-                className="itl-del-btn"
-                data-tooltip={editState?.id === row.id ? 'Cancel' : `Delete this ${row.txType === 'Payment Out' ? 'payment' : 'return'}`}
-                onClick={() => {
-                  if (editState?.id === row.id) { setEditState(null); return }
-                  if (row.txType === 'Payment Out') deletePayment(row.id)
-                  else deleteReturn(row.id)
-                }}
-              >
-                <X size={12} />
-              </button>
+              {editState?.id === row.id ? (
+                <button className="itl-del-btn" data-tooltip="Cancel" onClick={() => setEditState(null)}>
+                  <X size={12} />
+                </button>
+              ) : (
+                <DeleteButton
+                  onConfirm={() => row.txType === 'Payment Out' ? deletePayment(row.id) : deleteReturn(row.id)}
+                  className="itl-del-btn"
+                  iconSize={12}
+                />
+              )}
             </div>
           </motion.div>
         ))}

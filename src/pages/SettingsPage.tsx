@@ -1,12 +1,15 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
+import Papa from 'papaparse'
+import { useQueryClient } from '@tanstack/react-query'
 import {
-  DollarSign, Plus, Trash2, Download, AlertTriangle,
-  ChevronDown, Check, X
+  DollarSign, Plus, Download, AlertTriangle,
+  ChevronDown, Check, X, Upload, Sparkles, Eye, EyeOff,
 } from 'lucide-react'
+import DeleteButton from '@/components/common/DeleteButton'
 import { useCategories } from '@/hooks/useCategories'
 import { useBudgets, useUpsertBudget, useDeleteBudget } from '@/hooks/useBudgets'
 import { useExpenses } from '@/hooks/useExpenses'
@@ -122,13 +125,11 @@ function BudgetSection() {
               </div>
               <div className="budget-row-right">
                 <span className="budget-row-amount">{formatCurrency(b.monthly_limit)}/mo</span>
-                <button
+                <DeleteButton
+                  onConfirm={() => deleteBudget(b.id)}
                   className="budget-delete-btn"
-                  onClick={() => deleteBudget(b.id)}
-                  title="Remove limit"
-                >
-                  <Trash2 size={14} />
-                </button>
+                  iconSize={14}
+                />
               </div>
             </motion.div>
           ))
@@ -210,6 +211,349 @@ function ExportSection() {
           </div>
         </div>
       </div>
+    </section>
+  )
+}
+
+// ── Import Section ────────────────────────────────────────────────────────────
+
+const CSV_HEADERS = ['Date', 'Type', 'Amount', 'Category', 'Description', 'Payment Method', 'Account']
+const TEMPLATE_CSV = [
+  CSV_HEADERS.join(','),
+  '2026-04-01,Expense,500,Food,Lunch at restaurant,Cash,Cash',
+  '2026-04-02,Income,15000,Income,Monthly salary,Bank Transfer,BRAC Bank Savings',
+].join('\n')
+
+function ImportSection() {
+  const { data: allCategories = [] } = useCategories()
+  const qc = useQueryClient()
+  const userId = useAuthStore((s) => s.user?.id)
+  const isDemo = useDemoStore((s) => s.isDemo)
+
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [preview, setPreview] = useState<Record<string, string>[]>([])
+  const [fileName, setFileName] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [importing, setImporting] = useState(false)
+  const [imported, setImported] = useState<number | null>(null)
+
+  function downloadTemplate() {
+    const blob = new Blob([TEMPLATE_CSV], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = 'fintrack-import-template.csv'; a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function handleFile(file: File) {
+    setError(null); setImported(null); setPreview([])
+    setFileName(file.name)
+    Papa.parse<Record<string, string>>(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const rows = results.data
+        if (rows.length === 0) { setError('No data rows found in the file.'); return }
+        const missing = CSV_HEADERS.filter((h) => !(h in (rows[0] ?? {})))
+        if (missing.length > 0) {
+          setError(`Missing columns: ${missing.join(', ')}. Use the template.`)
+          return
+        }
+        setPreview(rows.slice(0, 5))
+      },
+      error: () => setError('Could not parse CSV. Make sure it uses commas as separators.'),
+    })
+  }
+
+  async function handleImport() {
+    if (!userId || isDemo || preview.length === 0 || !fileName) return
+    setImporting(true); setError(null)
+
+    // Re-parse full file
+    const input = fileRef.current?.files?.[0]
+    if (!input) { setImporting(false); return }
+
+    Papa.parse<Record<string, string>>(input, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        try {
+          const rows = results.data
+          const catMap: Record<string, string> = {}
+          allCategories.forEach((c) => { catMap[c.name.toLowerCase()] = c.id })
+          const othersId = allCategories.find((c) => c.name === 'Others')?.id ?? null
+
+          const txns = rows.map((r) => ({
+            user_id: userId,
+            txn_date: r['Date']?.trim() ?? '',
+            type: r['Type']?.trim() === 'Income' ? 'Income' : 'Expense',
+            amount: parseFloat(r['Amount']?.replace(/,/g, '') ?? '0') || 0,
+            category_id: catMap[r['Category']?.trim().toLowerCase() ?? ''] ?? othersId,
+            description: r['Description']?.trim() || null,
+            payment_method: r['Payment Method']?.trim() || null,
+            account: r['Account']?.trim() || null,
+            no_spend_flag: false,
+          })).filter((t) => t.txn_date && t.amount > 0)
+
+          if (txns.length === 0) { setError('No valid rows to import.'); setImporting(false); return }
+
+          const { error: dbErr } = await supabase.from('transactions').insert(txns)
+          if (dbErr) throw dbErr
+
+          await qc.invalidateQueries({ queryKey: ['expenses'] })
+          setImported(txns.length)
+          setPreview([])
+          setFileName(null)
+          if (fileRef.current) fileRef.current.value = ''
+        } catch (e) {
+          setError('Import failed. Check your data and try again.')
+        } finally {
+          setImporting(false)
+        }
+      },
+    })
+  }
+
+  return (
+    <section className="settings-section">
+      <div className="settings-section-header">
+        <div>
+          <h2 className="settings-section-title"><Upload size={16} /> Import Expenses</h2>
+          <p className="settings-section-desc">
+            Import transactions from a CSV file.{' '}
+            <button className="import-template-link" onClick={downloadTemplate}>Download template</button>{' '}
+            to see the required format.
+          </p>
+        </div>
+      </div>
+
+      {isDemo && (
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 0 }}>
+          Import is disabled in demo mode.
+        </p>
+      )}
+
+      {!isDemo && (
+        <>
+          <div
+            className="import-drop-zone"
+            onClick={() => fileRef.current?.click()}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f) }}
+          >
+            <Upload size={20} style={{ color: 'var(--text-muted)' }} />
+            <span className="import-drop-text">
+              {fileName ? fileName : 'Click or drag a CSV file here'}
+            </span>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".csv"
+              style={{ display: 'none' }}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
+            />
+          </div>
+
+          {error && <p className="import-error">{error}</p>}
+
+          {imported !== null && (
+            <motion.div
+              className="import-success"
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <Check size={14} /> Successfully imported {imported} transaction{imported !== 1 ? 's' : ''}!
+            </motion.div>
+          )}
+
+          {preview.length > 0 && (
+            <div className="import-preview">
+              <div className="import-preview-title">Preview (first {preview.length} rows)</div>
+              <div className="import-preview-table-wrap">
+                <table className="import-preview-table">
+                  <thead>
+                    <tr>
+                      {CSV_HEADERS.map((h) => <th key={h}>{h}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {preview.map((row, i) => (
+                      <tr key={i}>
+                        {CSV_HEADERS.map((h) => <td key={h}>{row[h] ?? ''}</td>)}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <button
+                className="btn-primary"
+                style={{ marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 8 }}
+                onClick={handleImport}
+                disabled={importing}
+              >
+                {importing ? <span className="auth-spinner" /> : <><Upload size={14} /> Import transactions</>}
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </section>
+  )
+}
+
+// ── AI Analytics Section ──────────────────────────────────────────────────────
+
+type AIProvider = 'gemini' | 'groq'
+
+const AI_PROVIDERS: { id: AIProvider; name: string; badge: string; placeholder: string; hint: string; free: string }[] = [
+  {
+    id: 'gemini',
+    name: 'Google Gemini',
+    badge: '15 req/min free',
+    placeholder: 'AIzaSy…',
+    hint: 'Get a free key at ai.google.dev → Get API key → Create API key in new project.',
+    free: '1M tokens/day, no card needed',
+  },
+  {
+    id: 'groq',
+    name: 'Groq',
+    badge: '⚡ Fastest',
+    placeholder: 'gsk_…',
+    hint: 'Get a free key at console.groq.com → API Keys → Create API key. Sign up is free.',
+    free: '14,400 req/day free — ~10× faster than Gemini',
+  },
+]
+
+function AISection() {
+  const [enabled, setEnabled] = useState(() => localStorage.getItem('ai_insights_enabled') === 'true')
+  const [provider, setProvider] = useState<AIProvider>(
+    () => (localStorage.getItem('ai_provider') as AIProvider) ?? 'groq',
+  )
+  const [geminiKey, setGeminiKey] = useState(() => localStorage.getItem('gemini_api_key') ?? '')
+  const [groqKey,   setGroqKey]   = useState(() => localStorage.getItem('groq_api_key')   ?? '')
+  const [showKey, setShowKey] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  const currentKey   = provider === 'gemini' ? geminiKey   : groqKey
+  const setCurrentKey = provider === 'gemini' ? setGeminiKey : setGroqKey
+  const providerMeta = AI_PROVIDERS.find((p) => p.id === provider)!
+
+  function handleToggle() {
+    const next = !enabled
+    setEnabled(next)
+    localStorage.setItem('ai_insights_enabled', String(next))
+  }
+
+  function handleProviderChange(p: AIProvider) {
+    setProvider(p)
+    localStorage.setItem('ai_provider', p)
+    setShowKey(false)
+  }
+
+  function handleSaveKey() {
+    localStorage.setItem(`${provider}_api_key`, currentKey)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
+  return (
+    <section className="settings-section">
+      <div className="settings-section-header">
+        <div>
+          <h2 className="settings-section-title"><Sparkles size={16} /> AI Insights (Beta)</h2>
+          <p className="settings-section-desc">
+            Get AI-powered spending analysis on the Analytics page.
+            Both providers are free — no credit card required.
+          </p>
+        </div>
+        <button
+          className={`ai-toggle ${enabled ? 'ai-toggle-on' : ''}`}
+          onClick={handleToggle}
+          aria-label="Toggle AI insights"
+        >
+          <span className="ai-toggle-knob" />
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {enabled && (
+          <motion.div
+            className="ai-key-section"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+          >
+            <div style={{ padding: '16px 0 0', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+              {/* Provider selector */}
+              <div>
+                <label className="pf-label" style={{ marginBottom: 8, display: 'block' }}>AI Provider</label>
+                <div className="ai-provider-row">
+                  {AI_PROVIDERS.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className={`ai-provider-btn ${provider === p.id ? 'ai-provider-active' : ''}`}
+                      onClick={() => handleProviderChange(p.id)}
+                    >
+                      <span className="ai-provider-name">{p.name}</span>
+                      <span className={`ai-provider-badge ${p.id === 'groq' ? 'ai-badge-groq' : 'ai-badge-gemini'}`}>
+                        {p.badge}
+                      </span>
+                      <span className="ai-provider-free">{p.free}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* API Key field */}
+              <div>
+                <label className="pf-label" style={{ marginBottom: 6, display: 'block' }}>
+                  {providerMeta.name} API Key
+                </label>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
+                    <input
+                      type={showKey ? 'text' : 'password'}
+                      className="pf-input"
+                      placeholder={providerMeta.placeholder}
+                      value={currentKey}
+                      onChange={(e) => setCurrentKey(e.target.value)}
+                      style={{ paddingRight: 40 }}
+                    />
+                    <button
+                      type="button"
+                      style={{
+                        position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                        background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer',
+                        display: 'flex', padding: 0,
+                      }}
+                      onClick={() => setShowKey((v) => !v)}
+                    >
+                      {showKey ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                  </div>
+                  <button
+                    className="btn-primary"
+                    style={{ padding: '9px 16px', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}
+                    onClick={handleSaveKey}
+                    disabled={!currentKey.trim()}
+                  >
+                    {saved ? <><Check size={14} /> Saved!</> : 'Save key'}
+                  </button>
+                </div>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '7px 0 0' }}>
+                  {providerMeta.hint}
+                </p>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '4px 0 0', opacity: 0.7 }}>
+                  Stored in this browser only — never sent to any server except the AI provider directly.
+                </p>
+              </div>
+
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   )
 }
@@ -327,7 +671,9 @@ export default function SettingsPage() {
       )}
 
       <motion.div variants={staggerItem}><BudgetSection /></motion.div>
+      <motion.div variants={staggerItem}><AISection /></motion.div>
       <motion.div variants={staggerItem}><ExportSection /></motion.div>
+      <motion.div variants={staggerItem}><ImportSection /></motion.div>
       {!isDemo && <motion.div variants={staggerItem}><DangerSection /></motion.div>}
 
       <style>{settingsStyles}</style>
@@ -443,4 +789,73 @@ const settingsStyles = `
   .pf-select:focus { outline: none; border-color: var(--border-focus); }
   .auth-spinner { display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Import */
+  .import-template-link {
+    background: none; border: none; padding: 0; cursor: pointer;
+    color: var(--accent-primary); font-size: inherit; text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .import-template-link:hover { opacity: 0.8; }
+  .import-drop-zone {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    padding: 28px 20px; border: 2px dashed var(--border); border-radius: 12px;
+    cursor: pointer; transition: border-color 0.15s, background 0.15s;
+    background: var(--bg-elevated);
+  }
+  .import-drop-zone:hover { border-color: var(--accent-primary); background: rgba(108,99,255,0.04); }
+  .import-drop-text { font-size: 13px; color: var(--text-muted); }
+  .import-error { font-size: 12px; color: #FCA5A5; margin: 8px 0 0; }
+  .import-success {
+    display: flex; align-items: center; gap: 6px; margin-top: 10px;
+    font-size: 13px; font-weight: 500; color: var(--accent-teal);
+  }
+  .import-preview { margin-top: 12px; }
+  .import-preview-title { font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: 8px; }
+  .import-preview-table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+  .import-preview-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .import-preview-table th {
+    background: var(--bg-elevated); color: var(--text-muted); font-weight: 600;
+    padding: 8px 12px; text-align: left; font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.05em; border-bottom: 1px solid var(--border);
+  }
+  .import-preview-table td {
+    padding: 8px 12px; color: var(--text-secondary); border-bottom: 1px solid rgba(42,42,74,0.4);
+  }
+  .import-preview-table tr:last-child td { border-bottom: none; }
+
+  /* AI toggle */
+  .ai-toggle {
+    width: 44px; height: 24px; border-radius: 12px; border: none; cursor: pointer;
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    position: relative; transition: background 0.2s, border-color 0.2s; flex-shrink: 0;
+    padding: 0;
+  }
+  .ai-toggle-on { background: linear-gradient(135deg,#6C63FF,#A855F7); border-color: transparent; }
+  .ai-toggle-knob {
+    position: absolute; top: 3px; left: 3px;
+    width: 16px; height: 16px; border-radius: 50%; background: var(--text-muted);
+    transition: transform 0.2s, background 0.2s;
+  }
+  .ai-toggle-on .ai-toggle-knob { transform: translateX(20px); background: #fff; }
+  .ai-key-section { overflow: hidden; }
+
+  /* AI provider selector */
+  .ai-provider-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .ai-provider-btn {
+    flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 4px; align-items: flex-start;
+    padding: 12px 14px; border-radius: 12px; cursor: pointer; text-align: left;
+    background: var(--bg-elevated); border: 2px solid var(--border);
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .ai-provider-btn:hover { border-color: rgba(108,99,255,0.3); background: rgba(108,99,255,0.04); }
+  .ai-provider-active { border-color: var(--accent-primary) !important; background: rgba(108,99,255,0.07) !important; }
+  .ai-provider-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+  .ai-provider-badge {
+    font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px;
+    letter-spacing: 0.02em;
+  }
+  .ai-badge-groq { background: rgba(16,185,129,0.15); color: var(--accent-teal); }
+  .ai-badge-gemini { background: rgba(108,99,255,0.12); color: var(--accent-primary); }
+  .ai-provider-free { font-size: 11px; color: var(--text-muted); }
 `

@@ -3,8 +3,9 @@ import { useParams, useNavigate } from '@tanstack/react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, Edit2, Wallet, TrendingUp, BarChart3,
-  CreditCard, PlusCircle, ExternalLink, Trash2, ArrowUpRight, ArrowDownRight,
+  CreditCard, PlusCircle, ExternalLink, ArrowUpRight, ArrowDownRight,
 } from 'lucide-react'
+import DeleteButton from '@/components/common/DeleteButton'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { useInvestments, useDeleteReturn, useDeleteInvestmentPayment } from '@/hooks/useInvestments'
@@ -211,9 +212,7 @@ export default function InvestmentDetailPage() {
                         <span className="idp-fully-paid">Fully paid ✓</span>
                       )}
                     </div>
-                    <button className="idp-del-btn" onClick={() => deletePayment(pay.id)} data-tooltip="Delete payment">
-                      <Trash2 size={12} />
-                    </button>
+                    <DeleteButton onConfirm={() => deletePayment(pay.id)} className="idp-del-btn" iconSize={12} />
                   </div>
                 )
               })
@@ -247,9 +246,7 @@ export default function InvestmentDetailPage() {
                       {ret.notes && <span className="idp-row-notes">{ret.notes}</span>}
                     </div>
                     <div className="idp-row-remaining" />
-                    <button className="idp-del-btn" onClick={() => deleteReturn(ret.id)} data-tooltip="Delete return">
-                      <Trash2 size={12} />
-                    </button>
+                    <DeleteButton onConfirm={() => deleteReturn(ret.id)} className="idp-del-btn" iconSize={12} />
                   </div>
                 )
               })

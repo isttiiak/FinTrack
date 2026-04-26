@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from '@tanstack/react-router'
-import { Edit2, Trash2, ChevronRight, CreditCard } from 'lucide-react'
+import { Edit2, ChevronRight, CreditCard } from 'lucide-react'
+import DeleteButton from '@/components/common/DeleteButton'
 import { formatCurrency } from '@/lib/utils'
 import { useDeletePerson } from '@/hooks/useLedger'
 import { useUIStore } from '@/stores/uiStore'
@@ -126,13 +127,11 @@ export default function PersonCard({ person, onEdit, onLogPayment }: PersonCardP
             >
               <Edit2 size={14} />
             </button>
-            <button
+            <DeleteButton
+              onConfirm={handleDelete}
               className="pc-action-btn pc-delete"
-              onClick={(e) => { e.stopPropagation(); handleDelete() }}
-              data-tooltip="Delete person"
-            >
-              <Trash2 size={14} />
-            </button>
+              iconSize={14}
+            />
           </motion.div>
         )}
       </AnimatePresence>
