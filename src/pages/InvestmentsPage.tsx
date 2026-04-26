@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, TrendingUp, Wallet, BarChart3, ChevronDown, ChevronUp,
-  Edit2, Trash2, ExternalLink, PlusCircle, CreditCard, ArrowUpRight, ArrowDownRight,
+  Edit2, Trash2, ExternalLink, PlusCircle, CreditCard, ArrowUpRight, ArrowDownRight, ChevronRight,
 } from 'lucide-react'
+import { useNavigate } from '@tanstack/react-router'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { useInvestments, useDeleteInvestment, useDeleteReturn, useDeleteInvestmentPayment } from '@/hooks/useInvestments'
@@ -34,6 +35,7 @@ export default function InvestmentsPage() {
   const { mutate: deleteInvestment } = useDeleteInvestment()
   const { mutate: deleteReturn } = useDeleteReturn()
 
+  const navigate = useNavigate()
   const { mutate: deleteInvPayment } = useDeleteInvestmentPayment()
   const [activeTab, setActiveTab] = useState<InvTab>('portfolio')
   const [showForm, setShowForm] = useState(false)
@@ -223,6 +225,13 @@ export default function InvestmentsPage() {
                       </div>
                     )}
                     <div className="inv-card-actions">
+                      <button
+                        className="inv-action-btn inv-action-view"
+                        onClick={() => navigate({ to: '/investments/$investmentId', params: { investmentId: inv.id } })}
+                        data-tooltip="View full details"
+                      >
+                        <ChevronRight size={13} />
+                      </button>
                       <button
                         className="inv-action-btn inv-action-pay"
                         onClick={() => setLoggingPaymentFor(inv)}
@@ -463,6 +472,8 @@ export default function InvestmentsPage() {
           cursor: pointer; transition: background 0.12s, color 0.12s;
           text-decoration: none;
         }
+        .inv-action-view { color: var(--text-secondary); }
+        .inv-action-view:hover { background: rgba(108,99,255,0.1); color: var(--accent-primary); border-color: rgba(108,99,255,0.25); }
         .inv-action-pay { color: var(--accent-coral); }
         .inv-action-pay:hover { background: rgba(249,115,22,0.12); border-color: rgba(249,115,22,0.3); }
         .inv-action-return { color: var(--accent-teal); }

@@ -13,10 +13,10 @@ const schema = z.object({
   name:             z.string().min(1, 'Name is required'),
   category:         z.enum(INVESTMENT_CATEGORIES).optional(),
   company_name:     z.string().optional(),
-  committed_amount: z.number({ error: 'Enter a valid amount' }).positive().optional(),
+  committed_amount: z.number({ error: 'Enter a valid amount' }).positive().optional().or(z.nan().transform(() => undefined)),
   start_date:       z.string().optional(),
   end_date:         z.string().optional(),
-  market_value:     z.number().nonnegative().optional(),
+  market_value:     z.number().nonnegative().optional().or(z.nan().transform(() => undefined)),
   doc_link:         z.string().url('Enter a valid URL').or(z.literal('')).optional(),
   notes:            z.string().optional(),
 })
@@ -116,9 +116,9 @@ export default function InvestmentForm({ editing, onClose }: InvestmentFormProps
           </div>
 
           <div className="invf-field">
-            <label className="invf-label">Committed amount (৳)</label>
+            <label className="invf-label">Committed amount (৳) <span className="req">*</span></label>
             <input
-              {...register('committed_amount', { valueAsNumber: true })}
+              {...register('committed_amount', { setValueAs: (v) => (v === '' || v === null || v === undefined) ? undefined : Number(v) })}
               type="number" step="0.01" placeholder="0.00"
               className={cn('invf-input invf-amount-input', errors.committed_amount && 'invf-input-error')}
             />
@@ -139,12 +139,13 @@ export default function InvestmentForm({ editing, onClose }: InvestmentFormProps
           </div>
 
           <div className="invf-field">
-            <label className="invf-label">Current market value (৳) <span className="invf-optional">(optional)</span></label>
+            <label className="invf-label">Current market value (৳) <span className="invf-optional">(optional — update any time)</span></label>
             <input
-              {...register('market_value', { valueAsNumber: true })}
-              type="number" step="0.01" placeholder="Mark-to-market value"
+              {...register('market_value', { setValueAs: (v) => (v === '' || v === null || v === undefined) ? undefined : Number(v) })}
+              type="number" step="0.01" placeholder="Current value of your investment"
               className="invf-input"
             />
+            <p className="field-hint">Leave blank if unknown. You can update this later as value changes.</p>
           </div>
 
           <div className="invf-field">

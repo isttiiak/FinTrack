@@ -335,6 +335,32 @@ export function useCreatePayment() {
   })
 }
 
+export function useUpdatePayment() {
+  const qc = useQueryClient()
+  const userId = useAuthStore((s) => s.user?.id)
+  const addToast = useUIStore((s) => s.addToast)
+
+  return useMutation({
+    mutationFn: async ({ id, ...data }: Partial<LedgerPayment> & { id: string }) => {
+      const { data: row, error } = await supabase
+        .from('ledger_payments')
+        .update(data)
+        .eq('id', id)
+        .eq('user_id', userId!)
+        .select()
+        .single()
+      if (error) throw error
+      return row as LedgerPayment
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['persons'] })
+      qc.invalidateQueries({ queryKey: ['person'] })
+      addToast({ type: 'success', message: 'Payment updated' })
+    },
+    onError: (err: Error) => addToast({ type: 'error', message: err.message }),
+  })
+}
+
 export function useDeletePayment() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)

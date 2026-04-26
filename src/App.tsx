@@ -23,6 +23,7 @@ import ExpensesPage from '@/pages/ExpensesPage'
 import LedgerPage from '@/pages/LedgerPage'
 import PersonDetailPage from '@/pages/PersonDetailPage'
 import InvestmentsPage from '@/pages/InvestmentsPage'
+import InvestmentDetailPage from '@/pages/InvestmentDetailPage'
 import AnalyticsPage from '@/pages/AnalyticsPage'
 import SettingsPage from '@/pages/SettingsPage'
 import ProfilePage from '@/pages/ProfilePage'
@@ -56,7 +57,7 @@ function Root() {
     }
 
     // Protected-route prefixes used for post-getSession redirect
-    const PROTECTED = ['/dashboard', '/expenses', '/ledger', '/analytics', '/settings', '/profile', '/investments']
+    const PROTECTED = ['/dashboard', '/expenses', '/ledger', '/analytics', '/settings', '/profile', '/investments', '/investment']
 
     // Initial session check — await profile so splash hides only when data is ready
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -207,7 +208,8 @@ const dashboardRoute      = createRoute({ getParentRoute: () => appRoute, path: 
 const expensesRoute       = createRoute({ getParentRoute: () => appRoute, path: '/expenses',          component: ExpensesPage })
 const ledgerRoute         = createRoute({ getParentRoute: () => appRoute, path: '/ledger',            component: LedgerPage })
 const personDetailRoute   = createRoute({ getParentRoute: () => appRoute, path: '/ledger/$personId',  component: PersonDetailPage })
-const investmentsRoute    = createRoute({ getParentRoute: () => appRoute, path: '/investments',       component: InvestmentsPage })
+const investmentsRoute       = createRoute({ getParentRoute: () => appRoute, path: '/investments',                 component: InvestmentsPage })
+const investmentDetailRoute  = createRoute({ getParentRoute: () => appRoute, path: '/investments/$investmentId',   component: InvestmentDetailPage })
 const analyticsRoute      = createRoute({ getParentRoute: () => appRoute, path: '/analytics',         component: AnalyticsPage })
 const settingsRoute       = createRoute({ getParentRoute: () => appRoute, path: '/settings',          component: SettingsPage })
 const profileRoute        = createRoute({ getParentRoute: () => appRoute, path: '/profile',           component: ProfilePage })
@@ -224,6 +226,7 @@ const routeTree = rootRoute.addChildren([
     ledgerRoute,
     personDetailRoute,
     investmentsRoute,
+    investmentDetailRoute,
     analyticsRoute,
     settingsRoute,
     profileRoute,

@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Filter, ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import { X, Filter, ArrowUpRight, ArrowDownRight, Edit2, Check } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { useDeleteInvestmentPayment, useDeleteReturn } from '@/hooks/useInvestments'
+import { useDeleteInvestmentPayment, useDeleteReturn, useUpdateInvestmentPayment, useUpdateReturn } from '@/hooks/useInvestments'
 import { fadeUp } from '@/lib/animations'
 import type { Investment } from '@/types/investment.types'
+
+interface EditState { id: string; type: 'Payment Out' | 'Return In'; amount: string; notes: string }
 
 interface TxRow {
   id: string
@@ -22,7 +24,22 @@ interface TxRow {
 export default function InvestmentTransactionLogs({ investments }: { investments: Investment[] }) {
   const { mutate: deletePayment } = useDeleteInvestmentPayment()
   const { mutate: deleteReturn } = useDeleteReturn()
+  const { mutateAsync: updatePayment, isPending: updatingPay } = useUpdateInvestmentPayment()
+  const { mutateAsync: updateReturn, isPending: updatingRet } = useUpdateReturn()
   const [filterInv, setFilterInv] = useState<string | null>(null)
+  const [editState, setEditState] = useState<EditState | null>(null)
+
+  async function saveEdit() {
+    if (!editState) return
+    const amount = Number(editState.amount)
+    if (isNaN(amount) || amount <= 0) return
+    if (editState.type === 'Payment Out') {
+      await updatePayment({ id: editState.id, amount, notes: editState.notes || null })
+    } else {
+      await updateReturn({ id: editState.id, amount, notes: editState.notes || null })
+    }
+    setEditState(null)
+  }
 
   const allRows = useMemo((): TxRow[] => {
     const rows: TxRow[] = []
@@ -180,11 +197,16 @@ export default function InvestmentTransactionLogs({ investments }: { investments
             {/* Date */}
             <div className="itl-cell itl-cell-muted">{formatDate(row.date)}</div>
 
-            {/* Amount */}
+            {/* Amount — inline edit */}
             <div className="itl-cell">
-              <span className={row.txType === 'Payment Out' ? 'itl-amount-out' : 'itl-amount-in'}>
-                {row.txType === 'Payment Out' ? '−' : '+'}{formatCurrency(row.amount)}
-              </span>
+              {editState?.id === row.id ? (
+                <input className="itl-edit-input" type="number" step="0.01" value={editState.amount}
+                  onChange={(e) => setEditState({ ...editState, amount: e.target.value })} autoFocus />
+              ) : (
+                <span className={row.txType === 'Payment Out' ? 'itl-amount-out' : 'itl-amount-in'}>
+                  {row.txType === 'Payment Out' ? '−' : '+'}{formatCurrency(row.amount)}
+                </span>
+              )}
             </div>
 
             {/* Remaining to pay */}
@@ -203,15 +225,35 @@ export default function InvestmentTransactionLogs({ investments }: { investments
               </span>
             </div>
 
-            {/* Notes */}
-            <div className="itl-cell itl-cell-muted">{row.notes ?? '—'}</div>
-
-            {/* Delete */}
+            {/* Notes — inline edit */}
             <div className="itl-cell">
+              {editState?.id === row.id ? (
+                <input className="itl-edit-input" type="text" placeholder="Notes…" value={editState.notes}
+                  onChange={(e) => setEditState({ ...editState, notes: e.target.value })} />
+              ) : (
+                <span className="itl-cell-muted">{row.notes ?? '—'}</span>
+              )}
+            </div>
+
+            {/* Edit / Delete */}
+            <div className="itl-cell" style={{ display: 'flex', gap: 4 }}>
+              {editState?.id === row.id ? (
+                <button className="itl-save-btn" onClick={saveEdit} disabled={updatingPay || updatingRet} data-tooltip="Save">
+                  <Check size={12} />
+                </button>
+              ) : (
+                <button className="itl-edit-btn"
+                  onClick={() => setEditState({ id: row.id, type: row.txType, amount: String(row.amount), notes: row.notes ?? '' })}
+                  data-tooltip="Edit"
+                >
+                  <Edit2 size={12} />
+                </button>
+              )}
               <button
                 className="itl-del-btn"
-                data-tooltip={`Delete this ${row.txType === 'Payment Out' ? 'payment' : 'return'}`}
+                data-tooltip={editState?.id === row.id ? 'Cancel' : `Delete this ${row.txType === 'Payment Out' ? 'payment' : 'return'}`}
                 onClick={() => {
+                  if (editState?.id === row.id) { setEditState(null); return }
                   if (row.txType === 'Payment Out') deletePayment(row.id)
                   else deleteReturn(row.id)
                 }}
@@ -260,10 +302,19 @@ export default function InvestmentTransactionLogs({ investments }: { investments
           background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
           overflow: hidden; overflow-x: auto;
         }
+        .itl-edit-input {
+          background: var(--bg-elevated); border: 1px solid var(--border-focus); border-radius: 6px;
+          color: var(--text-primary); font-size: 12px; padding: 3px 6px; width: 100%; outline: none;
+        }
+        .itl-edit-btn, .itl-save-btn { width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; background: none; border: none; cursor: pointer; }
+        .itl-edit-btn { color: var(--text-muted); }
+        .itl-edit-btn:hover { background: rgba(108,99,255,0.1); color: var(--accent-primary); }
+        .itl-save-btn { color: var(--accent-teal); }
+        .itl-save-btn:hover { background: rgba(16,185,129,0.1); }
         .itl-header-row, .itl-row {
           display: grid;
-          grid-template-columns: 140px 110px 100px 90px 110px 100px 1fr 32px;
-          gap: 0; padding: 10px 14px; min-width: 800px; align-items: center;
+          grid-template-columns: 140px 110px 100px 90px 110px 100px 1fr 58px;
+          gap: 0; padding: 10px 14px; min-width: 820px; align-items: center;
         }
         .itl-header-row {
           background: var(--bg-elevated); border-bottom: 1px solid var(--border);

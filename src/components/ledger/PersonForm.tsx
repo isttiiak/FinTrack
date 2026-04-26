@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -26,6 +27,9 @@ export default function PersonForm({ editing, onClose }: PersonFormProps) {
   const { mutateAsync: create, isPending: creating } = useCreatePerson()
   const { mutateAsync: update, isPending: updating } = useUpdatePerson()
   const isPending = creating || updating
+  const [customRelation, setCustomRelation] = useState(
+    editing?.relationship != null && !RELATIONSHIPS.includes(editing.relationship as never),
+  )
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -62,7 +66,7 @@ export default function PersonForm({ editing, onClose }: PersonFormProps) {
 
         <form onSubmit={handleSubmit(onSubmit)} className="pf-form">
           <div className="pf-field">
-            <label className="pf-label">Name</label>
+            <label className="pf-label">Name <span className="req">*</span></label>
             <input
               {...register('name')}
               className={cn('pf-input', errors.name && 'pf-input-error')}
@@ -74,10 +78,35 @@ export default function PersonForm({ editing, onClose }: PersonFormProps) {
 
           <div className="pf-field">
             <label className="pf-label">Relationship <span className="pf-optional">(optional)</span></label>
-            <select {...register('relationship')} className="pf-select">
-              <option value="">— Select —</option>
-              {RELATIONSHIPS.map((r) => <option key={r} value={r}>{r}</option>)}
-            </select>
+            {customRelation ? (
+              <div style={{ display: 'flex', gap: 6 }}>
+                <input
+                  {...register('relationship')}
+                  className="pf-input"
+                  placeholder="e.g. Cousin, Mentor, Neighbour…"
+                  style={{ flex: 1 }}
+                  autoFocus
+                />
+                <button type="button" className="pf-custom-back" onClick={() => setCustomRelation(false)}>
+                  ↩ List
+                </button>
+              </div>
+            ) : (
+              <select
+                {...register('relationship')}
+                className="pf-select"
+                onChange={(e) => {
+                  if (e.target.value === '__custom__') {
+                    e.preventDefault()
+                    setCustomRelation(true)
+                  }
+                }}
+              >
+                <option value="">— Select —</option>
+                {RELATIONSHIPS.map((r) => <option key={r} value={r}>{r}</option>)}
+                <option value="__custom__">✏️ Add custom…</option>
+              </select>
+            )}
           </div>
 
           <div className="pf-field">
@@ -167,6 +196,12 @@ export default function PersonForm({ editing, onClose }: PersonFormProps) {
         .pf-select:focus { outline: none; border-color: var(--border-focus); }
         .pf-select option { background: #1E1E38; }
         .pf-error { font-size: 12px; color: #FCA5A5; margin: 0; }
+        .pf-custom-back {
+          padding: 0 12px; border-radius: 8px; height: 40px;
+          background: var(--bg-hover); border: 1px solid var(--border);
+          color: var(--text-secondary); cursor: pointer; font-size: 12px; white-space: nowrap;
+        }
+        .pf-custom-back:hover { color: var(--text-primary); }
         .pf-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
         .pf-submit { min-width: 110px; min-height: 40px; display: flex; align-items: center; justify-content: center; }
         .lf-spinner { display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:lf-spin 0.7s linear infinite; }

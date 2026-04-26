@@ -6,22 +6,24 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, ChevronDown, Search, UserPlus } from 'lucide-react'
 import { scaleIn } from '@/lib/animations'
 import { cn, toISODateString } from '@/lib/utils'
-import { PAYMENT_METHODS, ACCOUNTS, LEDGER_TYPES } from '@/lib/constants'
+import { PAYMENT_METHODS, ACCOUNTS, LEDGER_TYPES, RELATIONSHIPS } from '@/lib/constants'
 import { usePersons, useCreatePerson, useCreateLedgerEntry } from '@/hooks/useLedger'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
 import type { Person } from '@/types/ledger.types'
 
 const schema = z.object({
-  ledger_type:    z.enum(LEDGER_TYPES),
-  person_id:      z.string().optional(),   // existing person
-  new_person_name: z.string().optional(),  // or new person
-  total_amount:   z.number({ error: 'Enter a valid amount' }).positive(),
-  start_date:     z.string().min(1, 'Select a date'),
-  reason:         z.string().optional(),
-  payment_method: z.enum(PAYMENT_METHODS).optional(),
-  account:        z.enum(ACCOUNTS).optional(),
-  doc_link:       z.string().url('Enter a valid URL').or(z.literal('')).optional(),
+  ledger_type:         z.enum(LEDGER_TYPES),
+  person_id:           z.string().optional(),
+  new_person_name:     z.string().optional(),
+  new_person_relation: z.string().optional(),   // for new person
+  new_person_phone:    z.string().optional(),   // for new person
+  total_amount:        z.number({ error: 'Enter a valid amount' }).positive(),
+  start_date:          z.string().min(1, 'Select a date'),
+  reason:              z.string().optional(),
+  payment_method:      z.enum(PAYMENT_METHODS).optional(),
+  account:             z.enum(ACCOUNTS).optional(),
+  doc_link:            z.string().url('Enter a valid URL').or(z.literal('')).optional(),
 }).refine(
   (d) => !!(d.person_id || (d.new_person_name && d.new_person_name.trim().length >= 1)),
   { message: 'Select a person or enter a new name', path: ['new_person_name'] },
@@ -46,6 +48,7 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
   const [showDropdown, setShowDropdown] = useState(false)
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null)
   const [isNewPerson, setIsNewPerson] = useState(false)
+  const [customRelation, setCustomRelation] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -119,8 +122,8 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
     if (!personId && values.new_person_name) {
       const newPerson = await createPerson({
         name:         values.new_person_name.trim(),
-        relationship: null,
-        phone:        null,
+        relationship: (values.new_person_relation || null) as Person['relationship'],
+        phone:        values.new_person_phone || null,
         notes:        null,
       })
       personId = newPerson.id
@@ -349,19 +352,75 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
             {errors.doc_link && <p className="qle-error">{errors.doc_link.message}</p>}
           </div>
 
-          {/* Footer note for new person */}
-          {isNewPerson && (
-            <motion.div
-              className="qle-new-person-note"
-              initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-            >
-              <UserPlus size={13} />
-              <span>
-                <strong>{personQuery}</strong> will be added as a new person automatically.
-                You can set their relationship later from their profile.
-              </span>
-            </motion.div>
-          )}
+          {/* New person extra fields */}
+          <AnimatePresence>
+            {isNewPerson && (
+              <motion.div
+                className="qle-new-person-fields"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="qle-new-person-heading">
+                  <UserPlus size={13} />
+                  <span>New person details <span className="qle-optional">(optional)</span></span>
+                </div>
+                <div className="qle-row">
+                  <div className="qle-field">
+                    <label className="qle-label">Relationship</label>
+                    {customRelation ? (
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <input
+                          {...register('new_person_relation')}
+                          className="qle-input"
+                          placeholder="e.g. Cousin, Mentor…"
+                          style={{ flex: 1 }}
+                        />
+                        <button
+                          type="button"
+                          className="qle-custom-back"
+                          onClick={() => { setCustomRelation(false) }}
+                          data-tooltip="Pick from list"
+                        >
+                          <ChevronDown size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="qle-select-wrap">
+                        <select
+                          {...register('new_person_relation')}
+                          className="qle-select"
+                          onChange={(e) => {
+                            if (e.target.value === '__custom__') {
+                              e.preventDefault()
+                              setCustomRelation(true)
+                            }
+                          }}
+                        >
+                          <option value="">— Select —</option>
+                          {RELATIONSHIPS.map((r) => (
+                            <option key={r} value={r}>{r}</option>
+                          ))}
+                          <option value="__custom__">✏️ Add custom…</option>
+                        </select>
+                        <ChevronDown className="qle-select-icon" size={14} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="qle-field">
+                    <label className="qle-label">Phone</label>
+                    <input
+                      {...register('new_person_phone')}
+                      className="qle-input"
+                      placeholder="+880 17xx xxxxxx"
+                      type="tel"
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <div className="qle-actions">
             <button type="button" className="btn-ghost" onClick={onClose}>Cancel</button>
@@ -506,14 +565,23 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
         .qle-select-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
         .qle-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-        /* New person note */
-        .qle-new-person-note {
-          display: flex; align-items: flex-start; gap: 8px;
-          padding: 10px 14px; border-radius: 10px;
-          background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2);
-          font-size: 12px; color: var(--accent-teal); line-height: 1.5;
+        /* New person fields */
+        .qle-new-person-fields {
+          overflow: hidden;
+          background: rgba(16,185,129,0.05); border: 1px solid rgba(16,185,129,0.15); border-radius: 12px;
+          padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;
         }
-        .qle-new-person-note strong { color: var(--text-primary); }
+        .qle-new-person-heading {
+          display: flex; align-items: center; gap: 7px;
+          font-size: 12px; font-weight: 600; color: var(--accent-teal);
+        }
+        .qle-custom-back {
+          width: 38px; height: 38px; border-radius: 8px; flex-shrink: 0;
+          background: var(--bg-card); border: 1px solid var(--border);
+          color: var(--text-muted); cursor: pointer;
+          display: flex; align-items: center; justify-content: center;
+        }
+        .qle-custom-back:hover { background: var(--bg-hover); color: var(--text-primary); }
 
         /* Actions */
         .qle-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }

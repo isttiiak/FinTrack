@@ -108,8 +108,7 @@ export default function CategoryCombobox({ value, onChange, categories, txnType,
     setQuery('')
   }
 
-  async function handleCreateSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleCreateSubmit() {
     if (!newName.trim() || !newGroup.trim()) return
     if (isDemo) { setOpen(false); resetCreate(); return }
 
@@ -123,6 +122,10 @@ export default function CategoryCombobox({ value, onChange, categories, txnType,
     onChange(cat.id)
     setOpen(false)
     resetCreate()
+  }
+
+  function handleCreateKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter') { e.preventDefault(); handleCreateSubmit() }
   }
 
   return (
@@ -205,8 +208,8 @@ export default function CategoryCombobox({ value, onChange, categories, txnType,
                 </div>
               </>
             ) : (
-              /* Create form */
-              <form onSubmit={handleCreateSubmit} className="catcb-create-form">
+              /* Create — uses div, NOT form, because this lives inside ExpenseForm already */
+              <div className="catcb-create-form">
                 <div className="catcb-create-header">
                   <span className="catcb-create-title">New {txnType.toLowerCase()} category</span>
                   <button type="button" className="catcb-create-back" onClick={() => setMode('browse')}>
@@ -215,7 +218,7 @@ export default function CategoryCombobox({ value, onChange, categories, txnType,
                 </div>
 
                 <div className="catcb-create-field">
-                  <label className="catcb-create-label">Category name</label>
+                  <label className="catcb-create-label">Category name <span className="req">*</span></label>
                   <input
                     ref={newNameRef}
                     type="text"
@@ -223,12 +226,12 @@ export default function CategoryCombobox({ value, onChange, categories, txnType,
                     placeholder="e.g. Gym, Taxi, Freelance"
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
-                    required
+                    onKeyDown={handleCreateKeyDown}
                   />
                 </div>
 
                 <div className="catcb-create-field">
-                  <label className="catcb-create-label">Group (main category)</label>
+                  <label className="catcb-create-label">Group (main category) <span className="req">*</span></label>
                   <div style={{ position: 'relative' }}>
                     <input
                       type="text"
@@ -241,7 +244,7 @@ export default function CategoryCombobox({ value, onChange, categories, txnType,
                         setShowGroupDropdown(true)
                       }}
                       onFocus={() => setShowGroupDropdown(true)}
-                      required
+                      onKeyDown={handleCreateKeyDown}
                     />
                     <AnimatePresence>
                       {showGroupDropdown && (filteredGroups.length > 0 || showNewGroupOption) && (
@@ -292,14 +295,15 @@ export default function CategoryCombobox({ value, onChange, categories, txnType,
                     Cancel
                   </button>
                   <button
-                    type="submit"
+                    type="button"
+                    onClick={handleCreateSubmit}
                     className="catcb-create-save"
                     disabled={creating || !newName.trim() || !newGroup.trim()}
                   >
                     {creating ? <span className="catcb-spinner" /> : 'Save'}
                   </button>
                 </div>
-              </form>
+              </div>
             )}
           </motion.div>
         )}

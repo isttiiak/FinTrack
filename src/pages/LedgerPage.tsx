@@ -11,9 +11,10 @@ import PersonForm from '@/components/ledger/PersonForm'
 import PaymentForm from '@/components/ledger/PaymentForm'
 import QuickLedgerEntry from '@/components/ledger/QuickLedgerEntry'
 import LedgerPaymentLogs from '@/components/ledger/LedgerPaymentLogs'
+import LedgerSummaryTab from '@/components/ledger/LedgerSummaryTab'
 import type { PersonWithLedgers, PersonLedger } from '@/types/ledger.types'
 
-type Tab = 'lent' | 'debt' | 'all' | 'logs'
+type Tab = 'lent' | 'debt' | 'all' | 'logs' | 'summary'
 
 export default function LedgerPage() {
   const { data: persons = [], isLoading } = usePersons()
@@ -102,7 +103,7 @@ export default function LedgerPage() {
 
       {/* Tabs */}
       <div className="ledger-tabs">
-        {([['all', 'All'], ['lent', '💸 They owe me'], ['debt', '🏦 I owe them'], ['logs', '💳 Payment logs']] as [Tab, string][]).map(([t, label]) => (
+        {([['all', 'All'], ['lent', '💸 They owe me'], ['debt', '🏦 I owe them'], ['summary', '📊 Summary'], ['logs', '💳 Payment logs']] as [Tab, string][]).map(([t, label]) => (
           <button
             key={t}
             className={`ledger-tab ${activeTab === t ? 'ledger-tab-active' : ''}`}
@@ -113,16 +114,19 @@ export default function LedgerPage() {
         ))}
       </div>
 
+      {/* Summary tab */}
+      {activeTab === 'summary' && <LedgerSummaryTab persons={persons} />}
+
       {/* Payment logs tab */}
       {activeTab === 'logs' && (
         <LedgerPaymentLogs persons={persons} />
       )}
 
-      {activeTab !== 'logs' && isLoading ? (
+      {activeTab !== 'logs' && activeTab !== 'summary' && isLoading ? (
         <div className="ledger-skeletons">
           {[1, 2, 3].map((i) => <div key={i} className="ledger-skeleton" />)}
         </div>
-      ) : activeTab !== 'logs' && filtered.length === 0 ? (
+      ) : activeTab !== 'logs' && activeTab !== 'summary' && filtered.length === 0 ? (
         <motion.div className="ledger-empty" variants={fadeUp} initial="initial" animate="animate">
           <Users size={48} style={{ color: 'var(--text-muted)', marginBottom: 12 }} />
           <p style={{ color: 'var(--text-secondary)', margin: 0, fontWeight: 600 }}>
@@ -145,7 +149,7 @@ export default function LedgerPage() {
             </motion.button>
           )}
         </motion.div>
-      ) : activeTab !== 'logs' ? (
+      ) : activeTab !== 'logs' && activeTab !== 'summary' ? (
         <motion.div
           className="ledger-list"
           variants={staggerContainer}

@@ -150,6 +150,56 @@ export function useCreateInvestmentPayment() {
   })
 }
 
+export function useUpdateInvestmentPayment() {
+  const qc = useQueryClient()
+  const userId = useAuthStore((s) => s.user?.id)
+  const addToast = useUIStore((s) => s.addToast)
+
+  return useMutation({
+    mutationFn: async ({ id, ...data }: { id: string; amount?: number; payment_date?: string; notes?: string | null }) => {
+      const { data: row, error } = await supabase
+        .from('investment_payments')
+        .update(data)
+        .eq('id', id)
+        .eq('user_id', userId!)
+        .select()
+        .single()
+      if (error) throw error
+      return row
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['investments'] })
+      addToast({ type: 'success', message: 'Payment updated' })
+    },
+    onError: (err: Error) => addToast({ type: 'error', message: err.message }),
+  })
+}
+
+export function useUpdateReturn() {
+  const qc = useQueryClient()
+  const userId = useAuthStore((s) => s.user?.id)
+  const addToast = useUIStore((s) => s.addToast)
+
+  return useMutation({
+    mutationFn: async ({ id, ...data }: Partial<InvestmentReturn> & { id: string }) => {
+      const { data: row, error } = await supabase
+        .from('investment_returns')
+        .update(data)
+        .eq('id', id)
+        .eq('user_id', userId!)
+        .select()
+        .single()
+      if (error) throw error
+      return row as InvestmentReturn
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['investments'] })
+      addToast({ type: 'success', message: 'Return updated' })
+    },
+    onError: (err: Error) => addToast({ type: 'error', message: err.message }),
+  })
+}
+
 export function useDeleteInvestmentPayment() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)

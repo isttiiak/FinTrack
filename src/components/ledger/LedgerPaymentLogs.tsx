@@ -1,12 +1,18 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Filter } from 'lucide-react'
+import { X, Filter, Edit2, Check } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { useDeletePayment } from '@/hooks/useLedger'
+import { useDeletePayment, useUpdatePayment } from '@/hooks/useLedger'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
 import type { PersonWithLedgers } from '@/types/ledger.types'
 import { fadeUp } from '@/lib/animations'
+
+interface EditingState {
+  id: string
+  amount: string
+  notes: string
+}
 
 interface LogRow {
   id: string
@@ -30,9 +36,11 @@ const STATUS = {
 
 export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedgers[] }) {
   const { mutate: deletePayment } = useDeletePayment()
+  const { mutateAsync: updatePayment, isPending: updating } = useUpdatePayment()
   const isDemo = useDemoStore((s) => s.isDemo)
   const addToast = useUIStore((s) => s.addToast)
   const [filterPerson, setFilterPerson] = useState<string | null>(null)
+  const [editing, setEditing] = useState<EditingState | null>(null)
 
   const allLogs = useMemo((): LogRow[] => {
     const rows: LogRow[] = []
@@ -73,6 +81,18 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
   function handleDelete(id: string) {
     if (isDemo) { addToast({ type: 'info', message: 'Demo mode — changes are not saved' }); return }
     deletePayment(id)
+  }
+
+  function startEdit(row: LogRow) {
+    setEditing({ id: row.id, amount: String(row.amountPaid), notes: row.notes ?? '' })
+  }
+
+  async function saveEdit() {
+    if (!editing) return
+    const amount = Number(editing.amount)
+    if (isNaN(amount) || amount <= 0) { addToast({ type: 'error', message: 'Enter a valid amount' }); return }
+    await updatePayment({ id: editing.id, amount, notes: editing.notes || null })
+    setEditing(null)
   }
 
   // Per-person summary for filter pills
@@ -210,9 +230,20 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
                 {/* Date */}
                 <div className="lpl-cell lpl-cell-muted">{formatDate(row.paymentDate)}</div>
 
-                {/* Amount paid */}
+                {/* Amount paid — inline edit */}
                 <div className="lpl-cell">
-                  <span className="lpl-amount-paid">{formatCurrency(row.amountPaid)}</span>
+                  {editing?.id === row.id ? (
+                    <input
+                      className="lpl-edit-input"
+                      type="number"
+                      step="0.01"
+                      value={editing.amount}
+                      onChange={(e) => setEditing({ ...editing, amount: e.target.value })}
+                      autoFocus
+                    />
+                  ) : (
+                    <span className="lpl-amount-paid">{formatCurrency(row.amountPaid)}</span>
+                  )}
                 </div>
 
                 {/* Remaining */}
@@ -231,15 +262,36 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
                   </span>
                 </div>
 
-                {/* Notes */}
-                <div className="lpl-cell lpl-cell-muted">{row.notes ?? '—'}</div>
-
-                {/* Delete */}
+                {/* Notes — inline edit */}
                 <div className="lpl-cell">
+                  {editing?.id === row.id ? (
+                    <input
+                      className="lpl-edit-input"
+                      type="text"
+                      placeholder="Notes…"
+                      value={editing.notes}
+                      onChange={(e) => setEditing({ ...editing, notes: e.target.value })}
+                    />
+                  ) : (
+                    <span className="lpl-cell-muted">{row.notes ?? '—'}</span>
+                  )}
+                </div>
+
+                {/* Edit / Delete */}
+                <div className="lpl-cell" style={{ display: 'flex', gap: 4 }}>
+                  {editing?.id === row.id ? (
+                    <button className="lpl-save-btn" onClick={saveEdit} disabled={updating} data-tooltip="Save changes">
+                      <Check size={12} />
+                    </button>
+                  ) : (
+                    <button className="lpl-edit-btn" onClick={() => startEdit(row)} data-tooltip="Edit this payment">
+                      <Edit2 size={12} />
+                    </button>
+                  )}
                   <button
                     className="lpl-del-btn"
-                    onClick={() => handleDelete(row.id)}
-                    data-tooltip="Delete this payment"
+                    onClick={() => editing?.id === row.id ? setEditing(null) : handleDelete(row.id)}
+                    data-tooltip={editing?.id === row.id ? 'Cancel edit' : 'Delete this payment'}
                   >
                     <X size={12} />
                   </button>
@@ -298,23 +350,23 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
         }
         .lpl-header-row {
           display: grid;
-          grid-template-columns: 140px 90px 110px 100px 90px 90px 100px 1fr 32px;
+          grid-template-columns: 140px 90px 110px 100px 100px 90px 100px 1fr 60px;
           gap: 0;
           padding: 10px 14px;
           background: var(--bg-elevated);
           border-bottom: 1px solid var(--border);
           font-size: 10px; font-weight: 600; color: var(--text-muted);
           text-transform: uppercase; letter-spacing: 0.06em;
-          min-width: 860px;
+          min-width: 900px;
         }
         .lpl-row {
           display: grid;
-          grid-template-columns: 140px 90px 110px 100px 90px 90px 100px 1fr 32px;
+          grid-template-columns: 140px 90px 110px 100px 100px 90px 100px 1fr 60px;
           gap: 0;
           padding: 10px 14px;
           border-bottom: 1px solid rgba(42,42,74,0.5);
           align-items: center;
-          min-width: 860px;
+          min-width: 900px;
           transition: background 0.1s;
         }
         .lpl-row:last-child { border-bottom: none; }
@@ -347,12 +399,22 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
 
         .lpl-status { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
 
-        .lpl-del-btn {
+        .lpl-edit-input {
+          background: var(--bg-elevated); border: 1px solid var(--border-focus); border-radius: 6px;
+          color: var(--text-primary); font-size: 12px; padding: 3px 6px; width: 100%;
+          outline: none;
+        }
+        .lpl-edit-btn, .lpl-save-btn, .lpl-del-btn {
           width: 24px; height: 24px; border-radius: 6px;
           display: flex; align-items: center; justify-content: center;
-          background: none; border: none; color: var(--text-muted); cursor: pointer;
-          transition: background 0.1s, color 0.1s;
+          background: none; border: none; cursor: pointer;
+          transition: background 0.1s, color 0.1s; flex-shrink: 0;
         }
+        .lpl-edit-btn { color: var(--text-muted); }
+        .lpl-edit-btn:hover { background: rgba(108,99,255,0.1); color: var(--accent-primary); }
+        .lpl-save-btn { color: var(--accent-teal); }
+        .lpl-save-btn:hover { background: rgba(16,185,129,0.1); }
+        .lpl-del-btn { color: var(--text-muted); }
         .lpl-del-btn:hover { background: rgba(239,68,68,0.1); color: var(--accent-red); }
       `}</style>
     </motion.div>
