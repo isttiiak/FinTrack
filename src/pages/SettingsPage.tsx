@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import type React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -651,6 +652,16 @@ function DangerSection() {
 
 export default function SettingsPage() {
   const isDemo = useDemoStore((s) => s.isDemo)
+  const [showDataSettings, setShowDataSettings] = useState(false)
+
+  // Lazy import to keep initial bundle small
+  const [DataSettingsPage, setDataSettingsPage] = useState<React.ComponentType<{ onClose: () => void }> | null>(null)
+  function openDataSettings() {
+    import('@/pages/DataSettingsPage').then((mod) => {
+      setDataSettingsPage(() => mod.default)
+      setShowDataSettings(true)
+    })
+  }
 
   return (
     <motion.div
@@ -670,11 +681,37 @@ export default function SettingsPage() {
         </motion.div>
       )}
 
+      {/* Data Preferences card */}
+      <motion.div variants={staggerItem}>
+        <section className="settings-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+          <div>
+            <h2 className="settings-section-title">⚙️ Data Preferences</h2>
+            <p className="settings-section-desc">
+              Manage your categories (main groups & sub-categories), payment methods, and bank accounts.
+            </p>
+          </div>
+          <button
+            className="btn-primary"
+            style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}
+            onClick={openDataSettings}
+          >
+            Manage →
+          </button>
+        </section>
+      </motion.div>
+
       <motion.div variants={staggerItem}><BudgetSection /></motion.div>
       <motion.div variants={staggerItem}><AISection /></motion.div>
       <motion.div variants={staggerItem}><ExportSection /></motion.div>
       <motion.div variants={staggerItem}><ImportSection /></motion.div>
       {!isDemo && <motion.div variants={staggerItem}><DangerSection /></motion.div>}
+
+      {/* Data settings slide-in panel */}
+      <AnimatePresence>
+        {showDataSettings && DataSettingsPage && (
+          <DataSettingsPage onClose={() => setShowDataSettings(false)} />
+        )}
+      </AnimatePresence>
 
       <style>{settingsStyles}</style>
     </motion.div>

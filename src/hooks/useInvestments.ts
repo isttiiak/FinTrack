@@ -133,7 +133,7 @@ export function useCreateInvestmentPayment() {
   const addToast = useUIStore((s) => s.addToast)
 
   return useMutation({
-    mutationFn: async (data: { investment_id: string; amount: number; payment_date: string; notes: string | null }) => {
+    mutationFn: async (data: { investment_id: string; amount: number; payment_date: string; payment_method?: string | null; account?: string | null; notes: string | null }) => {
       const { data: row, error } = await supabase
         .from('investment_payments')
         .insert({ ...data, user_id: userId! })

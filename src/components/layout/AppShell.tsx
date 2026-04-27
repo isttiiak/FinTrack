@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Menu } from 'lucide-react'
 import Sidebar from './Sidebar'
 import MobileNav from './MobileNav'
+import ConfirmDialog from '@/components/common/ConfirmDialog'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
 
@@ -49,6 +50,7 @@ export default function AppShell() {
       </div>
 
       <MobileNav />
+      <ConfirmDialog />
 
       <style>{`
         .app-shell {

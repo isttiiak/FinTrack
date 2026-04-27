@@ -147,6 +147,10 @@ export default function AnalyticsPage() {
     const [y, m] = selectedMonth.split('-').map(Number)
     return thisExpense / new Date(y, m, 0).getDate()
   }, [thisExpense, selectedMonth])
+  const yearlyExpense = useMemo(() => {
+    const year = selectedMonth.slice(0, 4)
+    return allTxns.filter((t) => t.type === 'Expense' && t.txn_date.startsWith(year)).reduce((s, t) => s + t.amount, 0)
+  }, [allTxns, selectedMonth])
 
   return (
     <motion.div className="analytics-page" variants={staggerContainer} initial="initial" animate="animate">
@@ -166,13 +170,17 @@ export default function AnalyticsPage() {
 
       {/* Summary KPIs */}
       <motion.div className="analytics-kpis" variants={staggerItem}>
-        {[
-          { label: 'Spent',      value: formatCurrency(thisExpense), color: 'var(--accent-coral)' },
-          { label: 'Income',     value: formatCurrency(thisIncome),  color: 'var(--accent-teal)' },
-          { label: 'Saved',      value: formatCurrency(Math.max(0, thisIncome - thisExpense)), color: 'var(--accent-primary)' },
-          { label: 'Daily avg',  value: formatCurrency(Math.round(avgDaily)),                  color: '#F59E0B' },
-          { label: 'No-spend streak', value: `${streak}d`,                                    color: 'var(--accent-primary)' },
-        ].map((k) => (
+        {(() => {
+          const net = thisIncome - thisExpense
+          return [
+            { label: 'Spent this month',   value: formatCurrency(thisExpense),       color: 'var(--accent-coral)' },
+            { label: 'Income this month',  value: formatCurrency(thisIncome),        color: 'var(--accent-teal)' },
+            { label: 'Net (income−spent)', value: `${net >= 0 ? '+' : ''}${formatCurrency(net)}`, color: net >= 0 ? 'var(--accent-teal)' : 'var(--accent-red)' },
+            { label: 'Daily avg (month)',  value: formatCurrency(Math.round(avgDaily)), color: '#F59E0B' },
+            { label: `${selectedMonth.slice(0,4)} total spent`, value: formatCurrency(yearlyExpense), color: '#A855F7' },
+            { label: 'No-spend streak',   value: `${streak} day${streak !== 1 ? 's' : ''}`, color: 'var(--accent-primary)' },
+          ]
+        })().map((k) => (
           <div key={k.label} className="analytics-kpi">
             <div className="analytics-kpi-label">{k.label}</div>
             <div className="analytics-kpi-value" style={{ color: k.color }}>{k.value}</div>
@@ -404,10 +412,10 @@ export default function AnalyticsPage() {
 
         /* KPIs */
         .analytics-kpis {
-          display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 16px;
+          display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 16px;
         }
-        @media (max-width: 700px) { .analytics-kpis { grid-template-columns: repeat(3, 1fr); } }
-        @media (max-width: 400px) { .analytics-kpis { grid-template-columns: 1fr 1fr; gap: 6px; } }
+        @media (max-width: 900px) { .analytics-kpis { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 500px) { .analytics-kpis { grid-template-columns: 1fr 1fr; gap: 6px; } }
         .analytics-kpi {
           background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
           padding: 10px 12px;
@@ -491,6 +499,13 @@ export default function AnalyticsPage() {
 
 // ── AI Insights tab ───────────────────────────────────────────────────────────
 
+type AIProvider = 'gemini' | 'groq'
+
+const PROVIDER_LABELS: Record<AIProvider, string> = {
+  gemini: 'Google Gemini',
+  groq: 'Groq',
+}
+
 interface AIInsightsTabProps {
   trendData: { month: string; Expense: number; Income: number }[]
   categoryData: { name: string; value: number }[]
@@ -501,6 +516,52 @@ interface AIInsightsTabProps {
   streak: number
 }
 
+async function callGemini(apiKey: string, prompt: string): Promise<string> {
+  // gemini-1.5-flash first, fall back to gemini-pro (universally available on free tier)
+  const models = ['gemini-1.5-flash', 'gemini-pro']
+  let lastErr = ''
+  for (const model of models) {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+      },
+    )
+    if (res.ok) {
+      const data = await res.json()
+      return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? 'No response received.'
+    }
+    const body = await res.json().catch(() => ({}))
+    lastErr = body?.error?.message ?? `HTTP ${res.status}`
+    if (res.status !== 404) break  // only retry on 404 (model not found)
+  }
+  throw new Error(lastErr)
+}
+
+async function callGroq(apiKey: string, prompt: string): Promise<string> {
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'llama-3.1-8b-instant',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.5,
+      max_tokens: 400,
+    }),
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new Error(body?.error?.message ?? `HTTP ${res.status}`)
+  }
+  const data = await res.json()
+  return data?.choices?.[0]?.message?.content ?? 'No response received.'
+}
+
 function AIInsightsTab({
   trendData, categoryData, budgetData, thisExpense, thisIncome, selectedMonth, streak,
 }: AIInsightsTabProps) {
@@ -508,47 +569,41 @@ function AIInsightsTab({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const aiEnabled = localStorage.getItem('ai_insights_enabled') === 'true'
-  const apiKey = localStorage.getItem('gemini_api_key') ?? ''
+  const aiEnabled  = localStorage.getItem('ai_insights_enabled') === 'true'
+  const provider   = (localStorage.getItem('ai_provider') ?? 'groq') as AIProvider
+  const apiKey     = localStorage.getItem(`${provider}_api_key`) ?? ''
+  const providerLabel = PROVIDER_LABELS[provider]
 
   async function analyze() {
-    if (!apiKey) { setError('No API key set. Enable AI Insights in Settings and add your Gemini API key.'); return }
+    if (!apiKey) {
+      setError(`No API key saved for ${providerLabel}. Go to Settings → AI Insights, select your provider and save your key.`)
+      return
+    }
     setLoading(true); setError(null); setInsights(null)
 
-    const topCats = categoryData.slice(0, 5).map((c) => `${c.name}: ${formatCurrency(c.value)}`).join(', ')
-    const trendSummary = trendData.slice(-3).map((d) => `${d.month} — Expense: ${formatCurrency(d.Expense)}, Income: ${formatCurrency(d.Income)}`).join('; ')
-    const overBudget = budgetData.filter((b) => b.Actual > b.Budget).map((b) => b.name).join(', ')
+    const topCats     = categoryData.slice(0, 5).map((c) => `${c.name}: ${formatCurrency(c.value)}`).join(', ')
+    const trendSummary = trendData.slice(-3).map((d) => `${d.month} — Spent: ${formatCurrency(d.Expense)}, Income: ${formatCurrency(d.Income)}`).join('; ')
+    const overBudget  = budgetData.filter((b) => b.Actual > b.Budget).map((b) => b.name).join(', ')
 
-    const prompt = `You are a personal finance advisor. Analyze this spending data and give 4–5 concise, actionable bullet points. Be specific. Keep total under 180 words.
+    const prompt = `You are a personal finance advisor. Analyze this spending data and give 4–5 concise, actionable bullet points. Be specific and practical. Keep total under 180 words.
 
 Month: ${selectedMonth}
-This month — Spent: ${formatCurrency(thisExpense)}, Income: ${formatCurrency(thisIncome)}, Saved: ${formatCurrency(Math.max(0, thisIncome - thisExpense))}
+Spent: ${formatCurrency(thisExpense)} | Income: ${formatCurrency(thisIncome)} | Saved: ${formatCurrency(Math.max(0, thisIncome - thisExpense))}
 No-spend streak: ${streak} days
-Top categories: ${topCats || 'No data'}
-Recent 3-month trend: ${trendSummary || 'No data'}
-Over budget: ${overBudget || 'None'}
+Top spending categories: ${topCats || 'No data'}
+3-month trend: ${trendSummary || 'No data'}
+Over budget categories: ${overBudget || 'None'}
 
-Provide insights as a markdown bullet list.`
+Respond ONLY with bullet points starting with "•". No intro, no heading.`
 
     try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-        },
-      )
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new Error(body?.error?.message ?? `HTTP ${res.status}`)
-      }
-      const data = await res.json()
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? 'No response received.'
+      const text = provider === 'groq'
+        ? await callGroq(apiKey, prompt)
+        : await callGemini(apiKey, prompt)
       setInsights(text)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Unknown error'
-      setError(`Analysis failed: ${msg}`)
+      setError(`${providerLabel} error: ${msg}`)
     } finally {
       setLoading(false)
     }
@@ -563,7 +618,7 @@ Provide insights as a markdown bullet list.`
         <Sparkles size={28} style={{ color: 'var(--accent-primary)', marginBottom: 12 }} />
         <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 6px' }}>AI Insights not enabled</p>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
-          Enable AI Insights in <strong>Settings → AI Insights</strong> and add your free Google Gemini API key.
+          Go to <strong>Settings → AI Insights</strong>, toggle it on, pick a provider (Gemini or Groq), and save your free API key.
         </p>
       </motion.div>
     )
@@ -576,16 +631,13 @@ Provide insights as a markdown bullet list.`
           <div>
             <h3 className="analytics-card-title" style={{ marginBottom: 4 }}>
               <Sparkles size={16} style={{ color: '#A855F7' }} /> AI Spending Analysis
+              <span className="analytics-ai-provider-badge">{providerLabel}</span>
             </h3>
             <p style={{ font: '13px/1.4 inherit', color: 'var(--text-secondary)', margin: 0 }}>
-              Powered by Google Gemini. Click Analyze to get personalized insights for {selectedMonth}.
+              Click Analyze to get personalized insights for {selectedMonth}.
             </p>
           </div>
-          <button
-            className="analytics-ai-btn"
-            onClick={analyze}
-            disabled={loading}
-          >
+          <button className="analytics-ai-btn" onClick={analyze} disabled={loading}>
             {loading
               ? <><span className="analytics-ai-spinner" /> Analyzing…</>
               : <><Sparkles size={14} /> Analyze</>}
@@ -600,7 +652,7 @@ Provide insights as a markdown bullet list.`
               variants={fadeUp} initial="initial" animate="animate" exit={{ opacity: 0 }}
             >
               <span className="analytics-ai-spinner-lg" />
-              <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>Calling Gemini API…</span>
+              <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>Calling {providerLabel}…</span>
             </motion.div>
           )}
 
@@ -620,12 +672,14 @@ Provide insights as a markdown bullet list.`
               className="analytics-ai-insights"
               variants={fadeUp} initial="initial" animate="animate"
             >
-              {insights.split('\n').filter(Boolean).map((line, i) => (
-                <p key={i} className="analytics-ai-line"
-                  style={{ paddingLeft: line.startsWith('-') || line.startsWith('•') ? 0 : undefined }}>
-                  {line.replace(/^\*\s*/, '• ').replace(/^-\s*/, '• ')}
-                </p>
-              ))}
+              {insights
+                .split('\n')
+                .filter(Boolean)
+                .map((line, i) => (
+                  <p key={i} className="analytics-ai-line">
+                    {line.replace(/^[•\-\*]\s*/, '• ')}
+                  </p>
+                ))}
             </motion.div>
           )}
         </AnimatePresence>
@@ -665,6 +719,11 @@ Provide insights as a markdown bullet list.`
         .analytics-ai-line {
           font-size: 14px; color: var(--text-secondary); margin: 0; line-height: 1.55;
           padding: 6px 10px; border-radius: 8px; background: var(--bg-elevated);
+        }
+        .analytics-ai-provider-badge {
+          font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 20px;
+          background: rgba(16,185,129,0.12); color: var(--accent-teal);
+          margin-left: 4px;
         }
       `}</style>
     </motion.div>

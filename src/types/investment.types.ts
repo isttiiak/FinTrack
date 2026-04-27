@@ -37,6 +37,8 @@ export interface InvestmentReturn {
   amount: number
   return_date: string
   return_type: ReturnType | null
+  payment_method: string | null
+  account: string | null
   notes: string | null
   created_at: string
 }
@@ -47,6 +49,8 @@ export interface InvestmentPayment {
   user_id: string
   amount: number
   payment_date: string
+  payment_method: string | null
+  account: string | null
   notes: string | null
   created_at: string
 }

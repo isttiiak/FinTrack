@@ -7,13 +7,16 @@ import { scaleIn } from '@/lib/animations'
 import { cn, toISODateString, formatCurrency } from '@/lib/utils'
 import { RETURN_TYPES } from '@/types/investment.types'
 import { useCreateReturn } from '@/hooks/useInvestments'
+import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
 import type { Investment } from '@/types/investment.types'
 
 const schema = z.object({
-  amount:      z.number({ error: 'Enter a valid amount' }).positive(),
-  return_date: z.string().min(1, 'Select a date'),
-  return_type: z.enum(RETURN_TYPES).optional(),
-  notes:       z.string().optional(),
+  amount:         z.number().positive('Enter a valid amount'),
+  return_date:    z.string().min(1, 'Select a date'),
+  return_type:    z.enum(RETURN_TYPES).optional(),
+  payment_method: z.string().optional(),
+  account:        z.string().optional(),
+  notes:          z.string().optional(),
 })
 type FormValues = z.infer<typeof schema>
 
@@ -25,18 +28,22 @@ interface ReturnFormProps {
 export default function ReturnForm({ investment, onClose }: ReturnFormProps) {
   const { mutateAsync: createReturn, isPending } = useCreateReturn()
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { return_date: toISODateString(new Date()) },
   })
+  const watchMethod  = watch('payment_method')
+  const watchAccount = watch('account')
 
   async function onSubmit(values: FormValues) {
     await createReturn({
-      investment_id: investment.id,
-      amount:        values.amount,
-      return_date:   values.return_date,
-      return_type:   values.return_type ?? null,
-      notes:         values.notes || null,
+      investment_id:  investment.id,
+      amount:         values.amount,
+      return_date:    values.return_date,
+      return_type:    values.return_type ?? null,
+      payment_method: values.payment_method || null,
+      account:        values.account || null,
+      notes:          values.notes || null,
     })
     onClose()
   }
@@ -91,6 +98,16 @@ export default function ReturnForm({ investment, onClose }: ReturnFormProps) {
                 {RETURN_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
+          </div>
+
+          {/* Payment method + account (where was the money received?) */}
+          <div style={{ marginTop: 2 }}>
+            <PaymentMethodPicker
+              method={watchMethod}
+              account={watchAccount}
+              onMethodChange={(v) => setValue('payment_method', v)}
+              onAccountChange={(v) => setValue('account', v)}
+            />
           </div>
 
           <div className="retf-field">

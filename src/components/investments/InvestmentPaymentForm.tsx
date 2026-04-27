@@ -6,12 +6,15 @@ import { X, ArrowUpRight } from 'lucide-react'
 import { scaleIn } from '@/lib/animations'
 import { cn, toISODateString, formatCurrency } from '@/lib/utils'
 import { useCreateInvestmentPayment } from '@/hooks/useInvestments'
+import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
 import type { Investment } from '@/types/investment.types'
 
 const schema = z.object({
-  amount:       z.number({ error: 'Enter a valid amount' }).positive(),
-  payment_date: z.string().min(1, 'Select a date'),
-  notes:        z.string().optional(),
+  amount:         z.number().positive('Enter a valid amount'),
+  payment_date:   z.string().min(1, 'Select a date'),
+  payment_method: z.string().optional(),
+  account:        z.string().optional(),
+  notes:          z.string().optional(),
 })
 type FormValues = z.infer<typeof schema>
 
@@ -27,20 +30,24 @@ export default function InvestmentPaymentForm({ investment, onClose }: Investmen
   const paid = investment.total_paid ?? 0
   const remaining = Math.max(0, committed - paid)
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       amount:       remaining > 0 ? remaining : undefined,
       payment_date: toISODateString(new Date()),
     },
   })
+  const watchMethod  = watch('payment_method')
+  const watchAccount = watch('account')
 
   async function onSubmit(values: FormValues) {
     await createPayment({
-      investment_id: investment.id,
-      amount:        values.amount,
-      payment_date:  values.payment_date,
-      notes:         values.notes || null,
+      investment_id:  investment.id,
+      amount:         values.amount,
+      payment_date:   values.payment_date,
+      payment_method: values.payment_method || null,
+      account:        values.account || null,
+      notes:          values.notes || null,
     })
     onClose()
   }
@@ -101,6 +108,14 @@ export default function InvestmentPaymentForm({ investment, onClose }: Investmen
               className={cn('ipf-input', errors.payment_date && 'ipf-input-error')}
             />
           </div>
+
+          {/* Payment method + account */}
+          <PaymentMethodPicker
+            method={watchMethod}
+            account={watchAccount}
+            onMethodChange={(v) => setValue('payment_method', v)}
+            onAccountChange={(v) => setValue('account', v)}
+          />
 
           <div className="ipf-field">
             <label className="ipf-label">Notes <span className="ipf-optional">(optional)</span></label>

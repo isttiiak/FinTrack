@@ -54,9 +54,48 @@ export const ACCOUNTS = [
   'BRAC Bank Savings',
   'Prime Bank',
   'Islami Bank',
+  'Dutch Bangla Bank',
   'Other',
 ] as const
 export type Account = (typeof ACCOUNTS)[number]
+
+// UI grouping: method group → specific methods + default accounts
+export const PAYMENT_METHOD_GROUPS = {
+  Cash: {
+    label: 'Cash', icon: '💵',
+    methods: ['Cash'] as PaymentMethod[],
+    accounts: ['Cash'] as Account[],
+    autoAccount: 'Cash' as Account,
+  },
+  MFS: {
+    label: 'MFS', icon: '📱',
+    methods: ['MFS - bKash', 'MFS - Nagad', 'MFS - Rocket'] as PaymentMethod[],
+    accounts: ['bKash', 'Nagad', 'Rocket'] as Account[],
+    autoAccount: null,
+  },
+  Card: {
+    label: 'Card', icon: '💳',
+    methods: ['Card'] as PaymentMethod[],
+    accounts: ['BRAC Bank Savings', 'Islami Bank', 'Prime Bank', 'Dutch Bangla Bank', 'Other'] as Account[],
+    autoAccount: null,
+  },
+  'Bank Transfer': {
+    label: 'Bank Transfer', icon: '🏦',
+    methods: ['Bank Transfer'] as PaymentMethod[],
+    accounts: ['BRAC Bank Savings', 'Islami Bank', 'Prime Bank', 'Dutch Bangla Bank', 'Other'] as Account[],
+    autoAccount: null,
+  },
+} as const
+
+export type PaymentMethodGroup = keyof typeof PAYMENT_METHOD_GROUPS
+
+export function getMethodGroup(method: string | null | undefined): PaymentMethodGroup | null {
+  if (!method) return null
+  for (const [group, cfg] of Object.entries(PAYMENT_METHOD_GROUPS)) {
+    if ((cfg.methods as readonly string[]).includes(method)) return group as PaymentMethodGroup
+  }
+  return null
+}
 
 export const RELATIONSHIPS = [
   'Friend',

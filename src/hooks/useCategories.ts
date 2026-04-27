@@ -49,3 +49,57 @@ export function useCreateCategory() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['categories'] }),
   })
 }
+
+export function useUpdateCategory() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, ...fields }: Partial<Category> & { id: string }) => {
+      const { error } = await supabase.from('categories').update(fields).eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['categories'] }),
+  })
+}
+
+export function useDeleteCategory() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('categories').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['categories'] }),
+  })
+}
+
+export function useRenameMainGroup() {
+  const qc = useQueryClient()
+  const userId = useAuthStore((s) => s.user?.id)
+  return useMutation({
+    mutationFn: async ({ oldName, newName }: { oldName: string; newName: string }) => {
+      const { error } = await supabase
+        .from('categories')
+        .update({ main_group: newName })
+        .eq('user_id', userId!)
+        .eq('main_group', oldName)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['categories'] }),
+  })
+}
+
+export function useDeleteMainGroup() {
+  const qc = useQueryClient()
+  const userId = useAuthStore((s) => s.user?.id)
+  return useMutation({
+    mutationFn: async (groupName: string) => {
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('user_id', userId!)
+        .eq('main_group', groupName)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['categories'] }),
+  })
+}

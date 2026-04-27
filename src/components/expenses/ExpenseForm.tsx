@@ -3,10 +3,12 @@ import { useForm, Controller } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ChevronDown } from 'lucide-react'
+import { X } from 'lucide-react'
 import { useCategories } from '@/hooks/useCategories'
 import { useCreateExpense, useUpdateExpense } from '@/hooks/useExpenses'
-import { PAYMENT_METHODS, ACCOUNTS, TXN_TYPES } from '@/lib/constants'
+import { TXN_TYPES } from '@/lib/constants'
+import type { PaymentMethod, Account } from '@/lib/constants'
+import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
 import { toISODateString } from '@/lib/utils'
 import { scaleIn } from '@/lib/animations'
 import { cn } from '@/lib/utils'
@@ -15,12 +17,12 @@ import CategoryCombobox from '@/components/expenses/CategoryCombobox'
 
 const schema = z.object({
   type:           z.enum(['Expense', 'Income']),
-  amount:         z.number({ error: 'Enter a valid amount' }).positive('Amount must be positive'),
+  amount:         z.number().positive('Amount must be positive'),
   category_id:    z.string().min(1, 'Select a category'),
   description:    z.string().optional(),
   txn_date:       z.string().min(1, 'Select a date'),
-  payment_method: z.enum(PAYMENT_METHODS).optional(),
-  account:        z.enum(ACCOUNTS).optional(),
+  payment_method: z.string().optional(),
+  account:        z.string().optional(),
 })
 type FormValues = z.infer<typeof schema>
 
@@ -77,8 +79,8 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
     const payload = {
       ...values,
       description:    values.description    ?? null,
-      payment_method: values.payment_method ?? null,
-      account:        values.account        ?? null,
+      payment_method: (values.payment_method ?? null) as PaymentMethod | null,
+      account:        (values.account        ?? null) as Account | null,
     }
     if (editing) {
       await update({ id: editing.id, ...payload })
@@ -184,30 +186,25 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
             {errors.txn_date && <p className="ef-error">{errors.txn_date.message}</p>}
           </div>
 
-          {/* Payment method + Account side by side */}
-          <div className="ef-row">
-            <div className="ef-field">
-              <label className="ef-label">Payment method</label>
-              <div className="ef-select-wrap">
-                <select {...register('payment_method')} className="ef-select">
-                  <option value="">— None —</option>
-                  {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
-                </select>
-                <ChevronDown className="ef-select-icon" size={15} />
-              </div>
-            </div>
-
-            <div className="ef-field">
-              <label className="ef-label">Account</label>
-              <div className="ef-select-wrap">
-                <select {...register('account')} className="ef-select">
-                  <option value="">— None —</option>
-                  {ACCOUNTS.map((a) => <option key={a} value={a}>{a}</option>)}
-                </select>
-                <ChevronDown className="ef-select-icon" size={15} />
-              </div>
-            </div>
-          </div>
+          {/* Payment method + Account — linked picker */}
+          <Controller
+            control={control}
+            name="payment_method"
+            render={({ field: mField }) => (
+              <Controller
+                control={control}
+                name="account"
+                render={({ field: aField }) => (
+                  <PaymentMethodPicker
+                    method={mField.value as PaymentMethod | undefined}
+                    account={aField.value as Account | undefined}
+                    onMethodChange={mField.onChange}
+                    onAccountChange={aField.onChange}
+                  />
+                )}
+              />
+            )}
+          />
 
           {/* Actions */}
           <div className="ef-actions">
