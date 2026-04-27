@@ -9,12 +9,15 @@ import { useQueryClient } from '@tanstack/react-query'
 import {
   DollarSign, Plus, Download, AlertTriangle,
   ChevronDown, Check, X, Upload, Sparkles, Eye, EyeOff,
+  Power, Trash2, Lock, Unlock,
 } from 'lucide-react'
 import DeleteButton from '@/components/common/DeleteButton'
 import { useCategories } from '@/hooks/useCategories'
 import { useBudgets, useUpsertBudget, useDeleteBudget } from '@/hooks/useBudgets'
 import { useExpenses } from '@/hooks/useExpenses'
 import { usePersons } from '@/hooks/useLedger'
+import { useConfirmStore } from '@/stores/confirmStore'
+import { useUIStore } from '@/stores/uiStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
 import { supabase } from '@/lib/supabase'
@@ -416,9 +419,10 @@ function ImportSection() {
 // ── AI Analytics Section (Groq only) ─────────────────────────────────────────
 
 function AISection() {
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem('groq_api_key') ?? '')
-  const [showKey, setShowKey] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const [apiKey, setApiKey]     = useState(() => localStorage.getItem('groq_api_key') ?? '')
+  const [showKey, setShowKey]   = useState(false)
+  const [saved, setSaved]       = useState(false)
+  const [aiEnabled, setAiEnabled] = useState(() => localStorage.getItem('fintrack_ai_enabled') !== 'false')
 
   function handleSaveKey() {
     localStorage.setItem('groq_api_key', apiKey.trim())
@@ -426,87 +430,210 @@ function AISection() {
     setTimeout(() => setSaved(false), 2500)
   }
 
+  function toggleAI() {
+    const next = !aiEnabled
+    setAiEnabled(next)
+    localStorage.setItem('fintrack_ai_enabled', String(next))
+  }
+
   const configured = !!apiKey.trim()
 
   return (
-    <section className="settings-section">
+    <section className={`settings-section ai-section ${aiEnabled ? 'ai-section-on' : 'ai-section-off'}`}>
       <div className="settings-section-header">
-        <div>
+        <div style={{ flex: 1 }}>
           <h2 className="settings-section-title"><Sparkles size={16} /> AI Insights</h2>
           <p className="settings-section-desc">
             Powered by <strong style={{ color: 'var(--accent-teal)' }}>Groq</strong> — free tier, no credit card.
-            Get smart spending analysis, anomaly detection, goal planning, and a chat assistant on the Analytics page.
+            Smart analysis, anomaly detection, goal planning, and chat on the Analytics page.
           </p>
         </div>
-        {configured && (
-          <span style={{ fontSize: 11, padding: '3px 9px', borderRadius: 20, background: 'rgba(16,185,129,0.12)', color: 'var(--accent-teal)', fontWeight: 600, flexShrink: 0 }}>
-            ✓ Connected
-          </span>
-        )}
+        <button className={`ai-power-btn ${aiEnabled ? 'ai-power-on' : 'ai-power-off'}`} onClick={toggleAI}>
+          <Power size={14} />
+          <span>{aiEnabled ? 'ON' : 'OFF'}</span>
+        </button>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <label className="pf-label">Groq API Key</label>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
-            <input
-              type={showKey ? 'text' : 'password'}
-              className="pf-input"
-              placeholder="gsk_…"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              style={{ paddingRight: 40 }}
-            />
-            <button type="button" onClick={() => setShowKey((v) => !v)}
-              style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', padding: 0 }}>
-              {showKey ? <EyeOff size={15} /> : <Eye size={15} />}
-            </button>
-          </div>
-          <button className="btn-primary"
-            style={{ padding: '9px 16px', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}
-            onClick={handleSaveKey} disabled={!apiKey.trim()}>
-            {saved ? <><Check size={14} /> Saved!</> : 'Save key'}
-          </button>
-        </div>
-        <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-          Free key at <strong>console.groq.com</strong> → API Keys → Create API key.
-          14,400 requests/day free. Stored in your browser only.
-        </p>
-      </div>
+      <AnimatePresence mode="wait">
+        {aiEnabled ? (
+          <motion.div
+            key="enabled"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.2 }}
+            style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <label className="pf-label">Groq API Key</label>
+              {configured && (
+                <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: 'rgba(16,185,129,0.12)', color: 'var(--accent-teal)', fontWeight: 600 }}>
+                  ✓ Connected
+                </span>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
+                <input
+                  type={showKey ? 'text' : 'password'}
+                  className="pf-input"
+                  placeholder="gsk_…"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  style={{ paddingRight: 40 }}
+                />
+                <button type="button" onClick={() => setShowKey((v) => !v)}
+                  style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', padding: 0 }}>
+                  {showKey ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+              <button className="btn-primary"
+                style={{ padding: '9px 16px', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}
+                onClick={handleSaveKey} disabled={!apiKey.trim()}>
+                {saved ? <><Check size={14} /> Saved!</> : 'Save key'}
+              </button>
+            </div>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
+              Free key at <strong>console.groq.com</strong> → API Keys → Create API key. 14,400 requests/day. Stored in your browser only.
+            </p>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="disabled"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{ padding: '16px', borderRadius: 10, background: 'var(--bg-card)', border: '1px solid var(--border)', textAlign: 'center' }}
+          >
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+              Turn on AI Insights to access smart spending analysis and the chat assistant on the Analytics page.
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   )
 }
 
-// ── Account Deletion ──────────────────────────────────────────────────────────
+// ── Danger Zone ───────────────────────────────────────────────────────────────
 
 function DangerSection() {
-  const [step, setStep] = useState<'idle' | 'confirm' | 'typing'>('idle')
+  const [unlocked, setUnlocked]     = useState(false)
+  const [step, setStep]             = useState<'idle' | 'confirm' | 'typing'>('idle')
   const [confirmText, setConfirmText] = useState('')
-  const [deleting, setDeleting] = useState(false)
-  const { profile } = useAuthStore()
+  const [deleting, setDeleting]     = useState(false)
+  const [activeOp, setActiveOp]     = useState<string | null>(null)
+  const { profile }                 = useAuthStore()
+  const userId                      = useAuthStore((s) => s.user?.id)
   const { data: transactions = [] } = useExpenses()
+  const confirm                     = useConfirmStore((s) => s.confirm)
+  const addToast                    = useUIStore((s) => s.addToast)
+  const qc                          = useQueryClient()
 
-  async function handleDelete() {
+  async function handleDeleteLogs(type: 'expenses' | 'lent' | 'debt' | 'investments') {
+    const labels = {
+      expenses:    'Delete all expense logs',
+      lent:        'Delete all lent entries',
+      debt:        'Delete all debt entries',
+      investments: 'Delete all investment data',
+    }
+    const ok = await confirm({
+      title: labels[type],
+      description: 'This will permanently delete the selected data. This action cannot be undone.',
+      itemName: labels[type],
+    })
+    if (!ok) return
+
+    setActiveOp(type)
+    try {
+      if (type === 'expenses') {
+        const { error } = await supabase.from('transactions').delete().eq('user_id', userId!)
+        if (error) throw error
+        await qc.invalidateQueries({ queryKey: ['expenses'] })
+      } else if (type === 'lent') {
+        const { error } = await supabase.from('person_ledger').delete().eq('user_id', userId!).eq('ledger_type', 'Lent')
+        if (error) throw error
+        await qc.invalidateQueries({ queryKey: ['persons'] })
+      } else if (type === 'debt') {
+        const { error } = await supabase.from('person_ledger').delete().eq('user_id', userId!).eq('ledger_type', 'Debt')
+        if (error) throw error
+        await qc.invalidateQueries({ queryKey: ['persons'] })
+      } else if (type === 'investments') {
+        const { error } = await supabase.from('investments').delete().eq('user_id', userId!)
+        if (error) throw error
+        await qc.invalidateQueries({ queryKey: ['investments'] })
+      }
+      addToast({ type: 'success', message: 'Data deleted successfully.' })
+    } catch {
+      addToast({ type: 'error', message: 'Delete failed. Please try again.' })
+    } finally {
+      setActiveOp(null)
+      setUnlocked(false)
+    }
+  }
+
+  async function handleDeleteAccount() {
     if (confirmText !== 'DELETE') return
     setDeleting(true)
-    await supabase
-      .from('profiles')
-      .update({ deleted_at: new Date().toISOString() })
-      .eq('id', profile!.id)
+    await supabase.from('profiles').update({ deleted_at: new Date().toISOString() }).eq('id', profile!.id)
     await supabase.auth.signOut()
   }
 
-  return (
-    <section className="settings-section settings-danger-section">
-      <h2 className="settings-section-title" style={{ color: 'var(--accent-red)' }}>
-        <AlertTriangle size={16} /> Danger Zone
-      </h2>
+  const DATA_ACTIONS = [
+    { key: 'expenses',    label: 'Delete expense logs',    desc: 'All transactions' },
+    { key: 'lent',        label: 'Delete lent entries',    desc: 'Money you gave out' },
+    { key: 'debt',        label: 'Delete debt entries',    desc: 'Money you owe' },
+    { key: 'investments', label: 'Delete investment data', desc: 'Portfolio + payments + returns' },
+  ] as const
 
+  return (
+    <section className={`settings-section settings-danger-section ${unlocked ? 'danger-unlocked' : ''}`}>
+      {/* Header with unlock toggle */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+        <h2 className="settings-section-title" style={{ color: 'var(--accent-red)', margin: 0 }}>
+          <AlertTriangle size={16} /> Danger Zone
+        </h2>
+        <button
+          className={`danger-unlock-btn ${unlocked ? 'danger-unlock-on' : 'danger-unlock-off'}`}
+          onClick={() => setUnlocked((v) => !v)}
+        >
+          {unlocked ? <><Unlock size={13} /> Unlocked</> : <><Lock size={13} /> Locked</>}
+        </button>
+      </div>
+
+      {!unlocked && (
+        <p className="settings-section-desc" style={{ marginBottom: 16 }}>
+          Toggle the lock to enable data deletion. Each action asks for confirmation twice.
+        </p>
+      )}
+
+      {/* Data deletion buttons */}
+      <div className="danger-actions-grid">
+        {DATA_ACTIONS.map(({ key, label, desc }) => (
+          <button
+            key={key}
+            className="danger-data-btn"
+            disabled={!unlocked || activeOp !== null}
+            onClick={() => handleDeleteLogs(key)}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {activeOp === key ? <span className="auth-spinner" style={{ borderTopColor: 'var(--accent-red)', borderColor: 'rgba(239,68,68,0.3)' }} /> : <Trash2 size={14} />}
+              <span style={{ fontWeight: 600, fontSize: 13 }}>{label}</span>
+            </div>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{desc}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="danger-section-divider" />
+
+      {/* Account deletion */}
       <AnimatePresence mode="wait">
         {step === 'idle' && (
           <motion.div key="idle" variants={fadeUp} initial="initial" animate="animate">
-            <p className="settings-section-desc">
-              Permanently delete your account and all data. You have a 30-day recovery window after deletion.
+            <p className="settings-section-desc" style={{ marginBottom: 12 }}>
+              Permanently delete your account and all data. A 30-day recovery window applies.
             </p>
             <button className="danger-btn" onClick={() => setStep('confirm')}>
               Delete my account
@@ -517,7 +644,7 @@ function DangerSection() {
         {step === 'confirm' && (
           <motion.div key="confirm" className="danger-confirm-card" variants={fadeUp} initial="initial" animate="animate">
             <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 16 }}>
-              Before you go — you have <strong style={{ color: 'var(--text-primary)' }}>{transactions.length} transactions</strong>. Want to export your data first?
+              Before you go — you have <strong style={{ color: 'var(--text-primary)' }}>{transactions.length} transactions</strong>. Export your data first?
             </p>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
               <button className="export-btn" onClick={() => exportTransactionsExcel(transactions)}>
@@ -552,7 +679,7 @@ function DangerSection() {
               <button
                 className="danger-btn"
                 disabled={confirmText !== 'DELETE' || deleting}
-                onClick={handleDelete}
+                onClick={handleDeleteAccount}
                 style={{ opacity: confirmText !== 'DELETE' ? 0.4 : 1 }}
               >
                 {deleting ? <span className="auth-spinner" /> : 'Delete account'}
@@ -622,7 +749,14 @@ export default function SettingsPage() {
       <motion.div variants={staggerItem}><AISection /></motion.div>
       <motion.div variants={staggerItem}><ExportSection /></motion.div>
       <motion.div variants={staggerItem}><ImportSection /></motion.div>
-      {!isDemo && <motion.div variants={staggerItem}><DangerSection /></motion.div>}
+      {!isDemo && (
+        <>
+          <motion.div variants={staggerItem}>
+            <hr className="settings-divider" />
+          </motion.div>
+          <motion.div variants={staggerItem}><DangerSection /></motion.div>
+        </>
+      )}
 
       {/* Data settings slide-in panel */}
       <AnimatePresence>
@@ -722,6 +856,77 @@ const settingsStyles = `
     padding: 16px; background: var(--bg-elevated);
     border: 1px solid rgba(239,68,68,0.2); border-radius: 12px;
   }
+
+  /* ── AI section ── */
+  .ai-section { transition: border-color 0.3s, box-shadow 0.3s; }
+  .ai-section-on {
+    border-color: rgba(108,99,255,0.35);
+    box-shadow: 0 0 0 1px rgba(108,99,255,0.15), 0 4px 24px rgba(108,99,255,0.1);
+  }
+  .ai-power-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
+    cursor: pointer; border: none; transition: all 0.2s; flex-shrink: 0;
+    letter-spacing: 0.04em;
+  }
+  .ai-power-on {
+    background: linear-gradient(135deg, #6C63FF, #A855F7);
+    color: #fff;
+    box-shadow: 0 0 16px rgba(108,99,255,0.5);
+    animation: ai-pulse 2.5s ease-in-out infinite;
+  }
+  .ai-power-off {
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+  @keyframes ai-pulse {
+    0%, 100% { box-shadow: 0 0 12px rgba(108,99,255,0.4); }
+    50%       { box-shadow: 0 0 24px rgba(168,85,247,0.7); }
+  }
+
+  /* ── Danger zone ── */
+  .settings-divider {
+    border: none; border-top: 1px solid var(--border); margin: 8px 0;
+  }
+  .danger-unlock-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; letter-spacing: 0.03em; flex-shrink: 0;
+  }
+  .danger-unlock-off {
+    background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2);
+    color: rgba(239,68,68,0.5);
+  }
+  .danger-unlock-on {
+    background: linear-gradient(135deg, rgba(239,68,68,0.25), rgba(249,115,22,0.25));
+    border: 1px solid rgba(239,68,68,0.5); color: #EF4444;
+    box-shadow: 0 0 14px rgba(239,68,68,0.3);
+    animation: danger-pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes danger-pulse {
+    0%, 100% { box-shadow: 0 0 10px rgba(239,68,68,0.25); }
+    50%       { box-shadow: 0 0 22px rgba(239,68,68,0.5); }
+  }
+  .danger-unlocked {
+    border-color: rgba(239,68,68,0.4) !important;
+    box-shadow: 0 0 0 1px rgba(239,68,68,0.2), 0 8px 32px rgba(239,68,68,0.12);
+  }
+  .danger-actions-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px;
+    margin-bottom: 16px;
+  }
+  .danger-data-btn {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+    padding: 12px 14px; border-radius: 10px; cursor: pointer; text-align: left;
+    background: rgba(239,68,68,0.05); border: 1px solid rgba(239,68,68,0.15);
+    color: var(--text-secondary); transition: all 0.15s;
+  }
+  .danger-data-btn:not(:disabled):hover {
+    background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.35);
+    color: var(--text-primary);
+  }
+  .danger-data-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .danger-section-divider { height: 1px; background: rgba(239,68,68,0.15); margin: 16px 0; }
 
   /* shared field styles referenced from sub-components */
   .pf-field { display: flex; flex-direction: column; gap: 5px; }

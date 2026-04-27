@@ -6,7 +6,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, ChevronDown, Search, UserPlus } from 'lucide-react'
 import { scaleIn } from '@/lib/animations'
 import { cn, toISODateString } from '@/lib/utils'
-import { PAYMENT_METHODS, ACCOUNTS, LEDGER_TYPES, RELATIONSHIPS } from '@/lib/constants'
+import { LEDGER_TYPES, RELATIONSHIPS } from '@/lib/constants'
+import type { PaymentMethod, Account } from '@/lib/constants'
+import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
 import { usePersons, useCreatePerson, useCreateLedgerEntry } from '@/hooks/useLedger'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
@@ -21,8 +23,8 @@ const schema = z.object({
   total_amount:        z.number({ error: 'Enter a valid amount' }).positive(),
   start_date:          z.string().min(1, 'Select a date'),
   reason:              z.string().optional(),
-  payment_method:      z.enum(PAYMENT_METHODS).optional(),
-  account:             z.enum(ACCOUNTS).optional(),
+  payment_method:      z.string().optional(),
+  account:             z.string().optional(),
   doc_link:            z.string().url('Enter a valid URL').or(z.literal('')).optional(),
 }).refine(
   (d) => !!(d.person_id || (d.new_person_name && d.new_person_name.trim().length >= 1)),
@@ -80,7 +82,9 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
     },
   })
 
-  const selectedType = watch('ledger_type')
+  const selectedType   = watch('ledger_type')
+  const paymentMethod  = watch('payment_method')
+  const accountValue   = watch('account')
 
   function selectPerson(person: Person) {
     setSelectedPerson(person)
@@ -137,8 +141,8 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
       total_amount:   values.total_amount,
       start_date:     values.start_date,
       reason:         values.reason || null,
-      payment_method: values.payment_method ?? null,
-      account:        values.account ?? null,
+      payment_method: (values.payment_method ?? null) as PaymentMethod | null,
+      account:        (values.account ?? null) as Account | null,
       doc_link:       values.doc_link || null,
       notes:          null,
       settled_date:   null,
@@ -317,27 +321,14 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
           </div>
 
           {/* Method + Account */}
-          <div className="qle-row">
-            <div className="qle-field">
-              <label className="qle-label">Method</label>
-              <div className="qle-select-wrap">
-                <select {...register('payment_method')} className="qle-select">
-                  <option value="">— None —</option>
-                  {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
-                </select>
-                <ChevronDown className="qle-select-icon" size={14} />
-              </div>
-            </div>
-            <div className="qle-field">
-              <label className="qle-label">Account</label>
-              <div className="qle-select-wrap">
-                <select {...register('account')} className="qle-select">
-                  <option value="">— None —</option>
-                  {ACCOUNTS.map((a) => <option key={a} value={a}>{a}</option>)}
-                </select>
-                <ChevronDown className="qle-select-icon" size={14} />
-              </div>
-            </div>
+          <div className="qle-field">
+            <label className="qle-label">Payment <span className="qle-optional">(optional)</span></label>
+            <PaymentMethodPicker
+              method={paymentMethod}
+              account={accountValue}
+              onMethodChange={(m) => setValue('payment_method', m)}
+              onAccountChange={(a) => setValue('account', a)}
+            />
           </div>
 
           {/* Doc link */}
@@ -553,16 +544,6 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
         .qle-dropdown-rel { font-size: 11px; color: var(--text-muted); }
         .qle-dropdown-divider { height: 1px; background: var(--border); margin: 4px 0; }
 
-        /* Selects */
-        .qle-select-wrap { position: relative; }
-        .qle-select {
-          width: 100%; appearance: none;
-          background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
-          color: var(--text-primary); font-size: 14px; padding: 10px 30px 10px 14px; cursor: pointer;
-        }
-        .qle-select:focus { outline: none; border-color: var(--border-focus); }
-        .qle-select option { background: #1E1E38; }
-        .qle-select-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
         .qle-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
         /* New person fields */

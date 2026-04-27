@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Receipt, Filter, X } from 'lucide-react'
+import { Plus, Receipt, Filter, X, CalendarRange } from 'lucide-react'
 import { useExpenses } from '@/hooks/useExpenses'
 import { useBudgets } from '@/hooks/useBudgets'
 import { useNoSpendStreak } from '@/hooks/useNoSpendStreak'
@@ -37,12 +37,18 @@ export default function ExpensesPage() {
   const [typeFilter, setTypeFilter] = useState<'All' | 'Expense' | 'Income'>('All')
   const [methodFilter, setMethodFilter] = useState<string>('All')
   const [groupFilter, setGroupFilter] = useState<string>('All')
+  const [rangeMode, setRangeMode] = useState(false)
+  const [rangeFrom, setRangeFrom] = useState('')
+  const [rangeTo, setRangeTo] = useState('')
   const [editingTxn, setEditingTxn] = useState<Transaction | null>(null)
   const [addOpen, setAddOpen] = useState(false)
 
   const [year, mon] = month.split('-').map(Number)
-  const from = `${year}-${String(mon).padStart(2, '0')}-01`
-  const to = new Date(year, mon, 0).toISOString().split('T')[0]
+  const monthFrom = `${year}-${String(mon).padStart(2, '0')}-01`
+  const monthTo   = new Date(year, mon, 0).toISOString().split('T')[0]
+
+  const from = rangeMode ? (rangeFrom || undefined) : monthFrom
+  const to   = rangeMode ? (rangeTo   || undefined) : monthTo
 
   const filters: TransactionFilters = {
     from, to,
@@ -89,7 +95,7 @@ export default function ExpensesPage() {
     spent: categorySpend[b.category_id] ?? 0,
   })).filter((b) => b.monthly_limit > 0)
 
-  const isCurrentMonth = month === `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const isCurrentMonth = !rangeMode && month === `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 
   return (
     <motion.div
@@ -157,7 +163,34 @@ export default function ExpensesPage() {
 
       {/* Filters row */}
       <div className="filters-row">
-        <MonthPicker value={month} onChange={setMonth} />
+        {rangeMode ? (
+          <div className="date-range-wrap">
+            <input
+              type="date"
+              value={rangeFrom}
+              onChange={(e) => setRangeFrom(e.target.value)}
+              className="range-date-input"
+              placeholder="Start"
+            />
+            <span className="range-sep">→</span>
+            <input
+              type="date"
+              value={rangeTo}
+              onChange={(e) => setRangeTo(e.target.value)}
+              className="range-date-input"
+              placeholder="End"
+            />
+          </div>
+        ) : (
+          <MonthPicker value={month} onChange={setMonth} />
+        )}
+        <button
+          className={cn('filter-toggle-btn', rangeMode && 'filter-toggle-active')}
+          onClick={() => { setRangeMode((v) => !v); setRangeFrom(''); setRangeTo('') }}
+          title={rangeMode ? 'Switch to month view' : 'Switch to date range'}
+        >
+          <CalendarRange size={14} />
+        </button>
         <button
           className={cn('filter-toggle-btn', filterOpen && 'filter-toggle-active')}
           onClick={() => setFilterOpen((v) => !v)}
@@ -334,10 +367,19 @@ export default function ExpensesPage() {
         .filter-chips { display: flex; flex-wrap: wrap; gap: 6px; }
         .filter-chips-scroll { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
         .filter-chips-scroll::-webkit-scrollbar { display: none; }
+        .date-range-wrap { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .range-date-input {
+          background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+          color: var(--text-primary); font-size: 13px; padding: 7px 10px; cursor: pointer;
+          min-width: 130px;
+        }
+        .range-date-input:focus { outline: none; border-color: var(--border-focus); }
+        .range-sep { font-size: 13px; color: var(--text-muted); flex-shrink: 0; }
+
         .filter-chip {
           padding: 4px 12px; border-radius: 16px; font-size: 12px; font-weight: 500;
           background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary);
-          cursor: pointer; transition: all 0.15s;
+          cursor: pointer; transition: all 0.15s; white-space: nowrap; flex-shrink: 0;
         }
         .filter-chip:hover { background: var(--bg-hover); color: var(--text-primary); }
         .filter-chip-active { background: rgba(108,99,255,0.15); color: var(--accent-primary); border-color: rgba(108,99,255,0.35); }

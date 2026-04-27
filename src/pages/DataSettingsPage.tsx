@@ -99,6 +99,32 @@ function CategoriesTab({ categories }: { categories: Category[] }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {/* Add new main group — pinned to top */}
+      <AnimatePresence>
+        {addingGroup ? (
+          <motion.div className="dsc-add-group-form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <Plus size={14} style={{ color: 'var(--accent-primary)', flexShrink: 0 }} />
+            <input
+              className="dsc-inline-input" style={{ flex: 1 }}
+              placeholder="New main category name…" value={newGroupName}
+              onChange={(e) => setNewGroupName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && saveNewGroup()} autoFocus
+            />
+            <select className="dsc-type-select" value={newGroupType}
+              onChange={(e) => setNewGroupType(e.target.value as 'Expense' | 'Income')}>
+              <option value="Expense">Expense</option>
+              <option value="Income">Income</option>
+            </select>
+            <button className="dsc-icon-btn dsc-ok" onClick={saveNewGroup} disabled={!newGroupName.trim()}><Check size={13} /></button>
+            <button className="dsc-icon-btn" onClick={() => setAddingGroup(false)}><X size={13} /></button>
+          </motion.div>
+        ) : (
+          <button className="dsc-add-group-btn" onClick={() => setAddingGroup(true)}>
+            <Plus size={14} /> Add main category
+          </button>
+        )}
+      </AnimatePresence>
+
       {grouped.map(([group, cats]) => {
         const isOpen = expanded.has(group)
         const isEditingGroup = editingGroupName?.old === group
@@ -243,31 +269,6 @@ function CategoriesTab({ categories }: { categories: Category[] }) {
         )
       })}
 
-      {/* Add new main group */}
-      <AnimatePresence>
-        {addingGroup ? (
-          <motion.div className="dsc-add-group-form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <Plus size={14} style={{ color: 'var(--accent-primary)', flexShrink: 0 }} />
-            <input
-              className="dsc-inline-input" style={{ flex: 1 }}
-              placeholder="New main category name…" value={newGroupName}
-              onChange={(e) => setNewGroupName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && saveNewGroup()} autoFocus
-            />
-            <select className="dsc-type-select" value={newGroupType}
-              onChange={(e) => setNewGroupType(e.target.value as 'Expense' | 'Income')}>
-              <option value="Expense">Expense</option>
-              <option value="Income">Income</option>
-            </select>
-            <button className="dsc-icon-btn dsc-ok" onClick={saveNewGroup} disabled={!newGroupName.trim()}><Check size={13} /></button>
-            <button className="dsc-icon-btn" onClick={() => setAddingGroup(false)}><X size={13} /></button>
-          </motion.div>
-        ) : (
-          <button className="dsc-add-group-btn" onClick={() => setAddingGroup(true)}>
-            <Plus size={14} /> Add main category
-          </button>
-        )}
-      </AnimatePresence>
     </div>
   )
 }

@@ -387,7 +387,16 @@ export default function AnalyticsPage() {
         </motion.div>
       )}
 
-      {tab === 'ai' && <AIHub selectedMonth={selectedMonth} />}
+      {tab === 'ai' && (
+        localStorage.getItem('fintrack_ai_enabled') === 'false' ? (
+          <div style={{ textAlign: 'center', padding: '48px 24px', color: 'var(--text-muted)', fontSize: 14 }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>✨</div>
+            AI Insights is turned off. Enable it in <strong style={{ color: 'var(--accent-primary)' }}>Settings → AI Insights</strong>.
+          </div>
+        ) : (
+          <AIHub selectedMonth={selectedMonth} />
+        )
+      )}
 
       <style>{`
         .analytics-page { max-width: 960px; }
