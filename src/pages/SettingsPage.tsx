@@ -14,6 +14,7 @@ import DeleteButton from '@/components/common/DeleteButton'
 import { useCategories } from '@/hooks/useCategories'
 import { useBudgets, useUpsertBudget, useDeleteBudget } from '@/hooks/useBudgets'
 import { useExpenses } from '@/hooks/useExpenses'
+import { usePersons } from '@/hooks/useLedger'
 import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
 import { supabase } from '@/lib/supabase'
@@ -143,11 +144,17 @@ function BudgetSection() {
 // ── Export Section ────────────────────────────────────────────────────────────
 
 function ExportSection() {
-  const { data: transactions = [] } = useExpenses()
   const isDemo = useDemoStore((s) => s.isDemo)
   const demoLedgers = useDemoStore((s) => s.ledgers)
   const demoPayments = useDemoStore((s) => s.payments)
   const demoPersons = useDemoStore((s) => s.persons)
+
+  // Current month
+  const { data: transactions = [] } = useExpenses()
+  // All-time (empty filter object bypasses the current-month default)
+  const { data: allTransactions = [] } = useExpenses({})
+  // Persons with nested ledgers + payments
+  const { data: persons = [] } = usePersons()
 
   const now = new Date()
   const thisYear = now.getFullYear()
@@ -156,6 +163,10 @@ function ExportSection() {
   const to   = new Date(thisYear, now.getMonth() + 1, 0).toISOString().split('T')[0]
 
   const thisMonthTxns = transactions.filter((t) => t.txn_date >= from && t.txn_date <= to)
+
+  const exportPersons  = isDemo ? demoPersons  : persons
+  const exportLedgers  = isDemo ? demoLedgers  : persons.flatMap((p) => p.ledgers ?? [])
+  const exportPayments = isDemo ? demoPayments : persons.flatMap((p) => (p.ledgers ?? []).flatMap((l) => l.payments ?? []))
 
   return (
     <section className="settings-section">
@@ -182,12 +193,12 @@ function ExportSection() {
 
         <div className="export-card">
           <div className="export-card-title">All transactions</div>
-          <div className="export-card-sub">{transactions.length} total</div>
+          <div className="export-card-sub">{allTransactions.length} total</div>
           <div className="export-card-actions">
-            <button className="export-btn" onClick={() => exportTransactionsExcel(transactions, 'fintrack-all-transactions')}>
+            <button className="export-btn" onClick={() => exportTransactionsExcel(allTransactions, 'fintrack-all-transactions')}>
               Excel
             </button>
-            <button className="export-btn export-btn-secondary" onClick={() => exportTransactionsCSV(transactions, 'fintrack-all-transactions')}>
+            <button className="export-btn export-btn-secondary" onClick={() => exportTransactionsCSV(allTransactions, 'fintrack-all-transactions')}>
               CSV
             </button>
           </div>
@@ -200,10 +211,10 @@ function ExportSection() {
             <button
               className="export-btn"
               onClick={() => exportFullExcel(
-                transactions,
-                isDemo ? demoPersons : [],
-                isDemo ? demoLedgers : [],
-                isDemo ? demoPayments : [],
+                allTransactions,
+                exportPersons,
+                exportLedgers,
+                exportPayments,
                 'fintrack-full-export',
               )}
             >
