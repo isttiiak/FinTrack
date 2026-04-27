@@ -66,6 +66,22 @@ body {
   background-clip: text;
 }
 
+/* ── Date / month input calendar icon ───────────── */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="month"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.6) sepia(1) saturate(3) hue-rotate(200deg);
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 2px;
+  opacity: 0.75;
+  transition: opacity 0.15s;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="month"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  background-color: rgba(108, 99, 255, 0.15);
+}
+
 /* ── Scrollbar ──────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg-card); }

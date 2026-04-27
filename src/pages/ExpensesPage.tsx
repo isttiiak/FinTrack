@@ -36,6 +36,7 @@ export default function ExpensesPage() {
   const [filterOpen, setFilterOpen] = useState(false)
   const [typeFilter, setTypeFilter] = useState<'All' | 'Expense' | 'Income'>('All')
   const [methodFilter, setMethodFilter] = useState<string>('All')
+  const [groupFilter, setGroupFilter] = useState<string>('All')
   const [editingTxn, setEditingTxn] = useState<Transaction | null>(null)
   const [addOpen, setAddOpen] = useState(false)
 
@@ -53,12 +54,25 @@ export default function ExpensesPage() {
   const { data: budgets = [] } = useBudgets()
   const streak = useNoSpendStreak(transactions)
 
+  const mainGroups = useMemo(() => {
+    const groups = new Set<string>()
+    for (const t of transactions) {
+      if (t.category?.main_group) groups.add(t.category.main_group)
+    }
+    return Array.from(groups).sort()
+  }, [transactions])
+
+  const displayedTransactions = useMemo(() => {
+    if (groupFilter === 'All') return transactions
+    return transactions.filter((t) => t.category?.main_group === groupFilter)
+  }, [transactions, groupFilter])
+
   const { totalExpense, totalIncome, categorySpend } = useMemo(() => {
     let totalExpense = 0
     let totalIncome = 0
     const categorySpend: Record<string, number> = {}
 
-    for (const t of transactions) {
+    for (const t of displayedTransactions) {
       if (t.type === 'Expense') {
         totalExpense += t.amount
         if (t.category_id) categorySpend[t.category_id] = (categorySpend[t.category_id] ?? 0) + t.amount
@@ -68,7 +82,7 @@ export default function ExpensesPage() {
     }
 
     return { totalExpense, totalIncome, categorySpend }
-  }, [transactions])
+  }, [displayedTransactions])
 
   const budgetsWithSpend = budgets.map((b) => ({
     ...b,
@@ -149,7 +163,7 @@ export default function ExpensesPage() {
           onClick={() => setFilterOpen((v) => !v)}
         >
           <Filter size={14} /> Filters
-          {(typeFilter !== 'All' || methodFilter !== 'All') && (
+          {(typeFilter !== 'All' || methodFilter !== 'All' || groupFilter !== 'All') && (
             <span className="filter-active-dot" />
           )}
         </button>
@@ -180,6 +194,30 @@ export default function ExpensesPage() {
                 </div>
               </div>
 
+              {/* Main group filter */}
+              {mainGroups.length > 0 && (
+                <div className="filter-group">
+                  <label className="filter-label">Category group</label>
+                  <div className="filter-chips filter-chips-scroll">
+                    <button
+                      className={cn('filter-chip', groupFilter === 'All' && 'filter-chip-active')}
+                      onClick={() => setGroupFilter('All')}
+                    >
+                      All
+                    </button>
+                    {mainGroups.map((g) => (
+                      <button
+                        key={g}
+                        className={cn('filter-chip', groupFilter === g && 'filter-chip-active')}
+                        onClick={() => setGroupFilter(g)}
+                      >
+                        {g}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Payment method filter */}
               <div className="filter-group">
                 <label className="filter-label">Payment method</label>
@@ -197,10 +235,10 @@ export default function ExpensesPage() {
               </div>
 
               {/* Clear */}
-              {(typeFilter !== 'All' || methodFilter !== 'All') && (
+              {(typeFilter !== 'All' || methodFilter !== 'All' || groupFilter !== 'All') && (
                 <button
                   className="filter-clear-btn"
-                  onClick={() => { setTypeFilter('All'); setMethodFilter('All') }}
+                  onClick={() => { setTypeFilter('All'); setMethodFilter('All'); setGroupFilter('All') }}
                 >
                   <X size={13} /> Clear filters
                 </button>
@@ -226,7 +264,7 @@ export default function ExpensesPage() {
             }
           />
         ) : (
-          <ExpenseList transactions={transactions} onEdit={setEditingTxn} />
+          <ExpenseList transactions={displayedTransactions} onEdit={setEditingTxn} />
         )}
       </div>
 
@@ -294,6 +332,8 @@ export default function ExpensesPage() {
         .filter-group { display: flex; flex-direction: column; gap: 6px; }
         .filter-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
         .filter-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+        .filter-chips-scroll { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+        .filter-chips-scroll::-webkit-scrollbar { display: none; }
         .filter-chip {
           padding: 4px 12px; border-radius: 16px; font-size: 12px; font-weight: 500;
           background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary);
