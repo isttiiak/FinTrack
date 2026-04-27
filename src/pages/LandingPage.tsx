@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
 import {
   ArrowRight, Sparkles, Shield, Download, BarChart3, Users,
@@ -63,6 +63,12 @@ const STEPS = [
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function LandingPage() {
   const enterDemo = useDemoStore((s) => s.enterDemo)
+  const navigate  = useNavigate()
+
+  function handleDemo() {
+    enterDemo()
+    navigate({ to: '/dashboard' })
+  }
 
   return (
     <div className="lp">
@@ -112,7 +118,7 @@ export default function LandingPage() {
             <Link to="/signup" className="lp-cta-primary">
               Create free account <ArrowRight size={16} />
             </Link>
-            <button className="lp-cta-secondary" onClick={enterDemo}>
+            <button className="lp-cta-secondary" onClick={handleDemo}>
               <Sparkles size={15} /> Try demo
             </button>
           </motion.div>
@@ -235,7 +241,7 @@ export default function LandingPage() {
             <Link to="/signup" className="lp-cta-primary">
               Create free account <ArrowRight size={16} />
             </Link>
-            <button className="lp-cta-secondary" onClick={enterDemo}>
+            <button className="lp-cta-secondary" onClick={handleDemo}>
               <Sparkles size={15} /> Try demo first
             </button>
           </div>
