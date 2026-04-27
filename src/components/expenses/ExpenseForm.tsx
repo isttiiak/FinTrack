@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 import { useCategories } from '@/hooks/useCategories'
 import { useCreateExpense, useUpdateExpense } from '@/hooks/useExpenses'
+import { useAICategorySuggest } from '@/hooks/useAICategorySuggest'
 import { TXN_TYPES } from '@/lib/constants'
 import type { PaymentMethod, Account } from '@/lib/constants'
 import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
@@ -64,9 +65,14 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
         },
   })
 
-  const selectedType = watch('type')
+  const selectedType  = watch('type')
+  const description   = watch('description') ?? ''
+  const categoryId    = watch('category_id')
 
   const filteredCategories = categories.filter((c) => c.type === selectedType)
+
+  const { suggestedCategory, loading: suggestLoading, dismiss: dismissSuggest } =
+    useAICategorySuggest(description, filteredCategories, categoryId)
 
   useEffect(() => {
     if (!editing) setValue('category_id', '')
@@ -164,7 +170,7 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
             {errors.category_id && <p className="ef-error">{errors.category_id.message}</p>}
           </div>
 
-          {/* Description */}
+          {/* Description + AI category hint */}
           <div className="ef-field">
             <label className="ef-label">Description <span className="ef-optional">(optional)</span></label>
             <input
@@ -173,6 +179,33 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
               placeholder="e.g. Lunch at office"
               className="ef-input"
             />
+            <AnimatePresence>
+              {(suggestLoading || suggestedCategory) && !categoryId && (
+                <motion.div
+                  className="ef-ai-hint"
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  {suggestLoading ? (
+                    <span className="ef-ai-loading">✨ Detecting category…</span>
+                  ) : suggestedCategory ? (
+                    <>
+                      <span className="ef-ai-label">✨ AI suggests:</span>
+                      <button
+                        type="button"
+                        className="ef-ai-chip"
+                        onClick={() => { setValue('category_id', suggestedCategory.id); dismissSuggest() }}
+                      >
+                        {suggestedCategory.main_group} › {suggestedCategory.name}
+                      </button>
+                      <button type="button" className="ef-ai-dismiss" onClick={dismissSuggest}>✕</button>
+                    </>
+                  ) : null}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Date */}
@@ -309,6 +342,19 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
         .ef-submit { min-width: 110px; min-height: 40px; display: flex; align-items: center; justify-content: center; }
         .auth-spinner { display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* AI category hint */
+        .ef-ai-hint { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+        .ef-ai-label { font-size: 11px; color: var(--accent-primary); font-weight: 500; }
+        .ef-ai-loading { font-size: 11px; color: var(--text-muted); }
+        .ef-ai-chip {
+          font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 20px; cursor: pointer;
+          background: rgba(108,99,255,0.1); border: 1px solid rgba(108,99,255,0.3); color: var(--accent-primary);
+          transition: background 0.12s;
+        }
+        .ef-ai-chip:hover { background: rgba(108,99,255,0.2); }
+        .ef-ai-dismiss { background: none; border: none; font-size: 11px; color: var(--text-muted); cursor: pointer; padding: 0 2px; }
+        .ef-ai-dismiss:hover { color: var(--text-primary); }
       `}</style>
     </div>
   )

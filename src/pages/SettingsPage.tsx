@@ -402,159 +402,66 @@ function ImportSection() {
   )
 }
 
-// ── AI Analytics Section ──────────────────────────────────────────────────────
-
-type AIProvider = 'gemini' | 'groq'
-
-const AI_PROVIDERS: { id: AIProvider; name: string; badge: string; placeholder: string; hint: string; free: string }[] = [
-  {
-    id: 'gemini',
-    name: 'Google Gemini',
-    badge: '15 req/min free',
-    placeholder: 'AIzaSy…',
-    hint: 'Get a free key at ai.google.dev → Get API key → Create API key in new project.',
-    free: '1M tokens/day, no card needed',
-  },
-  {
-    id: 'groq',
-    name: 'Groq',
-    badge: '⚡ Fastest',
-    placeholder: 'gsk_…',
-    hint: 'Get a free key at console.groq.com → API Keys → Create API key. Sign up is free.',
-    free: '14,400 req/day free — ~10× faster than Gemini',
-  },
-]
+// ── AI Analytics Section (Groq only) ─────────────────────────────────────────
 
 function AISection() {
-  const [enabled, setEnabled] = useState(() => localStorage.getItem('ai_insights_enabled') === 'true')
-  const [provider, setProvider] = useState<AIProvider>(
-    () => (localStorage.getItem('ai_provider') as AIProvider) ?? 'groq',
-  )
-  const [geminiKey, setGeminiKey] = useState(() => localStorage.getItem('gemini_api_key') ?? '')
-  const [groqKey,   setGroqKey]   = useState(() => localStorage.getItem('groq_api_key')   ?? '')
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('groq_api_key') ?? '')
   const [showKey, setShowKey] = useState(false)
   const [saved, setSaved] = useState(false)
 
-  const currentKey   = provider === 'gemini' ? geminiKey   : groqKey
-  const setCurrentKey = provider === 'gemini' ? setGeminiKey : setGroqKey
-  const providerMeta = AI_PROVIDERS.find((p) => p.id === provider)!
-
-  function handleToggle() {
-    const next = !enabled
-    setEnabled(next)
-    localStorage.setItem('ai_insights_enabled', String(next))
-  }
-
-  function handleProviderChange(p: AIProvider) {
-    setProvider(p)
-    localStorage.setItem('ai_provider', p)
-    setShowKey(false)
-  }
-
   function handleSaveKey() {
-    localStorage.setItem(`${provider}_api_key`, currentKey)
+    localStorage.setItem('groq_api_key', apiKey.trim())
     setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    setTimeout(() => setSaved(false), 2500)
   }
+
+  const configured = !!apiKey.trim()
 
   return (
     <section className="settings-section">
       <div className="settings-section-header">
         <div>
-          <h2 className="settings-section-title"><Sparkles size={16} /> AI Insights (Beta)</h2>
+          <h2 className="settings-section-title"><Sparkles size={16} /> AI Insights</h2>
           <p className="settings-section-desc">
-            Get AI-powered spending analysis on the Analytics page.
-            Both providers are free — no credit card required.
+            Powered by <strong style={{ color: 'var(--accent-teal)' }}>Groq</strong> — free tier, no credit card.
+            Get smart spending analysis, anomaly detection, goal planning, and a chat assistant on the Analytics page.
           </p>
         </div>
-        <button
-          className={`ai-toggle ${enabled ? 'ai-toggle-on' : ''}`}
-          onClick={handleToggle}
-          aria-label="Toggle AI insights"
-        >
-          <span className="ai-toggle-knob" />
-        </button>
+        {configured && (
+          <span style={{ fontSize: 11, padding: '3px 9px', borderRadius: 20, background: 'rgba(16,185,129,0.12)', color: 'var(--accent-teal)', fontWeight: 600, flexShrink: 0 }}>
+            ✓ Connected
+          </span>
+        )}
       </div>
 
-      <AnimatePresence>
-        {enabled && (
-          <motion.div
-            className="ai-key-section"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-          >
-            <div style={{ padding: '16px 0 0', display: 'flex', flexDirection: 'column', gap: 14 }}>
-
-              {/* Provider selector */}
-              <div>
-                <label className="pf-label" style={{ marginBottom: 8, display: 'block' }}>AI Provider</label>
-                <div className="ai-provider-row">
-                  {AI_PROVIDERS.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      className={`ai-provider-btn ${provider === p.id ? 'ai-provider-active' : ''}`}
-                      onClick={() => handleProviderChange(p.id)}
-                    >
-                      <span className="ai-provider-name">{p.name}</span>
-                      <span className={`ai-provider-badge ${p.id === 'groq' ? 'ai-badge-groq' : 'ai-badge-gemini'}`}>
-                        {p.badge}
-                      </span>
-                      <span className="ai-provider-free">{p.free}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* API Key field */}
-              <div>
-                <label className="pf-label" style={{ marginBottom: 6, display: 'block' }}>
-                  {providerMeta.name} API Key
-                </label>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
-                    <input
-                      type={showKey ? 'text' : 'password'}
-                      className="pf-input"
-                      placeholder={providerMeta.placeholder}
-                      value={currentKey}
-                      onChange={(e) => setCurrentKey(e.target.value)}
-                      style={{ paddingRight: 40 }}
-                    />
-                    <button
-                      type="button"
-                      style={{
-                        position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                        background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer',
-                        display: 'flex', padding: 0,
-                      }}
-                      onClick={() => setShowKey((v) => !v)}
-                    >
-                      {showKey ? <EyeOff size={15} /> : <Eye size={15} />}
-                    </button>
-                  </div>
-                  <button
-                    className="btn-primary"
-                    style={{ padding: '9px 16px', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}
-                    onClick={handleSaveKey}
-                    disabled={!currentKey.trim()}
-                  >
-                    {saved ? <><Check size={14} /> Saved!</> : 'Save key'}
-                  </button>
-                </div>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '7px 0 0' }}>
-                  {providerMeta.hint}
-                </p>
-                <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '4px 0 0', opacity: 0.7 }}>
-                  Stored in this browser only — never sent to any server except the AI provider directly.
-                </p>
-              </div>
-
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <label className="pf-label">Groq API Key</label>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
+            <input
+              type={showKey ? 'text' : 'password'}
+              className="pf-input"
+              placeholder="gsk_…"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              style={{ paddingRight: 40 }}
+            />
+            <button type="button" onClick={() => setShowKey((v) => !v)}
+              style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', padding: 0 }}>
+              {showKey ? <EyeOff size={15} /> : <Eye size={15} />}
+            </button>
+          </div>
+          <button className="btn-primary"
+            style={{ padding: '9px 16px', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}
+            onClick={handleSaveKey} disabled={!apiKey.trim()}>
+            {saved ? <><Check size={14} /> Saved!</> : 'Save key'}
+          </button>
+        </div>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
+          Free key at <strong>console.groq.com</strong> → API Keys → Create API key.
+          14,400 requests/day free. Stored in your browser only.
+        </p>
+      </div>
     </section>
   )
 }
