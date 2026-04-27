@@ -1,18 +1,18 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Users, TrendingUp, TrendingDown, ArrowRightLeft, UserPlus } from 'lucide-react'
+import { Plus, Users, TrendingUp, TrendingDown, ArrowRightLeft } from 'lucide-react'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { formatCurrency } from '@/lib/utils'
 import { usePersons } from '@/hooks/useLedger'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
 import PersonCard from '@/components/ledger/PersonCard'
-import PersonForm from '@/components/ledger/PersonForm'
+import PersonManagementPanel from '@/components/ledger/PersonManagementPanel'
 import PaymentForm from '@/components/ledger/PaymentForm'
 import QuickLedgerEntry from '@/components/ledger/QuickLedgerEntry'
 import LedgerPaymentLogs from '@/components/ledger/LedgerPaymentLogs'
 import LedgerSummaryTab from '@/components/ledger/LedgerSummaryTab'
-import type { PersonWithLedgers, PersonLedger } from '@/types/ledger.types'
+import type { PersonLedger } from '@/types/ledger.types'
 
 type Tab = 'lent' | 'debt' | 'all' | 'logs' | 'summary'
 
@@ -23,8 +23,7 @@ export default function LedgerPage() {
 
   const [activeTab, setActiveTab] = useState<Tab>('all')
   const [showAddEntry, setShowAddEntry] = useState(false)
-  const [showAddPerson, setShowAddPerson] = useState(false)
-  const [editingPerson, setEditingPerson] = useState<PersonWithLedgers | null>(null)
+  const [showPeoplePanel, setShowPeoplePanel] = useState(false)
   const [quickPayEntry, setQuickPayEntry] = useState<PersonLedger | null>(null)
 
   // Aggregate totals
@@ -44,9 +43,8 @@ export default function LedgerPage() {
     setShowAddEntry(true)
   }
 
-  function handleAddPerson() {
-    if (isDemo) { addToast({ type: 'info', message: 'Demo mode — changes are not saved' }); return }
-    setShowAddPerson(true)
+  function handleOpenPeoplePanel() {
+    setShowPeoplePanel(true)
   }
 
   return (
@@ -61,12 +59,11 @@ export default function LedgerPage() {
           <motion.button
             className="btn-ghost"
             style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}
-            onClick={handleAddPerson}
+            onClick={handleOpenPeoplePanel}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
-            title="Add person without an entry"
           >
-            <UserPlus size={15} /> Person
+            <Users size={15} /> People
           </motion.button>
           <motion.button
             className="btn-primary"
@@ -160,7 +157,7 @@ export default function LedgerPage() {
             <motion.div key={person.id} variants={staggerItem} layout>
               <PersonCard
                 person={person}
-                onEdit={(p) => setEditingPerson(p)}
+                onEdit={() => setShowPeoplePanel(true)}
                 onLogPayment={(entry) => setQuickPayEntry(entry)}
               />
             </motion.div>
@@ -173,11 +170,8 @@ export default function LedgerPage() {
         {showAddEntry && (
           <QuickLedgerEntry onClose={() => setShowAddEntry(false)} />
         )}
-        {(showAddPerson || editingPerson) && (
-          <PersonForm
-            editing={editingPerson}
-            onClose={() => { setShowAddPerson(false); setEditingPerson(null) }}
-          />
+        {showPeoplePanel && (
+          <PersonManagementPanel onClose={() => setShowPeoplePanel(false)} />
         )}
         {quickPayEntry && (
           <PaymentForm

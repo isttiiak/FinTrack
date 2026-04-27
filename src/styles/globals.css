@@ -255,3 +255,67 @@ p, span, div, h1, h2, h3 {
   margin-top: 2px;
   line-height: 1.4;
 }
+
+/* ── Mobile — iPhone SE and small screens (≤375px) ── */
+@media (max-width: 400px) {
+  /* Typography scale down */
+  .page-title { font-size: 22px !important; }
+  .page-subtitle { font-size: 13px !important; }
+
+  /* Buttons tighter */
+  .btn-primary { padding: 9px 16px; font-size: 13px; }
+  .btn-ghost   { padding: 9px 14px; font-size: 13px; }
+
+  /* Page padding */
+  [class$="-page"], [class*="-page "] { padding-left: 2px; padding-right: 2px; }
+}
+
+/* ── Mobile — general (≤640px) ── */
+@media (max-width: 640px) {
+  /* Ensure panels / overlays fill screen width */
+  .qle-panel, .payf-panel { max-width: 100% !important; }
+
+  /* PersonCard action buttons: always visible on touch devices */
+  .pc-actions {
+    position: static !important;
+    transform: none !important;
+    opacity: 1 !important;
+    display: flex;
+    gap: 6px;
+    padding: 0 16px 12px;
+    justify-content: flex-end;
+    pointer-events: auto !important;
+  }
+
+  /* Collapse PersonCard main button padding on mobile */
+  .pc-main { padding: 12px 12px 4px !important; }
+
+  /* Investment action buttons wrap on small screens */
+  .inv-card-actions { justify-content: flex-end; padding: 0 12px 12px; }
+  .inv-card-right { flex-direction: column; align-items: flex-end; gap: 8px; }
+
+  /* Ledger tabs: horizontal scroll */
+  .ledger-tabs { flex-wrap: nowrap !important; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+  .ledger-tabs::-webkit-scrollbar { display: none; }
+  .ledger-tab { white-space: nowrap; flex-shrink: 0; }
+
+  /* Dashboard KPI grid: 2 columns */
+  .dash-kpi-grid { grid-template-columns: 1fr 1fr !important; }
+
+  /* Analytics tabs: scroll */
+  .analytics-tabs { overflow-x: auto; flex-wrap: nowrap !important; }
+  [class*="analytics-tab"] { white-space: nowrap; flex-shrink: 0; }
+
+  /* Settings sections: tighter padding */
+  .settings-section { padding: 16px !important; }
+
+  /* Data preferences panel: full width */
+  .dsp-panel { max-width: 100% !important; }
+
+  /* People management panel: full width */
+  .pmp-panel { max-width: 100% !important; }
+
+  /* PaymentMethodPicker: wrap chips */
+  [class*="pmp-grid"] { grid-template-columns: 1fr 1fr !important; }
+  .pmp-kpi-grid { grid-template-columns: 1fr 1fr !important; }
+}

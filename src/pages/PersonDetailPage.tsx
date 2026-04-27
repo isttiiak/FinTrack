@@ -209,7 +209,6 @@ export default function PersonDetailPage() {
                       <button
                         className="pd-action-btn pd-pay-btn"
                         onClick={() => setLoggingPaymentFor(entry)}
-                        data-tooltip={entry.ledger_type === 'Lent' ? 'Log repayment from them' : 'Log your payment to them'}
                       >
                         <CreditCard size={13} /> Pay
                       </button>
@@ -217,22 +216,20 @@ export default function PersonDetailPage() {
                     <button
                       className="pd-action-btn pd-edit-btn"
                       onClick={() => setEditingEntry(entry)}
-                      data-tooltip="Edit this entry"
                     >
-                      <Edit2 size={13} />
+                      <Edit2 size={13} /> Edit
                     </button>
                     <DeleteButton
                       onConfirm={() => handleDeleteEntry(entry.id)}
-                      className="pd-action-btn pd-del-btn"
                       iconSize={13}
                     />
                     {(entry.payments?.length ?? 0) > 0 && (
                       <button
                         className="pd-action-btn pd-expand-btn"
                         onClick={() => toggleExpand(entry.id)}
-                        data-tooltip={isExpanded ? 'Hide payment history' : 'View payment history'}
                       >
                         {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                        {isExpanded ? 'Hide' : 'Payments'}
                       </button>
                     )}
                   </div>
@@ -377,8 +374,6 @@ export default function PersonDetailPage() {
         .pd-pay-btn:hover { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.3); }
         .pd-edit-btn { color: var(--text-secondary); }
         .pd-edit-btn:hover { background: rgba(108,99,255,0.12); color: var(--accent-primary); border-color: rgba(108,99,255,0.3); }
-        .pd-del-btn { color: var(--text-muted); }
-        .pd-del-btn:hover { background: rgba(239,68,68,0.1); color: var(--accent-red); border-color: rgba(239,68,68,0.3); }
         .pd-expand-btn { color: var(--text-muted); }
         .pd-expand-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 

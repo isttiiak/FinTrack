@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { useNavigate } from '@tanstack/react-router'
 import { Edit2, ChevronRight, CreditCard } from 'lucide-react'
 import DeleteButton from '@/components/common/DeleteButton'
@@ -98,49 +98,36 @@ export default function PersonCard({ person, onEdit, onLogPayment }: PersonCardP
         <ChevronRight size={16} className="pc-chevron" />
       </button>
 
-      {/* Hover actions */}
-      <AnimatePresence>
-        {showActions && (
-          <motion.div
-            className="pc-actions"
-            initial={{ opacity: 0, x: 8 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 8 }}
-            transition={{ duration: 0.12 }}
-          >
+      {/* Action buttons — always in DOM; desktop hides via opacity, mobile always shows */}
+      <div className={`pc-actions${showActions ? ' pc-actions-visible' : ''}`}>
             {(() => {
               const pendingEntry = onLogPayment && person.ledgers.find((l) => l.status !== 'Settled')
               return pendingEntry ? (
                 <button
                   className="pc-action-btn pc-pay"
                   onClick={(e) => { e.stopPropagation(); onLogPayment(pendingEntry) }}
-                  data-tooltip={pendingEntry.ledger_type === 'Lent' ? 'Log repayment' : 'Log your payment'}
                 >
-                  <CreditCard size={14} />
+                  <CreditCard size={13} /> Pay
                 </button>
               ) : null
             })()}
             <button
               className="pc-action-btn pc-edit"
               onClick={(e) => { e.stopPropagation(); onEdit(person) }}
-              data-tooltip="Edit person"
             >
-              <Edit2 size={14} />
+              <Edit2 size={13} /> Edit
             </button>
             <DeleteButton
               onConfirm={handleDelete}
-              className="pc-action-btn pc-delete"
               iconSize={14}
             />
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
 
       <style>{`
         .pc-card {
           position: relative;
           background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
-          overflow: hidden; transition: border-color 0.15s, box-shadow 0.15s;
+          transition: border-color 0.15s, box-shadow 0.15s;
         }
         .pc-card:hover { border-color: rgba(108,99,255,0.25); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
         .pc-main {
@@ -173,18 +160,27 @@ export default function PersonCard({ person, onEdit, onLogPayment }: PersonCardP
         .pc-actions {
           position: absolute; right: 56px; top: 50%; transform: translateY(-50%);
           display: flex; gap: 6px; z-index: 2;
+          opacity: 0; pointer-events: none; transition: opacity 0.12s;
+        }
+        .pc-actions-visible { opacity: 1; pointer-events: auto; }
+        @media (max-width: 640px) {
+          .pc-actions {
+            position: static; transform: none; opacity: 1 !important;
+            pointer-events: auto !important; padding: 0 12px 10px; justify-content: flex-end;
+          }
+          .pc-main { padding-bottom: 4px !important; }
         }
         .pc-action-btn {
-          width: 30px; height: 30px; border-radius: 8px;
-          display: flex; align-items: center; justify-content: center;
+          height: 30px; padding: 0 10px; border-radius: 8px; gap: 5px;
+          display: flex; align-items: center; font-size: 12px; font-weight: 600;
           border: 1px solid var(--border); cursor: pointer; backdrop-filter: blur(8px);
-          background: var(--bg-elevated); transition: background 0.12s, color 0.12s;
+          background: var(--bg-elevated); transition: background 0.12s, color 0.12s; white-space: nowrap;
         }
         .pc-pay { color: var(--accent-teal); }
         .pc-pay:hover { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.3); }
         .pc-edit { color: var(--text-secondary); }
         .pc-edit:hover { background: rgba(108,99,255,0.15); color: var(--accent-primary); border-color: rgba(108,99,255,0.3); }
-        .pc-delete { color: var(--text-muted); }
+        .pc-delete { color: var(--text-muted); padding: 0 8px; }
         .pc-delete:hover { background: rgba(239,68,68,0.12); color: var(--accent-red); border-color: rgba(239,68,68,0.3); }
       `}</style>
     </motion.div>

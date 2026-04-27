@@ -78,7 +78,7 @@ export default function ExpensesPage() {
     let totalIncome = 0
     const categorySpend: Record<string, number> = {}
 
-    for (const t of displayedTransactions) {
+    for (const t of transactions) {   // always full-month totals, group filter only narrows the list
       if (t.type === 'Expense') {
         totalExpense += t.amount
         if (t.category_id) categorySpend[t.category_id] = (categorySpend[t.category_id] ?? 0) + t.amount
@@ -189,7 +189,7 @@ export default function ExpensesPage() {
           onClick={() => { setRangeMode((v) => !v); setRangeFrom(''); setRangeTo('') }}
           title={rangeMode ? 'Switch to month view' : 'Switch to date range'}
         >
-          <CalendarRange size={14} />
+          <CalendarRange size={14} /> {rangeMode ? 'Month' : 'Range'}
         </button>
         <button
           className={cn('filter-toggle-btn', filterOpen && 'filter-toggle-active')}

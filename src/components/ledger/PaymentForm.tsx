@@ -2,18 +2,19 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ChevronDown } from 'lucide-react'
+import { X } from 'lucide-react'
 import { scaleIn } from '@/lib/animations'
 import { cn, toISODateString, formatCurrency } from '@/lib/utils'
-import { PAYMENT_METHODS, ACCOUNTS } from '@/lib/constants'
+import type { PaymentMethod, Account } from '@/lib/constants'
+import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
 import { useCreatePayment } from '@/hooks/useLedger'
 import type { PersonLedger } from '@/types/ledger.types'
 
 const schema = z.object({
   amount:         z.number({ error: 'Enter a valid amount' }).positive(),
   payment_date:   z.string().min(1, 'Select a date'),
-  payment_method: z.enum(PAYMENT_METHODS).optional(),
-  account:        z.enum(ACCOUNTS).optional(),
+  payment_method: z.string().min(1, 'Required'),
+  account:        z.string().min(1, 'Required'),
   notes:          z.string().optional(),
 })
 type FormValues = z.infer<typeof schema>
@@ -27,21 +28,26 @@ export default function PaymentForm({ entry, onClose }: PaymentFormProps) {
   const { mutateAsync: createPayment, isPending } = useCreatePayment()
   const remaining = entry.remaining ?? entry.total_amount
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      amount:       remaining,
-      payment_date: toISODateString(new Date()),
+      amount:         remaining,
+      payment_date:   toISODateString(new Date()),
+      payment_method: 'Cash',
+      account:        'Cash',
     },
   })
+
+  const paymentMethod = watch('payment_method')
+  const accountValue  = watch('account')
 
   async function onSubmit(values: FormValues) {
     await createPayment({
       ledger_id:      entry.id,
       amount:         values.amount,
       payment_date:   values.payment_date,
-      payment_method: values.payment_method ?? null,
-      account:        values.account ?? null,
+      payment_method: (values.payment_method || null) as PaymentMethod | null,
+      account:        (values.account || null) as Account | null,
       notes:          values.notes || null,
     })
     onClose()
@@ -84,27 +90,14 @@ export default function PaymentForm({ entry, onClose }: PaymentFormProps) {
             {errors.payment_date && <p className="payf-error">{errors.payment_date.message}</p>}
           </div>
 
-          <div className="payf-row">
-            <div className="payf-field">
-              <label className="payf-label">Method</label>
-              <div className="payf-select-wrap">
-                <select {...register('payment_method')} className="payf-select">
-                  <option value="">— None —</option>
-                  {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
-                </select>
-                <ChevronDown className="payf-select-icon" size={14} />
-              </div>
-            </div>
-            <div className="payf-field">
-              <label className="payf-label">Account</label>
-              <div className="payf-select-wrap">
-                <select {...register('account')} className="payf-select">
-                  <option value="">— None —</option>
-                  {ACCOUNTS.map((a) => <option key={a} value={a}>{a}</option>)}
-                </select>
-                <ChevronDown className="payf-select-icon" size={14} />
-              </div>
-            </div>
+          <div className="payf-field">
+            <label className="payf-label">Payment</label>
+            <PaymentMethodPicker
+              method={paymentMethod}
+              account={accountValue}
+              onMethodChange={(v) => setValue('payment_method', v ?? 'Cash')}
+              onAccountChange={(v) => setValue('account', v ?? 'Cash')}
+            />
           </div>
 
           <div className="payf-field">
@@ -174,16 +167,6 @@ export default function PaymentForm({ entry, onClose }: PaymentFormProps) {
         .payf-input-error { border-color: var(--accent-red) !important; }
         .payf-amount-input { font-size: 22px; font-weight: 700; padding: 12px 14px; }
         .payf-error { font-size: 12px; color: #FCA5A5; margin: 0; }
-        .payf-select-wrap { position: relative; }
-        .payf-select {
-          width: 100%; appearance: none;
-          background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
-          color: var(--text-primary); font-size: 14px; padding: 10px 30px 10px 14px; cursor: pointer;
-        }
-        .payf-select:focus { outline: none; border-color: var(--border-focus); }
-        .payf-select option { background: #1E1E38; }
-        .payf-select-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
-        .payf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .payf-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
         .payf-submit { min-width: 120px; min-height: 40px; display: flex; align-items: center; justify-content: center; }
         .payf-spinner { display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:payf-spin 0.7s linear infinite; }

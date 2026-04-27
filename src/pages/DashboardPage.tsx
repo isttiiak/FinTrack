@@ -28,10 +28,15 @@ export default function DashboardPage() {
   const thisMonth = getMonthRange(0)
   const lastMonth = getMonthRange(-1)
 
+  const now2 = new Date()
+  const yearFrom = toISODateString(new Date(now2.getFullYear(), 0, 1))
+  const yearTo   = toISODateString(new Date(now2.getFullYear(), 11, 31))
+
   // All-time for streak
   const { data: allTxns = [] } = useExpenses({ from: '2000-01-01', to: toISODateString(new Date()) })
   const { data: thisTxns = [], isLoading: loadingThis } = useExpenses(thisMonth)
   const { data: lastTxns = [] } = useExpenses(lastMonth)
+  const { data: yearTxns = [] } = useExpenses({ from: yearFrom, to: yearTo })
   const { data: persons = [] } = usePersons()
 
   const streak = useNoSpendStreak(allTxns)
@@ -43,6 +48,7 @@ export default function DashboardPage() {
 
   const expenseDelta = lastExpense > 0 ? ((thisExpense - lastExpense) / lastExpense) * 100 : null
   const incomeDelta  = lastIncome  > 0 ? ((thisIncome  - lastIncome)  / lastIncome)  * 100 : null
+  const yearExpense  = useMemo(() => yearTxns.filter((t) => t.type === 'Expense').reduce((s, t) => s + t.amount, 0), [yearTxns])
 
   const totalLent = useMemo(() => persons.reduce((s, p) => s + p.total_outstanding_lent, 0), [persons])
   const totalDebt = useMemo(() => persons.reduce((s, p) => s + p.total_outstanding_debt, 0), [persons])
@@ -133,6 +139,14 @@ export default function DashboardPage() {
             {totalDebt > 0 && `↓ ${formatCurrency(totalDebt)} you owe`}
             {totalLent === 0 && totalDebt === 0 && 'All clear'}
           </div>
+        </motion.div>
+
+        {/* Yearly total */}
+        <motion.div className="dash-kpi dash-kpi-amber" variants={staggerItem} whileHover={{ scale: 1.02 }}>
+          <div className="dash-kpi-icon"><TrendingUp size={17} /></div>
+          <div className="dash-kpi-label">Spent this year</div>
+          <div className="dash-kpi-value">{formatCurrency(yearExpense)}</div>
+          <div className="dash-kpi-delta dash-delta-neutral">{now2.getFullYear()} total expenses</div>
         </motion.div>
 
       </motion.div>
@@ -295,6 +309,9 @@ export default function DashboardPage() {
         .dash-kpi-purple { background: rgba(108,99,255,0.05); border-color: rgba(108,99,255,0.12); }
         .dash-kpi-purple .dash-kpi-icon { background: rgba(108,99,255,0.15); color: var(--accent-primary); }
         .dash-kpi-purple .dash-kpi-value { color: var(--accent-primary); }
+        .dash-kpi-amber { background: rgba(245,158,11,0.05); border-color: rgba(245,158,11,0.12); }
+        .dash-kpi-amber .dash-kpi-icon { background: rgba(245,158,11,0.15); color: var(--accent-amber); }
+        .dash-kpi-amber .dash-kpi-value { color: var(--accent-amber); }
         .dash-kpi-label { font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
         .dash-kpi-value { font-size: 24px; font-weight: 700; margin-bottom: 6px; min-height: 30px; }
         .dash-kpi-skeleton {

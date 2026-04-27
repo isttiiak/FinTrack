@@ -215,21 +215,18 @@ export default function InvestmentsPage() {
                       <button
                         className="inv-action-btn inv-action-pay"
                         onClick={(e) => { e.stopPropagation(); setLoggingPaymentFor(inv) }}
-                        data-tooltip="Log installment payment"
                       >
-                        <CreditCard size={13} />
+                        <CreditCard size={13} /> Pay
                       </button>
                       <button
                         className="inv-action-btn inv-action-return"
                         onClick={(e) => { e.stopPropagation(); setLoggingReturnFor(inv) }}
-                        data-tooltip="Log return received"
                       >
-                        <PlusCircle size={13} />
+                        <PlusCircle size={13} /> Return
                       </button>
                       <button
                         className="inv-action-btn inv-action-edit"
                         onClick={(e) => { e.stopPropagation(); setEditingInv(inv) }}
-                        data-tooltip="Edit investment"
                       >
                         <Edit2 size={13} />
                       </button>
@@ -244,7 +241,6 @@ export default function InvestmentsPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inv-action-btn inv-action-doc"
-                          data-tooltip="Open document"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <ExternalLink size={13} />
@@ -337,7 +333,7 @@ export default function InvestmentsPage() {
 
         .inv-card {
           background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
-          overflow: hidden; transition: border-color 0.15s, box-shadow 0.15s;
+          transition: border-color 0.15s, box-shadow 0.15s;
         }
         .inv-card:hover { border-color: rgba(245,158,11,0.25); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
         .inv-card-header { display: flex; align-items: flex-start; gap: 10px; padding: 14px; flex-wrap: wrap; }
@@ -374,13 +370,13 @@ export default function InvestmentsPage() {
         .inv-roi-neg .inv-roi-pct { color: var(--accent-coral); }
         .inv-roi-label { font-size: 10px; color: var(--text-muted); }
 
-        .inv-card-actions { display: flex; gap: 4px; flex-wrap: wrap; }
+        .inv-card-actions { display: flex; gap: 5px; flex-wrap: wrap; }
         .inv-action-btn {
-          width: 28px; height: 28px; border-radius: 7px;
-          display: flex; align-items: center; justify-content: center;
+          height: 28px; padding: 0 9px; border-radius: 7px; gap: 4px;
+          display: flex; align-items: center; font-size: 12px; font-weight: 600;
           background: var(--bg-elevated); border: 1px solid var(--border);
           cursor: pointer; transition: background 0.12s, color 0.12s;
-          text-decoration: none;
+          text-decoration: none; white-space: nowrap;
         }
         .inv-action-pay { color: var(--accent-coral); }
         .inv-action-pay:hover { background: rgba(249,115,22,0.12); border-color: rgba(249,115,22,0.3); }

@@ -291,69 +291,15 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
             )}
           </div>
 
-          {/* Amount */}
-          <div className="qle-field">
-            <label className="qle-label">Amount (৳)</label>
-            <input
-              {...register('total_amount', { valueAsNumber: true })}
-              type="number" step="0.01" placeholder="0.00"
-              className={cn('qle-input qle-amount-input', errors.total_amount && 'qle-input-error')}
-            />
-            {errors.total_amount && <p className="qle-error">{errors.total_amount.message}</p>}
-          </div>
-
-          {/* Date */}
-          <div className="qle-field">
-            <label className="qle-label">Date</label>
-            <input
-              {...register('start_date')}
-              type="date"
-              className={cn('qle-input', errors.start_date && 'qle-input-error')}
-            />
-          </div>
-
-          {/* Reason */}
-          <div className="qle-field">
-            <label className="qle-label">Reason <span className="qle-optional">(optional)</span></label>
-            <input
-              {...register('reason')}
-              className="qle-input"
-              placeholder="e.g. Medical emergency, Lunch split"
-            />
-          </div>
-
-          {/* Method + Account */}
-          <div className="qle-field">
-            <label className="qle-label">Payment <span className="qle-optional">(optional)</span></label>
-            <PaymentMethodPicker
-              method={paymentMethod}
-              account={accountValue}
-              onMethodChange={(m) => setValue('payment_method', m ?? 'Cash')}
-              onAccountChange={(a) => setValue('account', a ?? 'Cash')}
-            />
-          </div>
-
-          {/* Doc link */}
-          <div className="qle-field">
-            <label className="qle-label">Document link <span className="qle-optional">(optional)</span></label>
-            <input
-              {...register('doc_link')}
-              className={cn('qle-input', errors.doc_link && 'qle-input-error')}
-              placeholder="Google Drive, receipt URL…"
-              type="url"
-            />
-            {errors.doc_link && <p className="qle-error">{errors.doc_link.message}</p>}
-          </div>
-
-          {/* New person extra fields */}
+          {/* New person extra fields — directly after person picker */}
           <AnimatePresence>
             {isNewPerson && (
               <motion.div
                 className="qle-new-person-fields"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2 }}
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.18 }}
               >
                 <div className="qle-new-person-heading">
                   <UserPlus size={13} />
@@ -414,6 +360,60 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Amount */}
+          <div className="qle-field">
+            <label className="qle-label">Amount (৳)</label>
+            <input
+              {...register('total_amount', { valueAsNumber: true })}
+              type="number" step="0.01" placeholder="0.00"
+              className={cn('qle-input qle-amount-input', errors.total_amount && 'qle-input-error')}
+            />
+            {errors.total_amount && <p className="qle-error">{errors.total_amount.message}</p>}
+          </div>
+
+          {/* Date */}
+          <div className="qle-field">
+            <label className="qle-label">Date</label>
+            <input
+              {...register('start_date')}
+              type="date"
+              className={cn('qle-input', errors.start_date && 'qle-input-error')}
+            />
+          </div>
+
+          {/* Reason */}
+          <div className="qle-field">
+            <label className="qle-label">Reason <span className="qle-optional">(optional)</span></label>
+            <input
+              {...register('reason')}
+              className="qle-input"
+              placeholder="e.g. Medical emergency, Lunch split"
+            />
+          </div>
+
+          {/* Method + Account */}
+          <div className="qle-field">
+            <label className="qle-label">Payment</label>
+            <PaymentMethodPicker
+              method={paymentMethod}
+              account={accountValue}
+              onMethodChange={(m) => setValue('payment_method', m ?? 'Cash')}
+              onAccountChange={(a) => setValue('account', a ?? 'Cash')}
+            />
+          </div>
+
+          {/* Doc link */}
+          <div className="qle-field">
+            <label className="qle-label">Document link <span className="qle-optional">(optional)</span></label>
+            <input
+              {...register('doc_link')}
+              className={cn('qle-input', errors.doc_link && 'qle-input-error')}
+              placeholder="Google Drive, receipt URL…"
+              type="url"
+            />
+            {errors.doc_link && <p className="qle-error">{errors.doc_link.message}</p>}
+          </div>
 
           <div className="qle-actions">
             <button type="button" className="btn-ghost" onClick={onClose}>Cancel</button>
@@ -564,7 +564,6 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
 
         /* New person fields */
         .qle-new-person-fields {
-          overflow: hidden;
           background: rgba(16,185,129,0.05); border: 1px solid rgba(16,185,129,0.15); border-radius: 12px;
           padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;
         }
