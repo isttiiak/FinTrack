@@ -22,8 +22,8 @@ const schema = z.object({
   category_id:    z.string().min(1, 'Select a category'),
   description:    z.string().optional(),
   txn_date:       z.string().min(1, 'Select a date'),
-  payment_method: z.string().optional(),
-  account:        z.string().optional(),
+  payment_method: z.string().min(1, 'Required'),
+  account:        z.string().min(1, 'Required'),
 })
 type FormValues = z.infer<typeof schema>
 

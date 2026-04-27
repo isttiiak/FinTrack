@@ -13,7 +13,7 @@ import { SkeletonList } from '@/components/common/SkeletonCard'
 import AnimatedNumber from '@/components/common/AnimatedNumber'
 import type { Transaction, TransactionFilters } from '@/types/expense.types'
 import { PAYMENT_METHODS } from '@/lib/constants'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, toISODateString } from '@/lib/utils'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { cn } from '@/lib/utils'
 
@@ -45,7 +45,7 @@ export default function ExpensesPage() {
 
   const [year, mon] = month.split('-').map(Number)
   const monthFrom = `${year}-${String(mon).padStart(2, '0')}-01`
-  const monthTo   = new Date(year, mon, 0).toISOString().split('T')[0]
+  const monthTo   = toISODateString(new Date(year, mon, 0))
 
   const from = rangeMode ? (rangeFrom || undefined) : monthFrom
   const to   = rangeMode ? (rangeTo   || undefined) : monthTo

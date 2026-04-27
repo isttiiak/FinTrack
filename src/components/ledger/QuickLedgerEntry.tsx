@@ -23,8 +23,8 @@ const schema = z.object({
   total_amount:        z.number({ error: 'Enter a valid amount' }).positive(),
   start_date:          z.string().min(1, 'Select a date'),
   reason:              z.string().optional(),
-  payment_method:      z.string().optional(),
-  account:             z.string().optional(),
+  payment_method:      z.string().min(1, 'Required'),
+  account:             z.string().min(1, 'Required'),
   doc_link:            z.string().url('Enter a valid URL').or(z.literal('')).optional(),
 }).refine(
   (d) => !!(d.person_id || (d.new_person_name && d.new_person_name.trim().length >= 1)),
@@ -77,8 +77,10 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
   const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      ledger_type: 'Lent',
-      start_date:  toISODateString(new Date()),
+      ledger_type:    'Lent',
+      start_date:     toISODateString(new Date()),
+      payment_method: 'Cash',
+      account:        'Cash',
     },
   })
 
@@ -326,8 +328,8 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
             <PaymentMethodPicker
               method={paymentMethod}
               account={accountValue}
-              onMethodChange={(m) => setValue('payment_method', m)}
-              onAccountChange={(a) => setValue('account', a)}
+              onMethodChange={(m) => setValue('payment_method', m ?? 'Cash')}
+              onAccountChange={(a) => setValue('account', a ?? 'Cash')}
             />
           </div>
 
@@ -444,14 +446,20 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
         }
         @media (max-width: 640px) {
           .qle-overlay { align-items: flex-end; padding: 0; }
-          .qle-panel { border-radius: 20px 20px 0 0 !important; max-height: 92vh; overflow-y: auto; }
+          .qle-panel { border-radius: 20px 20px 0 0 !important; max-height: 92vh !important; }
         }
         .qle-panel {
           width: 100%; max-width: 480px;
           background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 20px;
-          padding: 24px; box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+          box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+          display: flex; flex-direction: column;
+          max-height: min(90vh, 760px);
+          overflow: hidden;
         }
-        .qle-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .qle-header {
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 24px 24px 0; flex-shrink: 0; margin-bottom: 20px;
+        }
         .qle-title { font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0; }
         .qle-close {
           width: 30px; height: 30px; border-radius: 8px;
@@ -459,7 +467,15 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
           color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center;
         }
         .qle-close:hover { background: var(--bg-card); color: var(--text-primary); }
-        .qle-form { display: flex; flex-direction: column; gap: 14px; }
+        .qle-form {
+          display: flex; flex-direction: column; gap: 14px;
+          overflow-y: auto; flex: 1;
+          padding: 0 24px 4px;
+          scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+        }
+        .qle-form::-webkit-scrollbar { width: 4px; }
+        .qle-form::-webkit-scrollbar-track { background: transparent; }
+        .qle-form::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
         /* Type toggle */
         .qle-type-toggle { display: flex; gap: 8px; }
@@ -564,8 +580,15 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
         }
         .qle-custom-back:hover { background: var(--bg-hover); color: var(--text-primary); }
 
-        /* Actions */
-        .qle-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+        /* Actions — sticky footer inside scroll container */
+        .qle-actions {
+          display: flex; justify-content: flex-end; gap: 10px;
+          position: sticky; bottom: 0;
+          background: var(--bg-elevated);
+          border-top: 1px solid var(--border);
+          padding: 14px 0 24px;
+          margin-top: 4px; flex-shrink: 0;
+        }
         .qle-submit { min-width: 140px; min-height: 40px; display: flex; align-items: center; justify-content: center; }
         .qle-spinner { display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:qle-spin 0.7s linear infinite; }
         @keyframes qle-spin { to { transform: rotate(360deg); } }

@@ -526,7 +526,7 @@ function DangerSection() {
   const [activeOp, setActiveOp]     = useState<string | null>(null)
   const { profile }                 = useAuthStore()
   const userId                      = useAuthStore((s) => s.user?.id)
-  const { data: transactions = [] } = useExpenses()
+  const { data: transactions = [] } = useExpenses({})   // all-time for export count
   const confirm                     = useConfirmStore((s) => s.confirm)
   const addToast                    = useUIStore((s) => s.addToast)
   const qc                          = useQueryClient()
@@ -635,9 +635,19 @@ function DangerSection() {
             <p className="settings-section-desc" style={{ marginBottom: 12 }}>
               Permanently delete your account and all data. A 30-day recovery window applies.
             </p>
-            <button className="danger-btn" onClick={() => setStep('confirm')}>
+            <button
+              className="danger-btn"
+              onClick={() => setStep('confirm')}
+              disabled={!unlocked}
+              style={{ opacity: unlocked ? 1 : 0.4, cursor: unlocked ? 'pointer' : 'not-allowed' }}
+            >
               Delete my account
             </button>
+            {!unlocked && (
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>
+                Unlock the toggle above to enable account deletion.
+              </p>
+            )}
           </motion.div>
         )}
 
