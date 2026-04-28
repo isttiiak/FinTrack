@@ -20,12 +20,9 @@ interface LogRow {
   personId: string
   personName: string
   ledgerType: 'Lent' | 'Debt'
-  entryReason: string | null
-  entryTotal: number
   paymentDate: string
   amountPaid: number
-  remainingAfter: number
-  notes: string | null
+  remainingAfter: number   // remaining from person's TOTAL for this type
   status: 'Settled' | 'Partial' | 'Pending'
 }
 
@@ -46,26 +43,32 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
   const allLogs = useMemo((): LogRow[] => {
     const rows: LogRow[] = []
     for (const person of persons) {
-      for (const entry of person.ledgers) {
-        const sorted = [...(entry.payments ?? [])].sort((a, b) =>
-          a.payment_date.localeCompare(b.payment_date),
-        )
-        let runningPaid = 0
-        for (const pay of sorted) {
-          runningPaid += pay.amount
-          const remaining = Math.max(0, entry.total_amount - runningPaid)
+      // Process Lent and Debt separately — remaining is aggregate per person+type
+      for (const type of ['Lent', 'Debt'] as const) {
+        const entries = person.ledgers.filter((e) => e.ledger_type === type)
+        if (entries.length === 0) continue
+        const totalCommitted = entries.reduce((s, e) => s + e.total_amount, 0)
+        const allPayments = entries
+          .flatMap((e) => e.payments ?? [])
+          .sort((a, b) => a.payment_date.localeCompare(b.payment_date))
+
+        let totalPaidSoFar = 0
+        for (const pay of allPayments) {
+          totalPaidSoFar += pay.amount
+          const remaining = Math.max(0, totalCommitted - totalPaidSoFar)
           rows.push({
             id:             pay.id,
             personId:       person.id,
             personName:     person.name,
-            ledgerType:     entry.ledger_type,
-            entryReason:    entry.reason,
-            entryTotal:     entry.total_amount,
+            ledgerType:     type,
             paymentDate:    pay.payment_date,
             amountPaid:     pay.amount,
             remainingAfter: remaining,
-            notes:          pay.notes,
-            status:         remaining === 0 ? 'Settled' : runningPaid < entry.total_amount ? 'Partial' : 'Settled',
+            status: remaining === 0
+              ? 'Settled'
+              : totalPaidSoFar < totalCommitted
+                ? 'Partial'
+                : 'Settled',
           })
         }
       }
@@ -85,7 +88,7 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
   }
 
   function startEdit(row: LogRow) {
-    setEditing({ id: row.id, amount: String(row.amountPaid), notes: row.notes ?? '' })
+    setEditing({ id: row.id, amount: String(row.amountPaid), notes: '' })
   }
 
   async function saveEdit() {
@@ -185,12 +188,10 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
         <div className="lpl-header-row">
           <span>Person</span>
           <span>Type</span>
-          <span>Reason</span>
           <span>Date</span>
           <span>Paid</span>
           <span>Remaining</span>
           <span>Status</span>
-          <span>Notes</span>
           <span></span>
         </div>
 
@@ -225,9 +226,6 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
                   </span>
                 </div>
 
-                {/* Reason */}
-                <div className="lpl-cell lpl-cell-muted">{row.entryReason ?? '—'}</div>
-
                 {/* Date */}
                 <div className="lpl-cell lpl-cell-muted">{formatDate(row.paymentDate)}</div>
 
@@ -247,7 +245,7 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
                   )}
                 </div>
 
-                {/* Remaining */}
+                {/* Remaining (aggregate from person total) */}
                 <div className="lpl-cell">
                   {row.remainingAfter === 0 ? (
                     <span className="lpl-remaining-zero">—</span>
@@ -263,42 +261,24 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
                   </span>
                 </div>
 
-                {/* Notes — inline edit */}
-                <div className="lpl-cell">
-                  {editing?.id === row.id ? (
-                    <input
-                      className="lpl-edit-input"
-                      type="text"
-                      placeholder="Notes…"
-                      value={editing.notes}
-                      onChange={(e) => setEditing({ ...editing, notes: e.target.value })}
-                    />
-                  ) : (
-                    <span className="lpl-cell-muted">{row.notes ?? '—'}</span>
-                  )}
-                </div>
-
                 {/* Edit / Delete */}
                 <div className="lpl-cell" style={{ display: 'flex', gap: 4 }}>
                   {editing?.id === row.id ? (
-                    <button className="lpl-save-btn" onClick={saveEdit} disabled={updating} data-tooltip="Save changes">
-                      <Check size={12} />
-                    </button>
+                    <>
+                      <button className="lpl-save-btn" onClick={saveEdit} disabled={updating}>
+                        <Check size={12} />
+                      </button>
+                      <button className="lpl-cancel-btn" onClick={() => setEditing(null)}>
+                        <X size={12} />
+                      </button>
+                    </>
                   ) : (
-                    <button className="lpl-edit-btn" onClick={() => startEdit(row)} data-tooltip="Edit this payment">
-                      <Edit2 size={12} />
-                    </button>
-                  )}
-                  {editing?.id === row.id ? (
-                    <button
-                      className="lpl-del-btn"
-                      onClick={() => setEditing(null)}
-                      data-tooltip="Cancel edit"
-                    >
-                      <X size={12} />
-                    </button>
-                  ) : (
-                    <DeleteButton onConfirm={() => handleDelete(row.id)} className="lpl-del-btn" iconSize={12} />
+                    <>
+                      <button className="lpl-edit-btn edit-btn-purple" onClick={() => startEdit(row)}>
+                        <Edit2 size={12} /> Edit
+                      </button>
+                      <DeleteButton onConfirm={() => handleDelete(row.id)} iconSize={12} />
+                    </>
                   )}
                 </div>
               </motion.div>
@@ -355,23 +335,21 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
         }
         .lpl-header-row {
           display: grid;
-          grid-template-columns: 140px 90px 110px 100px 100px 90px 100px 1fr 60px;
-          gap: 0;
-          padding: 10px 14px;
+          grid-template-columns: 150px 90px 110px 110px 110px 110px 90px;
+          gap: 0; padding: 10px 14px;
           background: var(--bg-elevated);
           border-bottom: 1px solid var(--border);
           font-size: 10px; font-weight: 600; color: var(--text-muted);
           text-transform: uppercase; letter-spacing: 0.06em;
-          min-width: 900px;
+          min-width: 700px;
         }
         .lpl-row {
           display: grid;
-          grid-template-columns: 140px 90px 110px 100px 100px 90px 100px 1fr 60px;
-          gap: 0;
-          padding: 10px 14px;
+          grid-template-columns: 150px 90px 110px 110px 110px 110px 90px;
+          gap: 0; padding: 10px 14px;
           border-bottom: 1px solid rgba(42,42,74,0.5);
           align-items: center;
-          min-width: 900px;
+          min-width: 700px;
           transition: background 0.1s;
         }
         .lpl-row:last-child { border-bottom: none; }
@@ -409,18 +387,23 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
           color: var(--text-primary); font-size: 12px; padding: 3px 6px; width: 100%;
           outline: none;
         }
-        .lpl-edit-btn, .lpl-save-btn, .lpl-del-btn {
+        .lpl-edit-btn {
+          height: 26px; padding: 0 8px; border-radius: 6px; gap: 4px;
+          display: flex; align-items: center; font-size: 11px; font-weight: 600;
+          border: 1px solid var(--border); cursor: pointer; white-space: nowrap;
+          transition: background 0.1s, color 0.1s; flex-shrink: 0;
+          background: var(--bg-elevated); color: var(--text-secondary);
+        }
+        .lpl-save-btn, .lpl-cancel-btn {
           width: 24px; height: 24px; border-radius: 6px;
           display: flex; align-items: center; justify-content: center;
-          background: none; border: none; cursor: pointer;
-          transition: background 0.1s, color 0.1s; flex-shrink: 0;
+          background: none; border: 1px solid var(--border); cursor: pointer;
+          transition: background 0.1s; flex-shrink: 0;
         }
-        .lpl-edit-btn { color: var(--text-muted); }
-        .lpl-edit-btn:hover { background: rgba(108,99,255,0.1); color: var(--accent-primary); }
         .lpl-save-btn { color: var(--accent-teal); }
         .lpl-save-btn:hover { background: rgba(16,185,129,0.1); }
-        .lpl-del-btn { color: var(--text-muted); }
-        .lpl-del-btn:hover { background: rgba(239,68,68,0.1); color: var(--accent-red); }
+        .lpl-cancel-btn { color: var(--text-muted); }
+        .lpl-cancel-btn:hover { background: var(--bg-hover); }
       `}</style>
     </motion.div>
   )

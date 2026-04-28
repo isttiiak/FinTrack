@@ -14,7 +14,9 @@ import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
 import LedgerEntryForm from '@/components/ledger/LedgerEntryForm'
 import PaymentForm from '@/components/ledger/PaymentForm'
+import LedgerPaymentLogs from '@/components/ledger/LedgerPaymentLogs'
 import type { PersonLedger, LedgerPayment } from '@/types/ledger.types'
+import type { PersonWithLedgers } from '@/types/ledger.types'
 
 const STATUS_STYLE = {
   Pending: { bg: 'rgba(249,115,22,0.12)', color: '#F97316', label: '⏳ Pending' },
@@ -33,6 +35,7 @@ export default function PersonDetailPage() {
   const isDemo = useDemoStore((s) => s.isDemo)
   const addToast = useUIStore((s) => s.addToast)
 
+  const [activeTab, setActiveTab] = useState<'timeline' | 'payments'>('timeline')
   const [showAddEntry, setShowAddEntry] = useState(false)
   const [editingEntry, setEditingEntry] = useState<PersonLedger | null>(null)
   const [loggingPaymentFor, setLoggingPaymentFor] = useState<PersonLedger | null>(null)
@@ -146,37 +149,81 @@ export default function PersonDetailPage() {
         </div>
       </motion.div>
 
-      {/* Sub-totals row */}
-      {(person.total_outstanding_lent > 0 || person.total_outstanding_debt > 0) && (
-        <div className="pd-sub-row">
-          {person.total_outstanding_lent > 0 && (
-            <div className="pd-sub-chip pd-sub-lent">
-              💸 {formatCurrency(person.total_outstanding_lent)} they owe
-            </div>
-          )}
-          {person.total_outstanding_debt > 0 && (
-            <div className="pd-sub-chip pd-sub-debt">
-              🏦 {formatCurrency(person.total_outstanding_debt)} you owe
-            </div>
-          )}
+      {/* Aggregate stats row */}
+      {(person.total_lent > 0 || person.total_debt > 0) && (
+        <div className="pd-stats-row">
+          {person.total_lent > 0 && (() => {
+            const lentStatus = person.total_outstanding_lent === 0 ? 'Settled'
+              : person.total_outstanding_lent < person.total_lent ? 'Partial' : 'Pending'
+            const st = STATUS_STYLE[lentStatus]
+            return (
+              <div className="pd-stat-card pd-stat-lent">
+                <div className="pd-stat-label">Total lent</div>
+                <div className="pd-stat-amount">{formatCurrency(person.total_lent)}</div>
+                <div className="pd-stat-sub">
+                  Remaining: <strong>{formatCurrency(person.total_outstanding_lent)}</strong>
+                </div>
+                <span className="pd-status-badge" style={{ background: st.bg, color: st.color, marginTop: 4, display: 'inline-block' }}>
+                  {st.label}
+                </span>
+              </div>
+            )
+          })()}
+          {person.total_debt > 0 && (() => {
+            const debtStatus = person.total_outstanding_debt === 0 ? 'Settled'
+              : person.total_outstanding_debt < person.total_debt ? 'Partial' : 'Pending'
+            const st = STATUS_STYLE[debtStatus]
+            return (
+              <div className="pd-stat-card pd-stat-debt">
+                <div className="pd-stat-label">Total borrowed</div>
+                <div className="pd-stat-amount">{formatCurrency(person.total_debt)}</div>
+                <div className="pd-stat-sub">
+                  Remaining: <strong>{formatCurrency(person.total_outstanding_debt)}</strong>
+                </div>
+                <span className="pd-status-badge" style={{ background: st.bg, color: st.color, marginTop: 4, display: 'inline-block' }}>
+                  {st.label}
+                </span>
+              </div>
+            )
+          })()}
         </div>
       )}
 
-      {/* Section header */}
+      {/* Tabs + Add entry */}
       <div className="pd-section-header">
-        <h2 className="pd-section-title">Timeline</h2>
-        <motion.button
-          className="btn-primary pd-add-btn"
-          onClick={handleAddEntry}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
-        >
-          <Plus size={14} /> Add entry
-        </motion.button>
+        <div className="pd-tabs">
+          <button
+            className={`pd-tab ${activeTab === 'timeline' ? 'pd-tab-active' : ''}`}
+            onClick={() => setActiveTab('timeline')}
+          >
+            📋 Timeline
+          </button>
+          <button
+            className={`pd-tab ${activeTab === 'payments' ? 'pd-tab-active' : ''}`}
+            onClick={() => setActiveTab('payments')}
+          >
+            💳 Payments
+          </button>
+        </div>
+        {activeTab === 'timeline' && (
+          <motion.button
+            className="btn-primary pd-add-btn"
+            onClick={handleAddEntry}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+          >
+            <Plus size={14} /> Add entry
+          </motion.button>
+        )}
       </div>
 
-      {/* Entry timeline */}
-      {person.ledgers.length === 0 ? (
+      {/* Payments tab */}
+      {activeTab === 'payments' && (
+        <LedgerPaymentLogs persons={[person as PersonWithLedgers]} />
+      )}
+
+      {/* Timeline tab */}
+      {activeTab === 'timeline' && person.ledgers.length === 0 ? (
         <div className="pd-empty">
           <p style={{ color: 'var(--text-secondary)', margin: 0, fontWeight: 600 }}>No entries yet</p>
           <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '4px 0 16px' }}>Add a lent or debt entry to start tracking.</p>
@@ -184,12 +231,10 @@ export default function PersonDetailPage() {
             <Plus size={14} /> Add first entry
           </button>
         </div>
-      ) : (
+      ) : activeTab === 'timeline' ? (
         <motion.div className="pd-timeline" variants={staggerContainer} initial="initial" animate="animate">
           {person.ledgers.map((entry) => {
             const isExpanded = expandedEntries.has(entry.id)
-            const status = entry.status ?? 'Pending'
-            const st = STATUS_STYLE[status]
             const isLent = entry.ledger_type === 'Lent'
 
             return (
@@ -217,12 +262,6 @@ export default function PersonDetailPage() {
                     </div>
 
                     <div className="pd-entry-bottom-row">
-                      <span className="pd-status-badge" style={{ background: st.bg, color: st.color }}>
-                        {st.label}
-                      </span>
-                      {entry.remaining !== undefined && entry.remaining > 0 && (
-                        <span className="pd-remaining">{formatCurrency(entry.remaining)} remaining</span>
-                      )}
                       {entry.doc_link && (
                         <a href={entry.doc_link} target="_blank" rel="noopener noreferrer" className="pd-doc-link" onClick={(e) => e.stopPropagation()}>
                           <ExternalLink size={12} /> Doc
@@ -288,7 +327,7 @@ export default function PersonDetailPage() {
             )
           })}
         </motion.div>
-      )}
+      ) : null}
 
       {/* Modals */}
       <AnimatePresence>
@@ -341,7 +380,27 @@ export default function PersonDetailPage() {
         .pd-hero-all-settled { font-size: 16px; font-weight: 600; color: var(--accent-teal); }
         .pd-hero-btns { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 
-        .pd-sub-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+        .pd-stats-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+        .pd-stat-card {
+          flex: 1; min-width: 180px; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border);
+          display: flex; flex-direction: column; gap: 2px;
+        }
+        .pd-stat-lent { background: rgba(16,185,129,0.05); border-color: rgba(16,185,129,0.15); }
+        .pd-stat-debt { background: rgba(249,115,22,0.05); border-color: rgba(249,115,22,0.15); }
+        .pd-stat-label { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+        .pd-stat-amount { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+        .pd-stat-sub { font-size: 12px; color: var(--text-secondary); }
+        .pd-stat-sub strong { color: var(--text-primary); }
+
+        .pd-tabs { display: flex; gap: 6px; }
+        .pd-tab {
+          padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer;
+          background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary);
+          transition: all 0.15s;
+        }
+        .pd-tab:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .pd-tab-active { background: linear-gradient(135deg, #6C63FF, #A855F7); border-color: transparent; color: #fff; }
+
         .pd-sub-chip {
           padding: 5px 12px; border-radius: 20px; font-size: 13px; font-weight: 500;
           border: 1px solid;

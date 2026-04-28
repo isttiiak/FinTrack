@@ -2,10 +2,12 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ChevronDown } from 'lucide-react'
+import { X } from 'lucide-react'
 import { scaleIn } from '@/lib/animations'
 import { cn, toISODateString } from '@/lib/utils'
-import { PAYMENT_METHODS, ACCOUNTS, LEDGER_TYPES } from '@/lib/constants'
+import { LEDGER_TYPES } from '@/lib/constants'
+import type { PaymentMethod, Account } from '@/lib/constants'
+import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
 import { useCreateLedgerEntry, useUpdateLedgerEntry } from '@/hooks/useLedger'
 import type { PersonLedger } from '@/types/ledger.types'
 
@@ -14,8 +16,8 @@ const schema = z.object({
   total_amount:   z.number({ error: 'Enter a valid amount' }).positive(),
   start_date:     z.string().min(1, 'Select a date'),
   reason:         z.string().optional(),
-  payment_method: z.enum(PAYMENT_METHODS).optional(),
-  account:        z.enum(ACCOUNTS).optional(),
+  payment_method: z.string().min(1, 'Required'),
+  account:        z.string().min(1, 'Required'),
   doc_link:       z.string().url('Enter a valid URL').or(z.literal('')).optional(),
   notes:          z.string().optional(),
 })
@@ -33,7 +35,7 @@ export default function LedgerEntryForm({ personId, editing, defaultType = 'Lent
   const { mutateAsync: update, isPending: updating } = useUpdateLedgerEntry()
   const isPending = creating || updating
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: editing
       ? {
@@ -41,18 +43,22 @@ export default function LedgerEntryForm({ personId, editing, defaultType = 'Lent
           total_amount:   editing.total_amount,
           start_date:     editing.start_date,
           reason:         editing.reason ?? '',
-          payment_method: editing.payment_method ?? undefined,
-          account:        editing.account ?? undefined,
+          payment_method: editing.payment_method ?? 'Cash',
+          account:        editing.account ?? 'Cash',
           doc_link:       editing.doc_link ?? '',
           notes:          editing.notes ?? '',
         }
       : {
-          ledger_type: defaultType,
-          start_date:  toISODateString(new Date()),
+          ledger_type:    defaultType,
+          start_date:     toISODateString(new Date()),
+          payment_method: 'Cash',
+          account:        'Cash',
         },
   })
 
-  const selectedType = watch('ledger_type')
+  const selectedType   = watch('ledger_type')
+  const paymentMethod  = watch('payment_method')
+  const accountValue   = watch('account')
 
   async function onSubmit(values: FormValues) {
     const payload = {
@@ -61,8 +67,8 @@ export default function LedgerEntryForm({ personId, editing, defaultType = 'Lent
       total_amount:   values.total_amount,
       start_date:     values.start_date,
       reason:         values.reason || null,
-      payment_method: values.payment_method ?? null,
-      account:        values.account ?? null,
+      payment_method: (values.payment_method || null) as PaymentMethod | null,
+      account:        (values.account || null) as Account | null,
       doc_link:       values.doc_link || null,
       notes:          values.notes || null,
       settled_date:   editing?.settled_date ?? null,
@@ -134,27 +140,14 @@ export default function LedgerEntryForm({ personId, editing, defaultType = 'Lent
           </div>
 
           {/* Payment method + Account */}
-          <div className="lef-row">
-            <div className="lef-field">
-              <label className="lef-label">Method</label>
-              <div className="lef-select-wrap">
-                <select {...register('payment_method')} className="lef-select">
-                  <option value="">— None —</option>
-                  {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
-                </select>
-                <ChevronDown className="lef-select-icon" size={14} />
-              </div>
-            </div>
-            <div className="lef-field">
-              <label className="lef-label">Account</label>
-              <div className="lef-select-wrap">
-                <select {...register('account')} className="lef-select">
-                  <option value="">— None —</option>
-                  {ACCOUNTS.map((a) => <option key={a} value={a}>{a}</option>)}
-                </select>
-                <ChevronDown className="lef-select-icon" size={14} />
-              </div>
-            </div>
+          <div className="lef-field">
+            <label className="lef-label">Payment</label>
+            <PaymentMethodPicker
+              method={paymentMethod}
+              account={accountValue}
+              onMethodChange={(m) => setValue('payment_method', m ?? 'Cash')}
+              onAccountChange={(a) => setValue('account', a ?? 'Cash')}
+            />
           </div>
 
           {/* Doc link */}
@@ -205,9 +198,13 @@ export default function LedgerEntryForm({ personId, editing, defaultType = 'Lent
         .lef-panel {
           width: 100%; max-width: 460px;
           background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 20px;
-          padding: 24px; box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+          box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+          display: flex; flex-direction: column; max-height: min(90vh, 720px); overflow: hidden;
         }
-        .lef-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .lef-header {
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 24px 24px 0; flex-shrink: 0; margin-bottom: 20px;
+        }
         .lef-title { font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0; }
         .lef-close {
           width: 30px; height: 30px; border-radius: 8px;
@@ -215,7 +212,7 @@ export default function LedgerEntryForm({ personId, editing, defaultType = 'Lent
           color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center;
         }
         .lef-close:hover { background: var(--bg-card); color: var(--text-primary); }
-        .lef-form { display: flex; flex-direction: column; gap: 14px; }
+        .lef-form { display: flex; flex-direction: column; gap: 14px; overflow-y: auto; flex: 1; padding: 0 24px 0; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
         .lef-type-toggle { display: flex; gap: 8px; }
         .lef-type-btn {
           flex: 1; padding: 9px 12px; border-radius: 10px; text-align: center;
@@ -242,17 +239,11 @@ export default function LedgerEntryForm({ personId, editing, defaultType = 'Lent
         .lef-input-error { border-color: var(--accent-red) !important; }
         .lef-amount-input { font-size: 22px; font-weight: 700; padding: 12px 14px; }
         .lef-error { font-size: 12px; color: #FCA5A5; margin: 0; }
-        .lef-select-wrap { position: relative; }
-        .lef-select {
-          width: 100%; appearance: none;
-          background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
-          color: var(--text-primary); font-size: 14px; padding: 10px 32px 10px 14px; cursor: pointer;
+        .lef-actions {
+          display: flex; justify-content: flex-end; gap: 10px;
+          position: sticky; bottom: 0; background: var(--bg-elevated);
+          border-top: 1px solid var(--border); padding: 14px 24px 24px; flex-shrink: 0;
         }
-        .lef-select:focus { outline: none; border-color: var(--border-focus); }
-        .lef-select option { background: #1E1E38; }
-        .lef-select-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
-        .lef-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .lef-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
         .lef-submit { min-width: 110px; min-height: 40px; display: flex; align-items: center; justify-content: center; }
         .lef-spinner { display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:lef-spin 0.7s linear infinite; }
         @keyframes lef-spin { to { transform: rotate(360deg); } }
