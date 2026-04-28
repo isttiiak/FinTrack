@@ -560,6 +560,15 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
         .qle-dropdown-rel { font-size: 11px; color: var(--text-muted); }
         .qle-dropdown-divider { height: 1px; background: var(--border); margin: 4px 0; }
 
+        .qle-select-wrap { position: relative; }
+        .qle-select {
+          width: 100%; appearance: none;
+          background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+          color: var(--text-primary); font-size: 14px; padding: 10px 30px 10px 14px; cursor: pointer;
+        }
+        .qle-select:focus { outline: none; border-color: var(--border-focus); }
+        .qle-select option { background: #1E1E38; }
+        .qle-select-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
         .qle-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
         /* New person fields */

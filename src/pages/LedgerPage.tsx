@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Users, TrendingUp, TrendingDown, ArrowRightLeft } from 'lucide-react'
+import { Plus, Users, TrendingUp, TrendingDown, ArrowRightLeft, ArrowUp, ArrowDown } from 'lucide-react'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { formatCurrency } from '@/lib/utils'
 import { usePersons } from '@/hooks/useLedger'
@@ -22,6 +22,7 @@ export default function LedgerPage() {
   const addToast = useUIStore((s) => s.addToast)
 
   const [activeTab, setActiveTab] = useState<Tab>('all')
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
   const [showAddEntry, setShowAddEntry] = useState(false)
   const [showPeoplePanel, setShowPeoplePanel] = useState(false)
   const [quickPayEntry, setQuickPayEntry] = useState<PersonLedger | null>(null)
@@ -31,12 +32,20 @@ export default function LedgerPage() {
   const totalOutstandingDebt = persons.reduce((s, p) => s + p.total_outstanding_debt, 0)
   const netPosition = totalOutstandingLent - totalOutstandingDebt
 
-  // Filter by tab — "lent" = persons who owe me, "debt" = persons I owe
-  const filtered = persons.filter((p) => {
-    if (activeTab === 'lent') return p.total_outstanding_lent > 0 || p.ledgers.some((l) => l.ledger_type === 'Lent')
-    if (activeTab === 'debt') return p.total_outstanding_debt > 0 || p.ledgers.some((l) => l.ledger_type === 'Debt')
-    return true
-  })
+  // Filter by tab
+  const filtered = persons
+    .filter((p) => {
+      if (activeTab === 'lent') return p.total_outstanding_lent > 0 || p.ledgers.some((l) => l.ledger_type === 'Lent')
+      if (activeTab === 'debt') return p.total_outstanding_debt > 0 || p.ledgers.some((l) => l.ledger_type === 'Debt')
+      return true
+    })
+    .slice()
+    .sort((a, b) => {
+      const latestDate = (p: typeof a) =>
+        p.ledgers.reduce((max, l) => l.start_date > max ? l.start_date : max, '0000-00-00')
+      const da = latestDate(a), db = latestDate(b)
+      return sortOrder === 'newest' ? db.localeCompare(da) : da.localeCompare(db)
+    })
 
   function handleAddEntry() {
     if (isDemo) { addToast({ type: 'info', message: 'Demo mode — changes are not saved' }); return }
@@ -98,17 +107,37 @@ export default function LedgerPage() {
         </motion.div>
       )}
 
-      {/* Tabs */}
-      <div className="ledger-tabs">
-        {([['all', 'All'], ['lent', '💸 Lent'], ['debt', '🏦 Debt'], ['summary', '📊 Summary'], ['logs', '💳 Payment logs']] as [Tab, string][]).map(([t, label]) => (
-          <button
-            key={t}
-            className={`ledger-tab ${activeTab === t ? 'ledger-tab-active' : ''}`}
-            onClick={() => setActiveTab(t)}
-          >
-            {label}
-          </button>
-        ))}
+      {/* Tabs + sort controls */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+        <div className="ledger-tabs" style={{ marginBottom: 0, flex: 1 }}>
+          {([['all', 'All'], ['lent', '💸 Lent'], ['debt', '🏦 Debt'], ['summary', '📊 Summary'], ['logs', '💳 Payment logs']] as [Tab, string][]).map(([t, label]) => (
+            <button
+              key={t}
+              className={`ledger-tab ${activeTab === t ? 'ledger-tab-active' : ''}`}
+              onClick={() => setActiveTab(t)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {activeTab !== 'summary' && activeTab !== 'logs' && (
+          <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+            <button
+              className={`ledger-sort-btn ${sortOrder === 'newest' ? 'ledger-sort-active' : ''}`}
+              onClick={() => setSortOrder('newest')}
+              title="Newest first"
+            >
+              <ArrowDown size={13} /> Newest
+            </button>
+            <button
+              className={`ledger-sort-btn ${sortOrder === 'oldest' ? 'ledger-sort-active' : ''}`}
+              onClick={() => setSortOrder('oldest')}
+              title="Oldest first"
+            >
+              <ArrowUp size={13} /> Oldest
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Summary tab */}
@@ -216,7 +245,15 @@ export default function LedgerPage() {
         .ledger-sum-net-negative .ledger-sum-icon { background: rgba(239,68,68,0.12); color: var(--accent-red); }
         .ledger-sum-net-negative .ledger-sum-value { color: var(--accent-red); }
 
-        .ledger-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+        .ledger-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+        .ledger-sort-btn {
+          display: flex; align-items: center; gap: 4px;
+          padding: 6px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer;
+          background: var(--bg-card); border: 1px solid var(--border); color: var(--text-muted);
+          transition: all 0.15s; white-space: nowrap;
+        }
+        .ledger-sort-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+        .ledger-sort-active { color: var(--accent-primary) !important; border-color: rgba(108,99,255,0.35) !important; background: rgba(108,99,255,0.08) !important; }
         @media (max-width: 400px) { .ledger-tab { font-size: 12px; padding: 6px 10px; } }
         .ledger-tab {
           padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer;

@@ -2,20 +2,17 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, TrendingUp, Wallet, BarChart3,
-  Edit2, ExternalLink, PlusCircle, CreditCard,
+  ExternalLink,
 } from 'lucide-react'
-import DeleteButton from '@/components/common/DeleteButton'
 import { useNavigate } from '@tanstack/react-router'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { useInvestments, useDeleteInvestment } from '@/hooks/useInvestments'
+import { useInvestments } from '@/hooks/useInvestments'
 import InvestmentForm from '@/components/investments/InvestmentForm'
-import ReturnForm from '@/components/investments/ReturnForm'
-import InvestmentPaymentForm from '@/components/investments/InvestmentPaymentForm'
 import InvestmentTransactionLogs from '@/components/investments/InvestmentTransactionLogs'
-import type { Investment } from '@/types/investment.types'
 
 type InvTab = 'portfolio' | 'logs'
+
 
 const CATEGORY_ICONS: Record<string, string> = {
   'Real Estate': '🏢', 'Shared Business': '🤝', 'Garments': '👕',
@@ -27,14 +24,10 @@ const CATEGORY_ICONS: Record<string, string> = {
 
 export default function InvestmentsPage() {
   const { data: investments = [], isLoading } = useInvestments()
-  const { mutate: deleteInvestment } = useDeleteInvestment()
 
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<InvTab>('portfolio')
   const [showForm, setShowForm] = useState(false)
-  const [editingInv, setEditingInv] = useState<Investment | null>(null)
-  const [loggingReturnFor, setLoggingReturnFor] = useState<Investment | null>(null)
-  const [loggingPaymentFor, setLoggingPaymentFor] = useState<Investment | null>(null)
 
   // Portfolio summary
   const totalCommitted  = investments.reduce((s, i) => s + (i.committed_amount ?? 0), 0)
@@ -203,50 +196,25 @@ export default function InvestmentsPage() {
                     )}
                   </div>
 
-                  {/* ROI + actions */}
-                  <div className="inv-card-right" onClick={(e) => e.stopPropagation()}>
+                  {/* ROI + doc link */}
+                  <div className="inv-card-right">
                     {roi !== undefined && (
                       <div className={`inv-roi ${roi >= 0 ? 'inv-roi-pos' : 'inv-roi-neg'}`}>
                         <span className="inv-roi-pct">{roi >= 0 ? '+' : ''}{roi.toFixed(1)}%</span>
                         <span className="inv-roi-label">ROI</span>
                       </div>
                     )}
-                    <div className="inv-card-actions">
-                      <button
-                        className="inv-action-btn inv-action-pay"
-                        onClick={(e) => { e.stopPropagation(); setLoggingPaymentFor(inv) }}
+                    {inv.doc_link && (
+                      <a
+                        href={inv.doc_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inv-action-btn inv-action-doc"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <CreditCard size={13} /> Pay
-                      </button>
-                      <button
-                        className="inv-action-btn inv-action-return"
-                        onClick={(e) => { e.stopPropagation(); setLoggingReturnFor(inv) }}
-                      >
-                        <PlusCircle size={13} /> Return
-                      </button>
-                      <button
-                        className="inv-action-btn inv-action-edit"
-                        onClick={(e) => { e.stopPropagation(); setEditingInv(inv) }}
-                      >
-                        <Edit2 size={13} />
-                      </button>
-                      <DeleteButton
-                        onConfirm={() => deleteInvestment(inv.id)}
-                        className="inv-action-btn inv-action-del"
-                        iconSize={13}
-                      />
-                      {inv.doc_link && (
-                        <a
-                          href={inv.doc_link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inv-action-btn inv-action-doc"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <ExternalLink size={13} />
-                        </a>
-                      )}
-                    </div>
+                        <ExternalLink size={13} />
+                      </a>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -255,24 +223,12 @@ export default function InvestmentsPage() {
         </motion.div>
       ) : null}
 
-      {/* Modals */}
+      {/* Modal */}
       <AnimatePresence>
-        {(showForm || editingInv) && (
+        {showForm && (
           <InvestmentForm
-            editing={editingInv}
-            onClose={() => { setShowForm(false); setEditingInv(null) }}
-          />
-        )}
-        {loggingReturnFor && (
-          <ReturnForm
-            investment={loggingReturnFor}
-            onClose={() => setLoggingReturnFor(null)}
-          />
-        )}
-        {loggingPaymentFor && (
-          <InvestmentPaymentForm
-            investment={loggingPaymentFor}
-            onClose={() => setLoggingPaymentFor(null)}
+            editing={null}
+            onClose={() => setShowForm(false)}
           />
         )}
       </AnimatePresence>

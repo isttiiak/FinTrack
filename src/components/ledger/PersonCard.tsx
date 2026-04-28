@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from '@tanstack/react-router'
 import { Edit2, ChevronRight, CreditCard } from 'lucide-react'
@@ -29,7 +28,6 @@ export default function PersonCard({ person, onEdit, onLogPayment }: PersonCardP
   const { mutate: deletePerson } = useDeletePerson()
   const addToast = useUIStore((s) => s.addToast)
   const isDemo = useDemoStore((s) => s.isDemo)
-  const [showActions, setShowActions] = useState(false)
 
   const hasOutstanding = person.total_outstanding_lent > 0 || person.total_outstanding_debt > 0
   const netPosition = person.total_outstanding_lent - person.total_outstanding_debt
@@ -48,91 +46,85 @@ export default function PersonCard({ person, onEdit, onLogPayment }: PersonCardP
       className="pc-card"
       style={{ opacity: allSettled ? 0.6 : 1 }}
       whileHover={{ scale: 1.005 }}
-      onHoverStart={() => setShowActions(true)}
-      onHoverEnd={() => setShowActions(false)}
       layout
     >
-      <button
-        className="pc-main"
-        onClick={() => navigate({ to: '/ledger/$personId', params: { personId: person.id } })}
-      >
-        {/* Avatar */}
-        <div className="pc-avatar" style={{ background: `linear-gradient(135deg, ${relColor}33, ${relColor}55)`, color: relColor }}>
-          {person.name[0]?.toUpperCase()}
-        </div>
-
-        {/* Info */}
-        <div className="pc-info">
-          <div className="pc-name-row">
-            <span className="pc-name">{person.name}</span>
-            {person.relationship && (
-              <span className="pc-rel-badge" style={{ background: `${relColor}22`, color: relColor, borderColor: `${relColor}44` }}>
-                {person.relationship}
-              </span>
+      <div className="pc-inner">
+        {/* Clickable left portion — navigates to detail */}
+        <button
+          className="pc-main"
+          onClick={() => navigate({ to: '/ledger/$personId', params: { personId: person.id } })}
+        >
+          <div className="pc-avatar" style={{ background: `linear-gradient(135deg, ${relColor}33, ${relColor}55)`, color: relColor }}>
+            {person.name[0]?.toUpperCase()}
+          </div>
+          <div className="pc-info">
+            <div className="pc-name-row">
+              <span className="pc-name">{person.name}</span>
+              {person.relationship && (
+                <span className="pc-rel-badge" style={{ background: `${relColor}22`, color: relColor, borderColor: `${relColor}44` }}>
+                  {person.relationship}
+                </span>
+              )}
+            </div>
+            {person.ledgers.length === 0 ? (
+              <span className="pc-no-entries">No entries yet</span>
+            ) : (
+              <div className="pc-amounts">
+                {person.total_outstanding_lent > 0 && (
+                  <span className="pc-lent">+{formatCurrency(person.total_outstanding_lent)} they owe</span>
+                )}
+                {person.total_outstanding_debt > 0 && (
+                  <span className="pc-debt">−{formatCurrency(person.total_outstanding_debt)} you owe</span>
+                )}
+                {allSettled && <span className="pc-settled-label">All settled ✓</span>}
+              </div>
             )}
           </div>
+        </button>
 
-          {person.ledgers.length === 0 ? (
-            <span className="pc-no-entries">No entries yet</span>
-          ) : (
-            <div className="pc-amounts">
-              {person.total_outstanding_lent > 0 && (
-                <span className="pc-lent">+{formatCurrency(person.total_outstanding_lent)} they owe</span>
-              )}
-              {person.total_outstanding_debt > 0 && (
-                <span className="pc-debt">−{formatCurrency(person.total_outstanding_debt)} you owe</span>
-              )}
-              {allSettled && <span className="pc-settled-label">All settled ✓</span>}
+        {/* Right side: net amount + fixed actions */}
+        <div className="pc-right">
+          {hasOutstanding && (
+            <div className={`pc-net ${netPosition >= 0 ? 'pc-net-positive' : 'pc-net-negative'}`}>
+              <span className="pc-net-amount">{formatCurrency(Math.abs(netPosition))}</span>
+              <span className="pc-net-dir">{netPosition >= 0 ? '↑ owed to you' : '↓ you owe'}</span>
             </div>
           )}
-        </div>
-
-        {/* Net amount */}
-        {hasOutstanding && (
-          <div className={`pc-net ${netPosition >= 0 ? 'pc-net-positive' : 'pc-net-negative'}`}>
-            <span className="pc-net-amount">{formatCurrency(Math.abs(netPosition))}</span>
-            <span className="pc-net-dir">{netPosition >= 0 ? '↑ owed to you' : '↓ you owe'}</span>
-          </div>
-        )}
-
-        <ChevronRight size={16} className="pc-chevron" />
-      </button>
-
-      {/* Action buttons — always in DOM; desktop hides via opacity, mobile always shows */}
-      <div className={`pc-actions${showActions ? ' pc-actions-visible' : ''}`}>
+          <div className="pc-actions">
             {(() => {
               const pendingEntry = onLogPayment && person.ledgers.find((l) => l.status !== 'Settled')
               return pendingEntry ? (
-                <button
-                  className="pc-action-btn pc-pay"
-                  onClick={(e) => { e.stopPropagation(); onLogPayment(pendingEntry) }}
-                >
+                <button className="pc-action-btn pc-pay" onClick={() => onLogPayment(pendingEntry)}>
                   <CreditCard size={13} /> Pay
                 </button>
               ) : null
             })()}
-            <button
-              className="pc-action-btn pc-edit"
-              onClick={(e) => { e.stopPropagation(); onEdit(person) }}
-            >
+            <button className="pc-action-btn pc-edit edit-btn-purple" onClick={() => onEdit(person)}>
               <Edit2 size={13} /> Edit
             </button>
-            <DeleteButton
-              onConfirm={handleDelete}
-              iconSize={14}
-            />
+            <DeleteButton onConfirm={handleDelete} iconSize={14} />
           </div>
+        </div>
+
+        <ChevronRight size={16} className="pc-chevron"
+          onClick={() => navigate({ to: '/ledger/$personId', params: { personId: person.id } })}
+        />
+      </div>
 
       <style>{`
         .pc-card {
-          position: relative;
           background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
           transition: border-color 0.15s, box-shadow 0.15s;
         }
         .pc-card:hover { border-color: rgba(108,99,255,0.25); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+        .pc-inner { display: flex; align-items: center; gap: 0; }
         .pc-main {
-          display: flex; align-items: center; gap: 14px; padding: 16px;
-          width: 100%; background: none; border: none; cursor: pointer; text-align: left;
+          display: flex; align-items: center; gap: 14px; padding: 14px 12px 14px 16px;
+          flex: 1; min-width: 0; background: none; border: none; cursor: pointer; text-align: left;
+        }
+        .pc-right {
+          display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+          padding: 12px 8px 12px 0; flex-shrink: 0;
         }
         .pc-avatar {
           width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
@@ -157,19 +149,8 @@ export default function PersonCard({ person, onEdit, onLogPayment }: PersonCardP
         .pc-net-negative .pc-net-amount { color: var(--accent-coral); }
         .pc-net-dir { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
         .pc-chevron { color: var(--text-muted); margin-left: 4px; flex-shrink: 0; }
-        .pc-actions {
-          position: absolute; right: 56px; top: 50%; transform: translateY(-50%);
-          display: flex; gap: 6px; z-index: 2;
-          opacity: 0; pointer-events: none; transition: opacity 0.12s;
-        }
-        .pc-actions-visible { opacity: 1; pointer-events: auto; }
-        @media (max-width: 640px) {
-          .pc-actions {
-            position: static; transform: none; opacity: 1 !important;
-            pointer-events: auto !important; padding: 0 12px 10px; justify-content: flex-end;
-          }
-          .pc-main { padding-bottom: 4px !important; }
-        }
+        .pc-actions { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; }
+        .pc-chevron { color: var(--text-muted); margin: 0 10px 0 4px; flex-shrink: 0; cursor: pointer; }
         .pc-action-btn {
           height: 30px; padding: 0 10px; border-radius: 8px; gap: 5px;
           display: flex; align-items: center; font-size: 12px; font-weight: 600;

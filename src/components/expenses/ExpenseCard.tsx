@@ -90,17 +90,12 @@ export default function ExpenseCard({ txn, onEdit }: ExpenseCardProps) {
                   transition={{ duration: 0.1 }}
                 >
                   <button
-                    className="expense-action-btn expense-action-edit"
+                    className="expense-action-btn expense-action-edit edit-btn-purple"
                     onClick={() => onEdit(txn)}
-                    title="Edit"
                   >
-                    <Edit2 size={13} />
+                    <Edit2 size={13} /> Edit
                   </button>
-                  <DeleteButton
-                    onConfirm={handleDelete}
-                    className="expense-action-btn expense-action-delete"
-                    iconSize={13}
-                  />
+                  <DeleteButton onConfirm={handleDelete} iconSize={13} />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -148,13 +143,10 @@ export const expenseCardStyles = `
 
 .expense-card-actions { display: flex; gap: 4px; }
 .expense-action-btn {
-  width: 26px; height: 26px; border-radius: 6px;
-  display: flex; align-items: center; justify-content: center;
-  border: 1px solid var(--border); cursor: pointer;
+  height: 26px; padding: 0 8px; border-radius: 6px; gap: 4px;
+  display: flex; align-items: center; font-size: 12px; font-weight: 600;
+  border: 1px solid var(--border); cursor: pointer; white-space: nowrap;
   transition: background 0.15s, color 0.15s;
 }
 .expense-action-edit { background: var(--bg-elevated); color: var(--text-secondary); }
-.expense-action-edit:hover { background: rgba(108,99,255,0.15); color: var(--accent-primary); border-color: rgba(108,99,255,0.3); }
-.expense-action-delete { background: var(--bg-elevated); color: var(--text-secondary); }
-.expense-action-delete:hover { background: rgba(239,68,68,0.12); color: var(--accent-red); border-color: rgba(239,68,68,0.3); }
 `

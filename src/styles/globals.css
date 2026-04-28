@@ -248,6 +248,19 @@ p, span, div, h1, h2, h3 {
   opacity: 1;
 }
 
+/* ── Global edit button style ────────────────────── */
+/* Applied as a modifier class on any edit action button */
+.edit-btn-purple {
+  color: var(--accent-primary) !important;
+  border-color: rgba(108,99,255,0.25) !important;
+  background: rgba(108,99,255,0.06) !important;
+}
+.edit-btn-purple:hover {
+  background: rgba(108,99,255,0.15) !important;
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 0 0 3px rgba(108,99,255,0.12) !important;
+}
+
 /* ── Field helper text ───────────────────────────── */
 .field-hint {
   font-size: 11px;

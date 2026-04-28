@@ -8,7 +8,8 @@ import {
 import DeleteButton from '@/components/common/DeleteButton'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { usePerson, useDeleteLedgerEntry, useDeletePayment } from '@/hooks/useLedger'
+import { usePerson, useDeleteLedgerEntry, useDeletePayment, useDeletePerson } from '@/hooks/useLedger'
+import { useConfirmStore } from '@/stores/confirmStore'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
 import LedgerEntryForm from '@/components/ledger/LedgerEntryForm'
@@ -27,6 +28,8 @@ export default function PersonDetailPage() {
   const { data: person, isLoading } = usePerson(personId)
   const { mutate: deleteEntry } = useDeleteLedgerEntry()
   const { mutate: deletePayment } = useDeletePayment()
+  const { mutateAsync: deletePerson } = useDeletePerson()
+  const confirm = useConfirmStore((s) => s.confirm)
   const isDemo = useDemoStore((s) => s.isDemo)
   const addToast = useUIStore((s) => s.addToast)
 
@@ -84,6 +87,19 @@ export default function PersonDetailPage() {
 
   const totalOutstanding = person.total_outstanding_lent + person.total_outstanding_debt
   const netPosition = person.total_outstanding_lent - person.total_outstanding_debt
+  const firstPending = person.ledgers.find((l) => l.status !== 'Settled')
+
+  async function handleDeletePerson() {
+    const p = person!
+    const ok = await confirm({
+      title: `Remove ${p.name}?`,
+      description: 'This removes the person and all their ledger entries permanently.',
+      itemName: p.name,
+    })
+    if (!ok) return
+    await deletePerson(personId)
+    navigate({ to: '/ledger' })
+  }
 
   return (
     <motion.div className="pd-page" variants={fadeUp} initial="initial" animate="animate">
@@ -115,6 +131,18 @@ export default function PersonDetailPage() {
           ) : person.ledgers.length > 0 ? (
             <div className="pd-hero-all-settled">All settled ✓</div>
           ) : null}
+          {/* Hero action buttons */}
+          <div className="pd-hero-btns">
+            {firstPending && (
+              <button
+                className="pd-action-btn pd-pay-btn"
+                onClick={() => setLoggingPaymentFor(firstPending)}
+              >
+                <CreditCard size={13} /> Pay
+              </button>
+            )}
+            <DeleteButton onConfirm={handleDeletePerson} iconSize={13} />
+          </div>
         </div>
       </motion.div>
 
@@ -205,16 +233,8 @@ export default function PersonDetailPage() {
 
                   {/* Actions */}
                   <div className="pd-entry-actions">
-                    {status !== 'Settled' && (
-                      <button
-                        className="pd-action-btn pd-pay-btn"
-                        onClick={() => setLoggingPaymentFor(entry)}
-                      >
-                        <CreditCard size={13} /> Pay
-                      </button>
-                    )}
                     <button
-                      className="pd-action-btn pd-edit-btn"
+                      className="pd-action-btn pd-edit-btn edit-btn-purple"
                       onClick={() => setEditingEntry(entry)}
                     >
                       <Edit2 size={13} /> Edit
@@ -315,10 +335,11 @@ export default function PersonDetailPage() {
           background: rgba(108,99,255,0.12); color: var(--accent-primary);
         }
         .pd-hero-phone { font-size: 12px; color: var(--text-muted); margin: 4px 0 0; }
-        .pd-hero-right { text-align: right; }
+        .pd-hero-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
         .pd-hero-net { font-size: 28px; font-weight: 800; line-height: 1.1; }
-        .pd-hero-net-label { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .pd-hero-net-label { font-size: 12px; color: var(--text-muted); }
         .pd-hero-all-settled { font-size: 16px; font-weight: 600; color: var(--accent-teal); }
+        .pd-hero-btns { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 
         .pd-sub-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
         .pd-sub-chip {
