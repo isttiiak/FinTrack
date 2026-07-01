@@ -54,9 +54,9 @@ export function useCreateExpense() {
   const addToast = useUIStore((s) => s.addToast)
 
   return useMutation({
-    mutationFn: async (txn: Omit<Transaction, 'id' | 'user_id' | 'created_at' | 'no_spend_flag' | 'category'>) => {
+    mutationFn: async (txn: Omit<Transaction, 'id' | 'user_id' | 'created_at' | 'category'>) => {
       if (isDemo) {
-        return { ...txn, id: `demo-${Date.now()}`, user_id: 'demo', no_spend_flag: false, created_at: new Date().toISOString() }
+        return { ...txn, id: `demo-${Date.now()}`, user_id: 'demo', created_at: new Date().toISOString() }
       }
       const { data, error } = await supabase
         .from('transactions')

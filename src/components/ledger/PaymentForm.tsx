@@ -28,7 +28,7 @@ export default function PaymentForm({ entry, onClose }: PaymentFormProps) {
   const { mutateAsync: createPayment, isPending } = useCreatePayment()
   const remaining = entry.remaining ?? entry.total_amount
 
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, watch, setValue, setError, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       amount:         remaining,
@@ -42,6 +42,10 @@ export default function PaymentForm({ entry, onClose }: PaymentFormProps) {
   const accountValue  = watch('account')
 
   async function onSubmit(values: FormValues) {
+    if (values.amount > remaining) {
+      setError('amount', { message: `Cannot exceed remaining balance of ${formatCurrency(remaining)}` })
+      return
+    }
     await createPayment({
       ledger_id:      entry.id,
       amount:         values.amount,

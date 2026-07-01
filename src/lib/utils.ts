@@ -17,18 +17,33 @@ export function formatCurrency(amount: number, currency = 'BDT'): string {
   }).format(amount)
 }
 
+// Date-only strings (e.g. "2026-07-01") must be parsed as local-time y/m/d
+// components — passing them straight to `new Date(...)` parses as UTC
+// midnight, which then renders as the previous day for any UTC+ timezone
+// (including Asia/Dhaka, this app's default).
+const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/
+
+function parseDate(date: string | Date): Date {
+  if (date instanceof Date) return date
+  if (DATE_ONLY_RE.test(date)) {
+    const [y, m, d] = date.split('-').map(Number)
+    return new Date(y, m - 1, d)
+  }
+  return new Date(date)
+}
+
 export function formatDate(date: string | Date): string {
-  const d = typeof date === 'string' ? new Date(date) : date
+  const d = parseDate(date)
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 export function formatDateShort(date: string | Date): string {
-  const d = typeof date === 'string' ? new Date(date) : date
+  const d = parseDate(date)
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
 }
 
 export function formatDateLabel(date: string | Date): string {
-  const d = typeof date === 'string' ? new Date(date) : date
+  const d = parseDate(date)
   const today = new Date()
   const yesterday = new Date(today)
   yesterday.setDate(yesterday.getDate() - 1)

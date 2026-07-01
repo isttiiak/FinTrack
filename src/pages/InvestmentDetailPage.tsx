@@ -4,9 +4,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, Edit2, Wallet, TrendingUp, BarChart3,
   CreditCard, PlusCircle, ExternalLink, ArrowUpRight, ArrowDownRight,
-  Trash2,
+  Trash2, SearchX,
 } from 'lucide-react'
 import DeleteButton from '@/components/common/DeleteButton'
+import EmptyState from '@/components/common/EmptyState'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { useInvestments, useDeleteReturn, useDeleteInvestmentPayment, useDeleteInvestment, useUpdateInvestmentPayment, useUpdateReturn } from '@/hooks/useInvestments'
@@ -61,7 +62,11 @@ export default function InvestmentDetailPage() {
         <button className="idp-back" onClick={() => navigate({ to: '/investments' })}>
           <ArrowLeft size={15} /> Back to Investments
         </button>
-        <p style={{ color: 'var(--text-muted)', marginTop: 32 }}>Investment not found.</p>
+        <EmptyState
+          icon={<SearchX size={32} />}
+          title="Investment not found"
+          description="It may have been deleted, or the link is incorrect."
+        />
         <style>{skeletonCSS}</style>
       </div>
     )
@@ -71,8 +76,10 @@ export default function InvestmentDetailPage() {
   const totalPaid    = inv.total_paid ?? 0
   const totalReturned = inv.total_returned ?? 0
   const remainingToPay = Math.max(0, committed - totalPaid)
-  const profitLoss   = totalReturned - totalPaid
-  const roi          = totalPaid > 0 ? (profitLoss / totalPaid) * 100 : null
+  // ROI/P&L are computed once, against the committed amount, in useInvestments.ts's
+  // enrich() — reused here so the list page and this page never disagree.
+  const profitLoss   = inv.profit_loss
+  const roi          = inv.roi_percent
   const portfolioValue = inv.market_value ?? totalPaid
   const paymentProgress = committed > 0 ? Math.min(100, (totalPaid / committed) * 100) : 0
 
@@ -157,14 +164,14 @@ export default function InvestmentDetailPage() {
           <div className="idp-kpi-sub">{returns.length} return{returns.length !== 1 ? 's' : ''} logged</div>
         </motion.div>
 
-        <motion.div className={`idp-kpi ${profitLoss >= 0 ? 'idp-kpi-teal' : 'idp-kpi-coral'}`} variants={staggerItem}>
+        <motion.div className={`idp-kpi ${(profitLoss ?? 0) >= 0 ? 'idp-kpi-teal' : 'idp-kpi-coral'}`} variants={staggerItem}>
           <div className="idp-kpi-icon"><BarChart3 size={16} /></div>
           <div className="idp-kpi-label">Net P&amp;L</div>
-          <div className="idp-kpi-value" style={{ color: profitLoss >= 0 ? 'var(--accent-teal)' : 'var(--accent-coral)' }}>
-            {profitLoss >= 0 ? '+' : ''}{formatCurrency(profitLoss)}
+          <div className="idp-kpi-value" style={{ color: (profitLoss ?? 0) >= 0 ? 'var(--accent-teal)' : 'var(--accent-coral)' }}>
+            {profitLoss !== undefined ? `${profitLoss >= 0 ? '+' : ''}${formatCurrency(profitLoss)}` : '—'}
           </div>
           <div className="idp-kpi-sub">
-            {roi !== null ? `${roi >= 0 ? '+' : ''}${roi.toFixed(1)}% ROI` : '—'}
+            {roi !== undefined ? `${roi >= 0 ? '+' : ''}${roi.toFixed(1)}% ROI` : '—'}
           </div>
         </motion.div>
 

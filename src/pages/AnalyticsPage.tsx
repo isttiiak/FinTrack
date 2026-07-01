@@ -29,14 +29,20 @@ function fmtK(v: number) {
   return `৳${v.toLocaleString()}`
 }
 
-const CHART_COLORS = ['#6C63FF','#10B981','#F97316','#F59E0B','#EF4444','#06B6D4','#A855F7','#EC4899','#8B5CF6','#14B8A6']
+// First 7 map to the app's design-system tokens; the rest are supplementary
+// hues for category variety (no dedicated token exists for them).
+const CHART_COLORS = [
+  'var(--accent-primary)', 'var(--accent-teal)', 'var(--accent-coral)', 'var(--accent-amber)',
+  'var(--accent-red)', 'var(--accent-teal-2)', 'var(--accent-secondary)',
+  '#EC4899', '#8B5CF6', '#14B8A6',
+]
 const TOOLTIP_STYLE = {
   contentStyle: {
-    background: '#1E1E38', border: '1px solid #2A2A4A', borderRadius: 10,
-    color: '#E8E6FF', fontSize: 12,
+    background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 10,
+    color: 'var(--text-primary)', fontSize: 12,
   },
-  itemStyle: { color: '#E8E6FF' },
-  labelStyle: { color: '#9D9AB8', marginBottom: 4 },
+  itemStyle: { color: 'var(--text-primary)' },
+  labelStyle: { color: 'var(--text-secondary)', marginBottom: 4 },
 }
 
 type Tab = 'overview' | 'habits' | 'ai'

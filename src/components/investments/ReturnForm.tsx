@@ -20,6 +20,9 @@ const schema = z.object({
 })
 type FormValues = z.infer<typeof schema>
 
+const LS_METHOD_KEY = 'fintrack_last_method'
+const LS_ACCOUNT_KEY = 'fintrack_last_account'
+
 interface ReturnFormProps {
   investment: Investment
   onClose: () => void
@@ -28,14 +31,20 @@ interface ReturnFormProps {
 export default function ReturnForm({ investment, onClose }: ReturnFormProps) {
   const { mutateAsync: createReturn, isPending } = useCreateReturn()
 
+  const lastMethod = localStorage.getItem(LS_METHOD_KEY) ?? 'Cash'
+  const lastAccount = localStorage.getItem(LS_ACCOUNT_KEY) ?? 'Cash'
+
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { return_date: toISODateString(new Date()), payment_method: 'Cash', account: 'Cash' },
+    defaultValues: { return_date: toISODateString(new Date()), payment_method: lastMethod, account: lastAccount },
   })
   const watchMethod  = watch('payment_method')
   const watchAccount = watch('account')
 
   async function onSubmit(values: FormValues) {
+    if (values.payment_method) localStorage.setItem(LS_METHOD_KEY, values.payment_method)
+    if (values.account) localStorage.setItem(LS_ACCOUNT_KEY, values.account)
+
     await createReturn({
       investment_id:  investment.id,
       amount:         values.amount,
@@ -105,8 +114,8 @@ export default function ReturnForm({ investment, onClose }: ReturnFormProps) {
             <PaymentMethodPicker
               method={watchMethod}
               account={watchAccount}
-              onMethodChange={(v) => setValue('payment_method', v ?? 'Cash')}
-              onAccountChange={(v) => setValue('account', v ?? 'Cash')}
+              onMethodChange={(v) => setValue('payment_method', v ?? lastMethod)}
+              onAccountChange={(v) => setValue('account', v ?? lastAccount)}
             />
           </div>
 

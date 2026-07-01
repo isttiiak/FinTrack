@@ -18,6 +18,7 @@ import type { UserProfile } from '@/types/database.types'
 import LoginPage from '@/pages/auth/LoginPage'
 import SignupPage from '@/pages/auth/SignupPage'
 import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage'
+import ResetPasswordPage from '@/pages/auth/ResetPasswordPage'
 import DashboardPage from '@/pages/DashboardPage'
 import ExpensesPage from '@/pages/ExpensesPage'
 import LedgerPage from '@/pages/LedgerPage'
@@ -191,6 +192,12 @@ const forgotPasswordRoute = createRoute({
   component: ForgotPasswordPage,
 })
 
+const resetPasswordRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/reset-password',
+  component: ResetPasswordPage,
+})
+
 // ── Protected layout route ────────────────────────
 const appRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -220,6 +227,7 @@ const routeTree = rootRoute.addChildren([
   loginRoute,
   signupRoute,
   forgotPasswordRoute,
+  resetPasswordRoute,
   appRoute.addChildren([
     dashboardRoute,
     expensesRoute,

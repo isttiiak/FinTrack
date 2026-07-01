@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
+import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
 import type { Investment, InvestmentReturn, InvestmentPayment } from '@/types/investment.types'
 
@@ -18,11 +19,23 @@ function enrich(inv: Investment & { investment_returns?: InvestmentReturn[]; inv
 
 export function useInvestments() {
   const userId = useAuthStore((s) => s.user?.id)
+  const isDemo = useDemoStore((s) => s.isDemo)
+  const demoInvestments = useDemoStore((s) => s.investments)
+  const demoReturns = useDemoStore((s) => s.investmentReturns)
+  const demoPayments = useDemoStore((s) => s.investmentPayments)
 
   return useQuery({
     queryKey: ['investments', userId],
-    enabled: !!userId,
+    enabled: isDemo || !!userId,
     queryFn: async (): Promise<Investment[]> => {
+      if (isDemo) {
+        return demoInvestments.map((inv) => enrich({
+          ...inv,
+          investment_returns: demoReturns.filter((r) => r.investment_id === inv.id),
+          investment_payments: demoPayments.filter((p) => p.investment_id === inv.id),
+        }))
+      }
+
       const { data, error } = await supabase
         .from('investments')
         .select('*, investment_returns(*), investment_payments(*)')

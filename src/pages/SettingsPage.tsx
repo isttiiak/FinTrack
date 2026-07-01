@@ -232,6 +232,16 @@ function ExportSection() {
 
 // ── Import Section ────────────────────────────────────────────────────────────
 
+const ISO_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/
+
+function isValidIsoDate(value: string): boolean {
+  const match = ISO_DATE_RE.exec(value)
+  if (!match) return false
+  const year = Number(match[1]), month = Number(match[2]), day = Number(match[3])
+  const date = new Date(year, month - 1, day)
+  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day
+}
+
 const CSV_HEADERS = ['Date', 'Type', 'Amount', 'Category', 'Description', 'Payment Method', 'Account']
 const TEMPLATE_CSV = [
   CSV_HEADERS.join(','),
@@ -298,7 +308,7 @@ function ImportSection() {
           allCategories.forEach((c) => { catMap[c.name.toLowerCase()] = c.id })
           const othersId = allCategories.find((c) => c.name === 'Others')?.id ?? null
 
-          const txns = rows.map((r) => ({
+          const rowsWithAmount = rows.map((r) => ({
             user_id: userId,
             txn_date: r['Date']?.trim() ?? '',
             type: r['Type']?.trim() === 'Income' ? 'Income' : 'Expense',
@@ -307,16 +317,23 @@ function ImportSection() {
             description: r['Description']?.trim() || null,
             payment_method: r['Payment Method']?.trim() || null,
             account: r['Account']?.trim() || null,
-            no_spend_flag: false,
           })).filter((t) => t.txn_date && t.amount > 0)
 
-          if (txns.length === 0) { setError('No valid rows to import.'); setImporting(false); return }
+          const txns = rowsWithAmount.filter((t) => isValidIsoDate(t.txn_date))
+          const skippedDates = rowsWithAmount.length - txns.length
+
+          if (txns.length === 0) {
+            setError(skippedDates > 0 ? 'No valid rows — all dates must be in YYYY-MM-DD format.' : 'No valid rows to import.')
+            setImporting(false)
+            return
+          }
 
           const { error: dbErr } = await supabase.from('transactions').insert(txns)
           if (dbErr) throw dbErr
 
           await qc.invalidateQueries({ queryKey: ['expenses'] })
           setImported(txns.length)
+          setError(skippedDates > 0 ? `${skippedDates} row${skippedDates !== 1 ? 's' : ''} skipped — invalid date format (use YYYY-MM-DD).` : null)
           setPreview([])
           setFileName(null)
           if (fileRef.current) fileRef.current.value = ''
@@ -576,8 +593,17 @@ function DangerSection() {
   async function handleDeleteAccount() {
     if (confirmText !== 'DELETE') return
     setDeleting(true)
-    await supabase.from('profiles').update({ deleted_at: new Date().toISOString() }).eq('id', profile!.id)
-    await supabase.auth.signOut()
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', profile!.id)
+      if (error) throw error
+      await supabase.auth.signOut()
+    } catch {
+      addToast({ type: 'error', message: 'Account deletion failed. Please try again.' })
+      setDeleting(false)
+    }
   }
 
   const DATA_ACTIONS = [

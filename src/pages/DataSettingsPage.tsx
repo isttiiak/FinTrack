@@ -9,6 +9,7 @@ import {
 } from '@/hooks/useCategories'
 import { useConfirmStore } from '@/stores/confirmStore'
 import { PAYMENT_METHOD_GROUPS } from '@/lib/constants'
+import { supabase } from '@/lib/supabase'
 import type { Category } from '@/types/expense.types'
 
 type DSTab = 'categories' | 'methods' | 'accounts'
@@ -77,7 +78,17 @@ function CategoriesTab({ categories }: { categories: Category[] }) {
   }
 
   async function handleDeleteSubcat(cat: Category) {
-    const ok = await confirm({ title: 'Delete sub-category?', description: 'This sub-category will be removed. Existing transactions are unaffected.', itemName: `${cat.main_group} › ${cat.name}` })
+    // category_id is ON DELETE SET NULL — transactions aren't deleted, but they
+    // do lose their category, so the confirm copy must say so accurately.
+    const { count } = await supabase
+      .from('transactions')
+      .select('id', { count: 'exact', head: true })
+      .eq('category_id', cat.id)
+    const affected = count ?? 0
+    const description = affected > 0
+      ? `${affected} transaction${affected !== 1 ? 's' : ''} using this category will become Uncategorized.`
+      : 'No transactions currently use this category.'
+    const ok = await confirm({ title: 'Delete sub-category?', description, itemName: `${cat.main_group} › ${cat.name}` })
     if (ok) await deleteCat(cat.id)
   }
 

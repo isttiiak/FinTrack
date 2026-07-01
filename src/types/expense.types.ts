@@ -21,7 +21,6 @@ export interface Transaction {
   description: string | null
   payment_method: PaymentMethod | null
   account: Account | null
-  no_spend_flag: boolean
   created_at: string
   // joined
   category?: Category | null

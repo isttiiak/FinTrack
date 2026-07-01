@@ -18,6 +18,9 @@ const schema = z.object({
 })
 type FormValues = z.infer<typeof schema>
 
+const LS_METHOD_KEY = 'fintrack_last_method'
+const LS_ACCOUNT_KEY = 'fintrack_last_account'
+
 interface InvestmentPaymentFormProps {
   investment: Investment
   onClose: () => void
@@ -30,19 +33,25 @@ export default function InvestmentPaymentForm({ investment, onClose }: Investmen
   const paid = investment.total_paid ?? 0
   const remaining = Math.max(0, committed - paid)
 
+  const lastMethod = localStorage.getItem(LS_METHOD_KEY) ?? 'Cash'
+  const lastAccount = localStorage.getItem(LS_ACCOUNT_KEY) ?? 'Cash'
+
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       amount:         remaining > 0 ? remaining : undefined,
       payment_date:   toISODateString(new Date()),
-      payment_method: 'Cash',
-      account:        'Cash',
+      payment_method: lastMethod,
+      account:        lastAccount,
     },
   })
   const watchMethod  = watch('payment_method')
   const watchAccount = watch('account')
 
   async function onSubmit(values: FormValues) {
+    if (values.payment_method) localStorage.setItem(LS_METHOD_KEY, values.payment_method)
+    if (values.account) localStorage.setItem(LS_ACCOUNT_KEY, values.account)
+
     await createPayment({
       investment_id:  investment.id,
       amount:         values.amount,
@@ -115,8 +124,8 @@ export default function InvestmentPaymentForm({ investment, onClose }: Investmen
           <PaymentMethodPicker
             method={watchMethod}
             account={watchAccount}
-            onMethodChange={(v) => setValue('payment_method', v ?? 'Cash')}
-            onAccountChange={(v) => setValue('account', v ?? 'Cash')}
+            onMethodChange={(v) => setValue('payment_method', v ?? lastMethod)}
+            onAccountChange={(v) => setValue('account', v ?? lastAccount)}
           />
 
           <div className="ipf-field">
