@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Filter, Check, HandCoins, CreditCard, ArrowDownCircle, ArrowUpCircle } from 'lucide-react'
+import { X, Filter, Check, HandCoins, CreditCard, ArrowDownCircle, ArrowUpCircle, ChevronDown } from 'lucide-react'
 import DeleteButton from '@/components/common/DeleteButton'
 import { formatCurrency, formatDate, round2 } from '@/lib/utils'
 import { useDeletePayment, useUpdatePayment } from '@/hooks/useLedger'
@@ -162,7 +162,7 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
 
   return (
     <motion.div className="lpl-wrap" variants={fadeUp} initial="initial" animate="animate">
-      {/* Person filter pills */}
+      {/* Person filter: "All people" toggle + a dropdown to pick one */}
       {Object.keys(personSummary).length > 1 && (
         <div className="lpl-filters">
           <Filter size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
@@ -172,15 +172,21 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
           >
             All people
           </button>
-          {Object.entries(personSummary).map(([id, s]) => (
-            <button
-              key={id}
-              className={`lpl-pill ${filterPerson === id ? 'lpl-pill-active' : ''}`}
-              onClick={() => setFilterPerson(filterPerson === id ? null : id)}
+          <div className="lpl-person-select-wrap">
+            <select
+              className="lpl-person-select"
+              value={filterPerson ?? ''}
+              onChange={(e) => setFilterPerson(e.target.value || null)}
             >
-              {s.name} <span className="lpl-pill-count">{s.count}</span>
-            </button>
-          ))}
+              <option value="">Select a person…</option>
+              {Object.entries(personSummary)
+                .sort(([, a], [, b]) => a.name.localeCompare(b.name))
+                .map(([id, s]) => (
+                  <option key={id} value={id}>{s.name} ({s.count})</option>
+                ))}
+            </select>
+            <ChevronDown size={13} className="lpl-select-icon" />
+          </div>
         </div>
       )}
 
@@ -320,15 +326,29 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
         }
         .lpl-pill:hover { background: var(--bg-hover); color: var(--text-primary); }
         .lpl-pill-active { background: linear-gradient(135deg,#6C63FF,#A855F7); border-color: transparent; color: #fff; }
-        .lpl-pill-count {
-          background: rgba(255,255,255,0.2); border-radius: 20px; padding: 0 6px; font-size: 10px;
-        }
-        .lpl-pill:not(.lpl-pill-active) .lpl-pill-count { background: var(--bg-elevated); }
 
+        /* Person dropdown */
+        .lpl-person-select-wrap { position: relative; flex: 1; min-width: 160px; max-width: 260px; }
+        .lpl-person-select {
+          width: 100%; appearance: none; cursor: pointer;
+          background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px;
+          color: var(--text-primary); font-size: 12px; font-weight: 500;
+          padding: 5px 30px 5px 14px;
+          transition: border-color 0.12s;
+        }
+        .lpl-person-select:hover { border-color: rgba(108,99,255,0.35); }
+        .lpl-person-select:focus { outline: none; border-color: var(--border-focus); }
+        .lpl-person-select option { background: #1E1E38; color: var(--text-primary); }
+        .lpl-select-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
+
+        /* Filter banner + summary strip — deliberately styled apart from the
+           neutral history rows below, so this "you're looking at a filtered
+           view" context is visually distinct at a glance. */
         .lpl-filter-banner {
           overflow: hidden; display: flex; align-items: center; justify-content: space-between;
-          padding: 8px 14px; border-radius: 10px;
-          background: rgba(108,99,255,0.08); border: 1px solid rgba(108,99,255,0.2);
+          padding: 10px 14px; border-radius: 10px;
+          background: linear-gradient(135deg, rgba(108,99,255,0.16), rgba(168,85,247,0.12));
+          border: 1px solid rgba(108,99,255,0.35);
           font-size: 13px; color: var(--text-secondary);
         }
         .lpl-filter-banner strong { color: var(--text-primary); }
@@ -342,7 +362,8 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
         .lpl-summary-strip {
           display: flex; gap: 20px; flex-wrap: wrap;
           padding: 10px 14px; border-radius: 10px;
-          background: var(--bg-card); border: 1px solid var(--border);
+          background: linear-gradient(135deg, rgba(108,99,255,0.10), rgba(168,85,247,0.07));
+          border: 1px solid rgba(108,99,255,0.25);
         }
         .lpl-summary-item { display: flex; flex-direction: column; gap: 2px; }
         .lpl-summary-label { font-size: 10px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
