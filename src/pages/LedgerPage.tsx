@@ -12,7 +12,7 @@ import PaymentForm from '@/components/ledger/PaymentForm'
 import QuickLedgerEntry from '@/components/ledger/QuickLedgerEntry'
 import LedgerPaymentLogs from '@/components/ledger/LedgerPaymentLogs'
 import LedgerSummaryTab from '@/components/ledger/LedgerSummaryTab'
-import type { PersonLedger } from '@/types/ledger.types'
+import type { LedgerType } from '@/lib/constants'
 
 type Tab = 'lent' | 'debt' | 'all' | 'logs' | 'summary'
 
@@ -25,7 +25,7 @@ export default function LedgerPage() {
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
   const [showAddEntry, setShowAddEntry] = useState(false)
   const [showPeoplePanel, setShowPeoplePanel] = useState(false)
-  const [quickPayEntry, setQuickPayEntry] = useState<PersonLedger | null>(null)
+  const [quickPay, setQuickPay] = useState<{ personId: string; personName: string; ledgerType: LedgerType; remaining: number } | null>(null)
 
   // Aggregate totals
   const totalOutstandingLent = persons.reduce((s, p) => s + p.total_outstanding_lent, 0)
@@ -186,8 +186,8 @@ export default function LedgerPage() {
             <motion.div key={person.id} variants={staggerItem} layout>
               <PersonCard
                 person={person}
-                onEdit={() => setShowPeoplePanel(true)}
-                onLogPayment={(entry) => setQuickPayEntry(entry)}
+                onLogPayment={(personId, personName, ledgerType, remaining) =>
+                  setQuickPay({ personId, personName, ledgerType, remaining })}
               />
             </motion.div>
           ))}
@@ -202,10 +202,13 @@ export default function LedgerPage() {
         {showPeoplePanel && (
           <PersonManagementPanel onClose={() => setShowPeoplePanel(false)} />
         )}
-        {quickPayEntry && (
+        {quickPay && (
           <PaymentForm
-            entry={quickPayEntry}
-            onClose={() => setQuickPayEntry(null)}
+            personId={quickPay.personId}
+            personName={quickPay.personName}
+            ledgerType={quickPay.ledgerType}
+            remaining={quickPay.remaining}
+            onClose={() => setQuickPay(null)}
           />
         )}
       </AnimatePresence>

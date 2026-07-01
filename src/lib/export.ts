@@ -85,13 +85,14 @@ export function exportFullExcel(
     'Payment Method': l.payment_method ?? '',
     Account:          l.account ?? '',
     'Settled Date':   l.settled_date ?? '',
-    Status:           l.status ?? '',
   }))
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ledgerRows), 'Ledger Entries')
 
-  // Sheet 5: Payments
+  // Sheet 5: Payments — payments attach to (person, type), not one entry
+  const personById = new Map(persons.map((p) => [p.id, p.name]))
   const paymentRows = payments.map((p) => ({
-    'Ledger ID':      p.ledger_id,
+    Person:           personById.get(p.person_id) ?? '',
+    Type:             p.ledger_type,
     Amount:           p.amount,
     Date:             p.payment_date,
     'Payment Method': p.payment_method ?? '',

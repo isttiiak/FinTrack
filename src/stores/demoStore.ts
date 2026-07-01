@@ -62,19 +62,23 @@ function buildDemoData() {
     { id: 'p5', user_id: 'demo', name: 'Office Petty', relationship: 'Colleague',       phone: null, notes: null, created_at: '' },
   ]
 
+  // Rafiq Bhai has TWO separate Lent entries — demonstrates the aggregate
+  // balance model: the person's true remaining is the sum across both
+  // entries minus all their payments, not any single entry's amount.
   const rawLedgers = [
-    { id: 'l1', user_id: 'demo', person_id: 'p1', ledger_type: 'Lent' as const, total_amount: 5000,  start_date: daysAgo(30), reason: 'Borrowed for medical', payment_method: 'MFS - bKash'   as const, account: 'bKash'              as const, settled_date: null,        doc_link: null, notes: null, created_at: '', paid_amount: 2000, remaining: 3000,  status: 'Partial'  as const },
-    { id: 'l2', user_id: 'demo', person_id: 'p2', ledger_type: 'Lent' as const, total_amount: 10000, start_date: daysAgo(60), reason: 'House expense',        payment_method: 'Bank Transfer' as const, account: 'BRAC Bank Savings' as const, settled_date: null,        doc_link: null, notes: null, created_at: '', paid_amount: 0,    remaining: 10000, status: 'Pending'  as const },
-    { id: 'l3', user_id: 'demo', person_id: 'p3', ledger_type: 'Debt' as const, total_amount: 15000, start_date: daysAgo(45), reason: 'Business capital',    payment_method: 'Bank Transfer' as const, account: 'BRAC Bank Savings' as const, settled_date: null,        doc_link: null, notes: null, created_at: '', paid_amount: 5000, remaining: 10000, status: 'Partial'  as const },
-    { id: 'l4', user_id: 'demo', person_id: 'p4', ledger_type: 'Lent' as const, total_amount: 800,   start_date: daysAgo(10), reason: 'Lunch split',         payment_method: 'Cash'          as const, account: 'Cash'               as const, settled_date: daysAgo(3),  doc_link: null, notes: null, created_at: '', paid_amount: 800,  remaining: 0,     status: 'Settled'  as const },
-    { id: 'l5', user_id: 'demo', person_id: 'p5', ledger_type: 'Debt' as const, total_amount: 2000,  start_date: daysAgo(20), reason: 'Petty cash advance',  payment_method: 'Cash'          as const, account: 'Cash'               as const, settled_date: null,        doc_link: null, notes: null, created_at: '', paid_amount: 0,    remaining: 2000,  status: 'Pending'  as const },
+    { id: 'l1',  user_id: 'demo', person_id: 'p1', ledger_type: 'Lent' as const, total_amount: 5000,  start_date: daysAgo(30), reason: 'Borrowed for medical', payment_method: 'MFS - bKash'   as const, account: 'bKash'              as const, settled_date: null, doc_link: null, notes: null, created_at: '' },
+    { id: 'l1b', user_id: 'demo', person_id: 'p1', ledger_type: 'Lent' as const, total_amount: 1000,  start_date: daysAgo(10), reason: 'Emergency top-up',     payment_method: 'MFS - bKash'   as const, account: 'bKash'              as const, settled_date: null, doc_link: null, notes: null, created_at: '' },
+    { id: 'l2',  user_id: 'demo', person_id: 'p2', ledger_type: 'Lent' as const, total_amount: 10000, start_date: daysAgo(60), reason: 'House expense',        payment_method: 'Bank Transfer' as const, account: 'BRAC Bank Savings' as const, settled_date: null, doc_link: null, notes: null, created_at: '' },
+    { id: 'l3',  user_id: 'demo', person_id: 'p3', ledger_type: 'Debt' as const, total_amount: 15000, start_date: daysAgo(45), reason: 'Business capital',     payment_method: 'Bank Transfer' as const, account: 'BRAC Bank Savings' as const, settled_date: null, doc_link: null, notes: null, created_at: '' },
+    { id: 'l4',  user_id: 'demo', person_id: 'p4', ledger_type: 'Lent' as const, total_amount: 800,   start_date: daysAgo(10), reason: 'Lunch split',          payment_method: 'Cash'          as const, account: 'Cash'               as const, settled_date: daysAgo(3), doc_link: null, notes: null, created_at: '' },
+    { id: 'l5',  user_id: 'demo', person_id: 'p5', ledger_type: 'Debt' as const, total_amount: 2000,  start_date: daysAgo(20), reason: 'Petty cash advance',   payment_method: 'Cash'          as const, account: 'Cash'               as const, settled_date: null, doc_link: null, notes: null, created_at: '' },
   ]
   const ledgers: PersonLedger[] = rawLedgers.map((l) => ({ ...l, person: persons.find((p) => p.id === l.person_id) }))
 
   const payments: LedgerPayment[] = [
-    { id: 'pay1', ledger_id: 'l1', user_id: 'demo', amount: 2000, payment_date: daysAgo(15), payment_method: 'MFS - bKash', account: 'bKash', notes: null, created_at: '' },
-    { id: 'pay2', ledger_id: 'l3', user_id: 'demo', amount: 5000, payment_date: daysAgo(20), payment_method: 'Bank Transfer', account: 'BRAC Bank Savings', notes: null, created_at: '' },
-    { id: 'pay3', ledger_id: 'l4', user_id: 'demo', amount: 800,  payment_date: daysAgo(3),  payment_method: 'Cash', account: 'Cash', notes: 'Settled in full', created_at: '' },
+    { id: 'pay1', person_id: 'p1', ledger_type: 'Lent' as const, user_id: 'demo', amount: 2000, payment_date: daysAgo(15), payment_method: 'MFS - bKash', account: 'bKash', notes: null, created_at: '' },
+    { id: 'pay2', person_id: 'p3', ledger_type: 'Debt' as const, user_id: 'demo', amount: 5000, payment_date: daysAgo(20), payment_method: 'Bank Transfer', account: 'BRAC Bank Savings', notes: null, created_at: '' },
+    { id: 'pay3', person_id: 'p4', ledger_type: 'Lent' as const, user_id: 'demo', amount: 800,  payment_date: daysAgo(3),  payment_method: 'Cash', account: 'Cash', notes: 'Settled in full', created_at: '' },
   ]
 
   const investments: Investment[] = [

@@ -1,12 +1,13 @@
 import { motion } from 'framer-motion'
 import { useNavigate } from '@tanstack/react-router'
-import { Edit2, ChevronRight, CreditCard } from 'lucide-react'
+import { ChevronRight, CreditCard, HandCoins } from 'lucide-react'
 import DeleteButton from '@/components/common/DeleteButton'
 import { formatCurrency } from '@/lib/utils'
 import { useDeletePerson } from '@/hooks/useLedger'
 import { useUIStore } from '@/stores/uiStore'
 import { useDemoStore } from '@/stores/demoStore'
-import type { PersonWithLedgers, PersonLedger } from '@/types/ledger.types'
+import type { PersonWithLedgers } from '@/types/ledger.types'
+import type { LedgerType } from '@/lib/constants'
 
 const RELATIONSHIP_COLORS: Record<string, string> = {
   Friend:           '#6C63FF',
@@ -19,11 +20,10 @@ const RELATIONSHIP_COLORS: Record<string, string> = {
 
 interface PersonCardProps {
   person: PersonWithLedgers
-  onEdit: (person: PersonWithLedgers) => void
-  onLogPayment?: (entry: PersonLedger) => void
+  onLogPayment?: (personId: string, personName: string, ledgerType: LedgerType, remaining: number) => void
 }
 
-export default function PersonCard({ person, onEdit, onLogPayment }: PersonCardProps) {
+export default function PersonCard({ person, onLogPayment }: PersonCardProps) {
   const navigate = useNavigate()
   const { mutate: deletePerson } = useDeletePerson()
   const addToast = useUIStore((s) => s.addToast)
@@ -39,7 +39,8 @@ export default function PersonCard({ person, onEdit, onLogPayment }: PersonCardP
   }
 
   const allSettled = person.ledgers.length > 0
-    && person.ledgers.every((l) => l.status === 'Settled')
+    && person.total_outstanding_lent === 0
+    && person.total_outstanding_debt === 0
 
   return (
     <motion.div
@@ -76,6 +77,12 @@ export default function PersonCard({ person, onEdit, onLogPayment }: PersonCardP
                 {person.total_outstanding_debt > 0 && (
                   <span className="pc-debt">−{formatCurrency(person.total_outstanding_debt)} you owe</span>
                 )}
+                {person.overpaid_lent > 0 && (
+                  <span className="pc-overpaid">Overpaid by {formatCurrency(person.overpaid_lent)}</span>
+                )}
+                {person.overpaid_debt > 0 && (
+                  <span className="pc-overpaid">Overpaid by {formatCurrency(person.overpaid_debt)}</span>
+                )}
                 {allSettled && <span className="pc-settled-label">All settled ✓</span>}
               </div>
             )}
@@ -91,17 +98,22 @@ export default function PersonCard({ person, onEdit, onLogPayment }: PersonCardP
             </div>
           )}
           <div className="pc-actions">
-            {(() => {
-              const pendingEntry = onLogPayment && person.ledgers.find((l) => l.status !== 'Settled')
-              return pendingEntry ? (
-                <button className="pc-action-btn pc-pay" onClick={() => onLogPayment(pendingEntry)}>
-                  <CreditCard size={13} /> Pay
-                </button>
-              ) : null
-            })()}
-            <button className="pc-action-btn pc-edit edit-btn-purple" onClick={() => onEdit(person)}>
-              <Edit2 size={13} /> Edit
-            </button>
+            {onLogPayment && person.total_outstanding_lent > 0 && (
+              <button
+                className="pc-action-btn pc-collect"
+                onClick={() => onLogPayment(person.id, person.name, 'Lent', person.total_outstanding_lent)}
+              >
+                <HandCoins size={13} /> Collect
+              </button>
+            )}
+            {onLogPayment && person.total_outstanding_debt > 0 && (
+              <button
+                className="pc-action-btn pc-pay"
+                onClick={() => onLogPayment(person.id, person.name, 'Debt', person.total_outstanding_debt)}
+              >
+                <CreditCard size={13} /> Pay
+              </button>
+            )}
             <DeleteButton onConfirm={handleDelete} iconSize={14} />
           </div>
         </div>
@@ -141,6 +153,7 @@ export default function PersonCard({ person, onEdit, onLogPayment }: PersonCardP
         .pc-amounts { display: flex; gap: 10px; flex-wrap: wrap; }
         .pc-lent { font-size: 12px; color: var(--accent-teal); font-weight: 500; }
         .pc-debt { font-size: 12px; color: var(--accent-coral); font-weight: 500; }
+        .pc-overpaid { font-size: 12px; color: var(--accent-amber); font-weight: 500; }
         .pc-no-entries { font-size: 12px; color: var(--text-muted); }
         .pc-settled-label { font-size: 12px; color: var(--accent-teal); }
         .pc-net { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
@@ -157,10 +170,10 @@ export default function PersonCard({ person, onEdit, onLogPayment }: PersonCardP
           border: 1px solid var(--border); cursor: pointer; backdrop-filter: blur(8px);
           background: var(--bg-elevated); transition: background 0.12s, color 0.12s; white-space: nowrap;
         }
-        .pc-pay { color: var(--accent-teal); }
-        .pc-pay:hover { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.3); }
-        .pc-edit { color: var(--text-secondary); }
-        .pc-edit:hover { background: rgba(108,99,255,0.15); color: var(--accent-primary); border-color: rgba(108,99,255,0.3); }
+        .pc-collect { color: var(--accent-teal); }
+        .pc-collect:hover { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.3); }
+        .pc-pay { color: var(--accent-coral); }
+        .pc-pay:hover { background: rgba(249,115,22,0.12); border-color: rgba(249,115,22,0.3); }
         .pc-delete { color: var(--text-muted); padding: 0 8px; }
         .pc-delete:hover { background: rgba(239,68,68,0.12); color: var(--accent-red); border-color: rgba(239,68,68,0.3); }
       `}</style>

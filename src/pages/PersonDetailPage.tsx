@@ -3,20 +3,20 @@ import { useParams, useNavigate } from '@tanstack/react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, Plus, Edit2, ExternalLink,
-  ChevronDown, ChevronUp, CreditCard,
+  CreditCard, HandCoins,
 } from 'lucide-react'
 import DeleteButton from '@/components/common/DeleteButton'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { usePerson, useDeleteLedgerEntry, useDeletePayment, useDeletePerson } from '@/hooks/useLedger'
+import { usePerson, useDeleteLedgerEntry, useDeletePerson } from '@/hooks/useLedger'
 import { useConfirmStore } from '@/stores/confirmStore'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
 import LedgerEntryForm from '@/components/ledger/LedgerEntryForm'
 import PaymentForm from '@/components/ledger/PaymentForm'
 import LedgerPaymentLogs from '@/components/ledger/LedgerPaymentLogs'
-import type { PersonLedger, LedgerPayment } from '@/types/ledger.types'
-import type { PersonWithLedgers } from '@/types/ledger.types'
+import type { PersonLedger, PersonWithLedgers } from '@/types/ledger.types'
+import type { LedgerType } from '@/lib/constants'
 
 const STATUS_STYLE = {
   Pending: { bg: 'rgba(249,115,22,0.12)', color: '#F97316', label: '⏳ Pending' },
@@ -29,7 +29,6 @@ export default function PersonDetailPage() {
   const navigate = useNavigate()
   const { data: person, isLoading } = usePerson(personId)
   const { mutate: deleteEntry } = useDeleteLedgerEntry()
-  const { mutate: deletePayment } = useDeletePayment()
   const { mutateAsync: deletePerson } = useDeletePerson()
   const confirm = useConfirmStore((s) => s.confirm)
   const isDemo = useDemoStore((s) => s.isDemo)
@@ -38,16 +37,7 @@ export default function PersonDetailPage() {
   const [activeTab, setActiveTab] = useState<'timeline' | 'payments'>('timeline')
   const [showAddEntry, setShowAddEntry] = useState(false)
   const [editingEntry, setEditingEntry] = useState<PersonLedger | null>(null)
-  const [loggingPaymentFor, setLoggingPaymentFor] = useState<PersonLedger | null>(null)
-  const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set())
-
-  function toggleExpand(id: string) {
-    setExpandedEntries((prev) => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
-  }
+  const [loggingPaymentFor, setLoggingPaymentFor] = useState<{ ledgerType: LedgerType; remaining: number } | null>(null)
 
   function handleAddEntry() {
     if (isDemo) { addToast({ type: 'info', message: 'Demo mode — changes are not saved' }); return }
@@ -57,11 +47,6 @@ export default function PersonDetailPage() {
   function handleDeleteEntry(id: string) {
     if (isDemo) { addToast({ type: 'info', message: 'Demo mode — changes are not saved' }); return }
     deleteEntry(id)
-  }
-
-  function handleDeletePayment(id: string) {
-    if (isDemo) { addToast({ type: 'info', message: 'Demo mode — changes are not saved' }); return }
-    deletePayment(id)
   }
 
   if (isLoading) {
@@ -90,7 +75,6 @@ export default function PersonDetailPage() {
 
   const totalOutstanding = person.total_outstanding_lent + person.total_outstanding_debt
   const netPosition = person.total_outstanding_lent - person.total_outstanding_debt
-  const firstPending = person.ledgers.find((l) => l.status !== 'Settled')
 
   async function handleDeletePerson() {
     const p = person!
@@ -136,10 +120,18 @@ export default function PersonDetailPage() {
           ) : null}
           {/* Hero action buttons */}
           <div className="pd-hero-btns">
-            {firstPending && (
+            {person.total_outstanding_lent > 0 && (
+              <button
+                className="pd-action-btn pd-collect-btn"
+                onClick={() => setLoggingPaymentFor({ ledgerType: 'Lent', remaining: person.total_outstanding_lent })}
+              >
+                <HandCoins size={13} /> Collect
+              </button>
+            )}
+            {person.total_outstanding_debt > 0 && (
               <button
                 className="pd-action-btn pd-pay-btn"
-                onClick={() => setLoggingPaymentFor(firstPending)}
+                onClick={() => setLoggingPaymentFor({ ledgerType: 'Debt', remaining: person.total_outstanding_debt })}
               >
                 <CreditCard size={13} /> Pay
               </button>
@@ -150,42 +142,38 @@ export default function PersonDetailPage() {
       </motion.div>
 
       {/* Aggregate stats row */}
-      {(person.total_lent > 0 || person.total_debt > 0) && (
+      {(person.lent_count > 0 || person.debt_count > 0) && (
         <div className="pd-stats-row">
-          {person.total_lent > 0 && (() => {
-            const lentStatus = person.total_outstanding_lent === 0 ? 'Settled'
-              : person.total_outstanding_lent < person.total_lent ? 'Partial' : 'Pending'
-            const st = STATUS_STYLE[lentStatus]
-            return (
-              <div className="pd-stat-card pd-stat-lent">
-                <div className="pd-stat-label">Total lent</div>
-                <div className="pd-stat-amount">{formatCurrency(person.total_lent)}</div>
-                <div className="pd-stat-sub">
-                  Remaining: <strong>{formatCurrency(person.total_outstanding_lent)}</strong>
-                </div>
-                <span className="pd-status-badge" style={{ background: st.bg, color: st.color, marginTop: 4, display: 'inline-block' }}>
-                  {st.label}
-                </span>
+          {person.lent_count > 0 && person.lent_status && (
+            <div className="pd-stat-card pd-stat-lent">
+              <div className="pd-stat-label">Total lent</div>
+              <div className="pd-stat-amount">{formatCurrency(person.total_lent)}</div>
+              <div className="pd-stat-sub">
+                {person.lent_count} event{person.lent_count !== 1 ? 's' : ''} · Remaining: <strong>{formatCurrency(person.total_outstanding_lent)}</strong>
               </div>
-            )
-          })()}
-          {person.total_debt > 0 && (() => {
-            const debtStatus = person.total_outstanding_debt === 0 ? 'Settled'
-              : person.total_outstanding_debt < person.total_debt ? 'Partial' : 'Pending'
-            const st = STATUS_STYLE[debtStatus]
-            return (
-              <div className="pd-stat-card pd-stat-debt">
-                <div className="pd-stat-label">Total borrowed</div>
-                <div className="pd-stat-amount">{formatCurrency(person.total_debt)}</div>
-                <div className="pd-stat-sub">
-                  Remaining: <strong>{formatCurrency(person.total_outstanding_debt)}</strong>
-                </div>
-                <span className="pd-status-badge" style={{ background: st.bg, color: st.color, marginTop: 4, display: 'inline-block' }}>
-                  {st.label}
-                </span>
+              <span className="pd-status-badge" style={{ background: STATUS_STYLE[person.lent_status].bg, color: STATUS_STYLE[person.lent_status].color, marginTop: 4, display: 'inline-block' }}>
+                {STATUS_STYLE[person.lent_status].label}
+              </span>
+              {person.overpaid_lent > 0 && (
+                <span className="pd-overpaid-badge">Overpaid by {formatCurrency(person.overpaid_lent)}</span>
+              )}
+            </div>
+          )}
+          {person.debt_count > 0 && person.debt_status && (
+            <div className="pd-stat-card pd-stat-debt">
+              <div className="pd-stat-label">Total borrowed</div>
+              <div className="pd-stat-amount">{formatCurrency(person.total_debt)}</div>
+              <div className="pd-stat-sub">
+                {person.debt_count} event{person.debt_count !== 1 ? 's' : ''} · Remaining: <strong>{formatCurrency(person.total_outstanding_debt)}</strong>
               </div>
-            )
-          })()}
+              <span className="pd-status-badge" style={{ background: STATUS_STYLE[person.debt_status].bg, color: STATUS_STYLE[person.debt_status].color, marginTop: 4, display: 'inline-block' }}>
+                {STATUS_STYLE[person.debt_status].label}
+              </span>
+              {person.overpaid_debt > 0 && (
+                <span className="pd-overpaid-badge">Overpaid by {formatCurrency(person.overpaid_debt)}</span>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -234,7 +222,6 @@ export default function PersonDetailPage() {
       ) : activeTab === 'timeline' ? (
         <motion.div className="pd-timeline" variants={staggerContainer} initial="initial" animate="animate">
           {person.ledgers.map((entry) => {
-            const isExpanded = expandedEntries.has(entry.id)
             const isLent = entry.ledger_type === 'Lent'
 
             return (
@@ -282,47 +269,8 @@ export default function PersonDetailPage() {
                       onConfirm={() => handleDeleteEntry(entry.id)}
                       iconSize={13}
                     />
-                    {(entry.payments?.length ?? 0) > 0 && (
-                      <button
-                        className="pd-action-btn pd-expand-btn"
-                        onClick={() => toggleExpand(entry.id)}
-                      >
-                        {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-                        {isExpanded ? 'Hide' : 'Payments'}
-                      </button>
-                    )}
                   </div>
                 </div>
-
-                {/* Payments sub-list */}
-                <AnimatePresence>
-                  {isExpanded && (entry.payments?.length ?? 0) > 0 && (
-                    <motion.div
-                      className="pd-payments"
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      {(entry.payments as LedgerPayment[]).map((pay) => (
-                        <div key={pay.id} className="pd-payment-row">
-                          <div className="pd-pay-dot" />
-                          <div className="pd-pay-info">
-                            <span className="pd-pay-amount">{formatCurrency(pay.amount)}</span>
-                            <span className="pd-pay-date">{formatDate(pay.payment_date)}</span>
-                            {pay.payment_method && <span className="pd-pay-method">{pay.payment_method}</span>}
-                            {pay.notes && <span className="pd-pay-notes">{pay.notes}</span>}
-                          </div>
-                          <DeleteButton
-                            onConfirm={() => handleDeletePayment(pay.id)}
-                            className="pd-pay-del"
-                            iconSize={12}
-                          />
-                        </div>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </motion.div>
             )
           })}
@@ -338,16 +286,19 @@ export default function PersonDetailPage() {
             onClose={() => { setShowAddEntry(false); setEditingEntry(null) }}
           />
         )}
-        {loggingPaymentFor && (
+        {loggingPaymentFor && person && (
           <PaymentForm
-            entry={loggingPaymentFor}
+            personId={person.id}
+            personName={person.name}
+            ledgerType={loggingPaymentFor.ledgerType}
+            remaining={loggingPaymentFor.remaining}
             onClose={() => setLoggingPaymentFor(null)}
           />
         )}
       </AnimatePresence>
 
       <style>{`
-        .pd-page { max-width: 760px; }
+        .pd-page { max-width: 900px; }
         .pd-back {
           display: inline-flex; align-items: center; gap: 7px;
           font-size: 13px; color: var(--text-secondary); background: none; border: none;
@@ -391,6 +342,10 @@ export default function PersonDetailPage() {
         .pd-stat-amount { font-size: 20px; font-weight: 700; color: var(--text-primary); }
         .pd-stat-sub { font-size: 12px; color: var(--text-secondary); }
         .pd-stat-sub strong { color: var(--text-primary); }
+        .pd-overpaid-badge {
+          font-size: 11px; font-weight: 600; color: var(--accent-amber);
+          margin-top: 4px; display: inline-block;
+        }
 
         .pd-tabs { display: flex; gap: 6px; }
         .pd-tab {
@@ -450,40 +405,12 @@ export default function PersonDetailPage() {
           font-size: 12px; cursor: pointer; padding: 0 8px;
           transition: background 0.12s, color 0.12s;
         }
-        .pd-pay-btn { color: var(--accent-teal); }
-        .pd-pay-btn:hover { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.3); }
+        .pd-collect-btn { color: var(--accent-teal); }
+        .pd-collect-btn:hover { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.3); }
+        .pd-pay-btn { color: var(--accent-coral); }
+        .pd-pay-btn:hover { background: rgba(249,115,22,0.12); border-color: rgba(249,115,22,0.3); }
         .pd-edit-btn { color: var(--text-secondary); }
         .pd-edit-btn:hover { background: rgba(108,99,255,0.12); color: var(--accent-primary); border-color: rgba(108,99,255,0.3); }
-        .pd-expand-btn { color: var(--text-muted); }
-        .pd-expand-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
-
-        /* Payments sub-list */
-        .pd-payments {
-          overflow: hidden;
-          border-top: 1px solid var(--border);
-          background: rgba(0,0,0,0.15);
-          padding: 0 16px;
-        }
-        .pd-payment-row {
-          display: flex; align-items: center; gap: 10px;
-          padding: 10px 0; border-bottom: 1px solid rgba(42,42,74,0.4);
-        }
-        .pd-payment-row:last-child { border-bottom: none; }
-        .pd-pay-dot {
-          width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
-          background: var(--accent-teal); opacity: 0.7;
-        }
-        .pd-pay-info { flex: 1; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-        .pd-pay-amount { font-size: 13px; font-weight: 600; color: var(--accent-teal); }
-        .pd-pay-date { font-size: 12px; color: var(--text-muted); }
-        .pd-pay-method { font-size: 11px; color: var(--text-muted); padding: 1px 6px; background: var(--bg-hover); border-radius: 5px; }
-        .pd-pay-notes { font-size: 11px; color: var(--text-muted); font-style: italic; }
-        .pd-pay-del {
-          width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0;
-          display: flex; align-items: center; justify-content: center;
-          background: none; border: none; color: var(--text-muted); cursor: pointer;
-        }
-        .pd-pay-del:hover { color: var(--accent-red); background: rgba(239,68,68,0.1); }
 
         ${skeletonStyles}
       `}</style>
@@ -492,7 +419,7 @@ export default function PersonDetailPage() {
 }
 
 const skeletonStyles = `
-  .pd-page { max-width: 760px; }
+  .pd-page { max-width: 900px; }
   .pd-back {
     display: inline-flex; align-items: center; gap: 7px;
     font-size: 13px; color: var(--text-secondary); background: none; border: none;

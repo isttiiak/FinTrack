@@ -1,35 +1,46 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Filter, Edit2, Check } from 'lucide-react'
+import { X, Filter, Check, HandCoins, CreditCard, ArrowDownCircle, ArrowUpCircle } from 'lucide-react'
 import DeleteButton from '@/components/common/DeleteButton'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate, round2 } from '@/lib/utils'
 import { useDeletePayment, useUpdatePayment } from '@/hooks/useLedger'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
 import type { PersonWithLedgers } from '@/types/ledger.types'
+import type { LedgerType } from '@/lib/constants'
 import { fadeUp } from '@/lib/animations'
 
 interface EditingState {
   id: string
   amount: string
-  notes: string
 }
 
-interface LogRow {
-  id: string
+// One row per lend/debt entry OR payment, merged into a single
+// chronological timeline per (person, type) with a running balance —
+// this is the "central" view: you can see exactly why the balance
+// changed at each point, instead of a payments-only list.
+interface HistoryRow {
+  key: string
   personId: string
   personName: string
-  ledgerType: 'Lent' | 'Debt'
-  paymentDate: string
-  amountPaid: number
-  remainingAfter: number   // remaining from person's TOTAL for this type
-  status: 'Settled' | 'Partial' | 'Pending'
+  ledgerType: LedgerType
+  date: string
+  kind: 'entry' | 'payment'
+  amount: number
+  runningBalance: number
+  reason: string | null
+  paymentMethod: string | null
+  notes: string | null
+  sourceId: string
 }
 
-const STATUS = {
-  Settled: { bg: 'rgba(16,185,129,0.12)',  color: '#10B981', label: '✅ Settled' },
-  Partial:  { bg: 'rgba(245,158,11,0.12)', color: '#F59E0B', label: '🔄 Partial' },
-  Pending:  { bg: 'rgba(249,115,22,0.12)', color: '#F97316', label: '⏳ Pending' },
+function rowLabel(row: HistoryRow): string {
+  if (row.kind === 'entry') return row.ledgerType === 'Lent' ? 'Lent' : 'Borrowed'
+  return row.ledgerType === 'Lent' ? 'Collected' : 'Paid'
+}
+
+function rowColor(row: HistoryRow): string {
+  return row.ledgerType === 'Lent' ? 'var(--accent-teal)' : 'var(--accent-coral)'
 }
 
 export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedgers[] }) {
@@ -40,43 +51,55 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
   const [filterPerson, setFilterPerson] = useState<string | null>(null)
   const [editing, setEditing] = useState<EditingState | null>(null)
 
-  const allLogs = useMemo((): LogRow[] => {
-    const rows: LogRow[] = []
+  const allRows = useMemo((): HistoryRow[] => {
+    const rows: HistoryRow[] = []
     for (const person of persons) {
-      // Process Lent and Debt separately — remaining is aggregate per person+type
       for (const type of ['Lent', 'Debt'] as const) {
-        const entries = person.ledgers.filter((e) => e.ledger_type === type)
-        if (entries.length === 0) continue
-        const totalCommitted = entries.reduce((s, e) => s + e.total_amount, 0)
-        const allPayments = entries
-          .flatMap((e) => e.payments ?? [])
-          .sort((a, b) => a.payment_date.localeCompare(b.payment_date))
+        const entries = person.ledgers.filter((l) => l.ledger_type === type)
+        const payments = person.payments.filter((p) => p.ledger_type === type)
+        if (entries.length === 0 && payments.length === 0) continue
 
-        let totalPaidSoFar = 0
-        for (const pay of allPayments) {
-          totalPaidSoFar += pay.amount
-          const remaining = Math.max(0, totalCommitted - totalPaidSoFar)
+        const events = [
+          ...entries.map((e) => ({
+            date: e.start_date, kind: 'entry' as const, amount: e.total_amount, sourceId: e.id,
+            reason: e.reason, paymentMethod: e.payment_method, notes: null as string | null,
+          })),
+          ...payments.map((p) => ({
+            date: p.payment_date, kind: 'payment' as const, amount: p.amount, sourceId: p.id,
+            reason: null as string | null, paymentMethod: p.payment_method, notes: p.notes,
+          })),
+        ].sort((a, b) => {
+          const dateCmp = a.date.localeCompare(b.date)
+          if (dateCmp !== 0) return dateCmp
+          if (a.kind === b.kind) return 0
+          return a.kind === 'entry' ? -1 : 1
+        })
+
+        let balance = 0
+        for (const ev of events) {
+          balance += ev.kind === 'entry' ? ev.amount : -ev.amount
+          balance = round2(Math.max(0, balance))
           rows.push({
-            id:             pay.id,
-            personId:       person.id,
-            personName:     person.name,
-            ledgerType:     type,
-            paymentDate:    pay.payment_date,
-            amountPaid:     pay.amount,
-            remainingAfter: remaining,
-            status: remaining === 0
-              ? 'Settled'
-              : totalPaidSoFar < totalCommitted
-                ? 'Partial'
-                : 'Settled',
+            key: `${person.id}-${type}-${ev.kind}-${ev.sourceId}`,
+            personId: person.id,
+            personName: person.name,
+            ledgerType: type,
+            date: ev.date,
+            kind: ev.kind,
+            amount: ev.amount,
+            runningBalance: balance,
+            reason: ev.reason,
+            paymentMethod: ev.paymentMethod,
+            notes: ev.notes,
+            sourceId: ev.sourceId,
           })
         }
       }
     }
-    return rows.sort((a, b) => b.paymentDate.localeCompare(a.paymentDate))
+    return rows.sort((a, b) => b.date.localeCompare(a.date))
   }, [persons])
 
-  const filtered = filterPerson ? allLogs.filter((r) => r.personId === filterPerson) : allLogs
+  const filtered = filterPerson ? allRows.filter((r) => r.personId === filterPerson) : allRows
 
   const selectedPersonName = filterPerson
     ? persons.find((p) => p.id === filterPerson)?.name ?? null
@@ -87,35 +110,51 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
     deletePayment(id)
   }
 
-  function startEdit(row: LogRow) {
-    setEditing({ id: row.id, amount: String(row.amountPaid), notes: '' })
+  function startEdit(row: HistoryRow) {
+    setEditing({ id: row.sourceId, amount: String(row.amount) })
   }
 
   async function saveEdit() {
     if (!editing) return
     const amount = Number(editing.amount)
     if (isNaN(amount) || amount <= 0) { addToast({ type: 'error', message: 'Enter a valid amount' }); return }
-    await updatePayment({ id: editing.id, amount, notes: editing.notes || null })
+    await updatePayment({ id: editing.id, amount })
     setEditing(null)
   }
 
   // Per-person summary for filter pills
   const personSummary = useMemo(() => {
-    const map: Record<string, { name: string; count: number; totalPaid: number }> = {}
-    for (const row of allLogs) {
-      if (!map[row.personId]) map[row.personId] = { name: row.personName, count: 0, totalPaid: 0 }
+    const map: Record<string, { name: string; count: number }> = {}
+    for (const row of allRows) {
+      if (!map[row.personId]) map[row.personId] = { name: row.personName, count: 0 }
       map[row.personId].count++
-      map[row.personId].totalPaid += row.amountPaid
     }
     return map
-  }, [allLogs])
+  }, [allRows])
 
-  if (allLogs.length === 0) {
+  // "Currently settled" = distinct (person, type) pairs whose most recent row has a zero balance.
+  // allRows is sorted newest-first, so the first row seen per key is the most recent.
+  const settledPairCount = useMemo(() => {
+    const seen = new Set<string>()
+    let settled = 0
+    for (const row of filtered) {
+      const pairKey = `${row.personId}-${row.ledgerType}`
+      if (seen.has(pairKey)) continue
+      seen.add(pairKey)
+      if (row.runningBalance === 0) settled++
+    }
+    return settled
+  }, [filtered])
+
+  const totalPaid = filtered.filter((r) => r.kind === 'payment').reduce((s, r) => s + r.amount, 0)
+  const paymentCount = filtered.filter((r) => r.kind === 'payment').length
+
+  if (allRows.length === 0) {
     return (
       <motion.div className="lpl-empty" variants={fadeUp} initial="initial" animate="animate">
-        <p style={{ color: 'var(--text-secondary)', margin: 0, fontWeight: 600 }}>No payment logs yet</p>
+        <p style={{ color: 'var(--text-secondary)', margin: 0, fontWeight: 600 }}>No history yet</p>
         <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '4px 0 0' }}>
-          Payments you log from PersonDetail will appear here.
+          Lend/debt entries and payments will appear here as a running balance.
         </p>
       </motion.div>
     )
@@ -154,7 +193,7 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
           >
-            <span>Showing payments for <strong>{selectedPersonName}</strong></span>
+            <span>Showing history for <strong>{selectedPersonName}</strong></span>
             <button className="lpl-filter-clear" onClick={() => setFilterPerson(null)}><X size={13} /></button>
           </motion.div>
         )}
@@ -164,106 +203,87 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
       {filtered.length > 0 && (
         <div className="lpl-summary-strip">
           <span className="lpl-summary-item">
-            <span className="lpl-summary-label">Total payments</span>
-            <span className="lpl-summary-value">{filtered.length}</span>
+            <span className="lpl-summary-label">Payments logged</span>
+            <span className="lpl-summary-value">{paymentCount}</span>
           </span>
           <span className="lpl-summary-item">
             <span className="lpl-summary-label">Total paid</span>
             <span className="lpl-summary-value" style={{ color: 'var(--accent-teal)' }}>
-              {formatCurrency(filtered.reduce((s, r) => s + r.amountPaid, 0))}
+              {formatCurrency(totalPaid)}
             </span>
           </span>
           <span className="lpl-summary-item">
-            <span className="lpl-summary-label">Settled entries</span>
+            <span className="lpl-summary-label">Settled balances</span>
             <span className="lpl-summary-value" style={{ color: 'var(--accent-teal)' }}>
-              {filtered.filter((r) => r.status === 'Settled').length}
+              {settledPairCount}
             </span>
           </span>
         </div>
       )}
 
-      {/* Logs table */}
-      <div className="lpl-table">
-        {/* Header */}
-        <div className="lpl-header-row">
-          <span>Person</span>
-          <span>Type</span>
-          <span>Date</span>
-          <span>Paid</span>
-          <span>Remaining</span>
-          <span>Status</span>
-          <span></span>
-        </div>
-
+      {/* Unified history */}
+      <div className="lpl-list">
         {filtered.length === 0 ? (
-          <div className="lpl-no-match">No payments found for this filter.</div>
+          <div className="lpl-no-match">No history found for this filter.</div>
         ) : (
-          filtered.map((row) => {
-            const st = STATUS[row.status]
-            return (
-              <motion.div
-                key={row.id}
-                className="lpl-row"
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                layout
-              >
-                {/* Person */}
-                <div className="lpl-cell">
+          filtered.map((row) => (
+            <motion.div
+              key={row.key}
+              className="lpl-row"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              layout
+            >
+              <div className="lpl-row-icon" style={{ color: rowColor(row) }}>
+                {row.kind === 'entry'
+                  ? (row.ledgerType === 'Lent' ? <ArrowUpCircle size={18} /> : <ArrowDownCircle size={18} />)
+                  : (row.ledgerType === 'Lent' ? <HandCoins size={18} /> : <CreditCard size={18} />)}
+              </div>
+
+              <div className="lpl-row-info">
+                <div className="lpl-row-top">
                   <button
                     className="lpl-person-btn"
                     onClick={() => setFilterPerson(filterPerson === row.personId ? null : row.personId)}
                   >
-                    <span className="lpl-person-avatar">{row.personName[0]?.toUpperCase()}</span>
-                    <span className="lpl-person-name">{row.personName}</span>
+                    {row.personName}
                   </button>
+                  <span className="lpl-row-action" style={{ color: rowColor(row) }}>
+                    {rowLabel(row)} {formatCurrency(row.amount)}
+                  </span>
                 </div>
-
-                {/* Type */}
-                <div className="lpl-cell">
+                <div className="lpl-row-meta">
+                  <span>{formatDate(row.date)}</span>
                   <span className={`lpl-type-chip ${row.ledgerType === 'Lent' ? 'lpl-type-lent' : 'lpl-type-debt'}`}>
                     {row.ledgerType === 'Lent' ? '💸 Lent' : '🏦 Debt'}
                   </span>
+                  {row.reason && <span>· {row.reason}</span>}
+                  {row.paymentMethod && <span>· {row.paymentMethod}</span>}
+                  {row.notes && <span>· {row.notes}</span>}
                 </div>
+              </div>
 
-                {/* Date */}
-                <div className="lpl-cell lpl-cell-muted">{formatDate(row.paymentDate)}</div>
-
-                {/* Amount paid — inline edit */}
-                <div className="lpl-cell">
-                  {editing?.id === row.id ? (
-                    <input
-                      className="lpl-edit-input"
-                      type="number"
-                      step="0.01"
-                      value={editing.amount}
-                      onChange={(e) => setEditing({ ...editing, amount: e.target.value })}
-                      autoFocus
-                    />
-                  ) : (
-                    <span className="lpl-amount-paid">{formatCurrency(row.amountPaid)}</span>
-                  )}
-                </div>
-
-                {/* Remaining (aggregate from person total) */}
-                <div className="lpl-cell">
-                  {row.remainingAfter === 0 ? (
-                    <span className="lpl-remaining-zero">—</span>
-                  ) : (
-                    <span className="lpl-remaining">{formatCurrency(row.remainingAfter)}</span>
-                  )}
-                </div>
-
-                {/* Status */}
-                <div className="lpl-cell">
-                  <span className="lpl-status" style={{ background: st.bg, color: st.color }}>
-                    {st.label}
+              <div className="lpl-row-balance">
+                <span className="lpl-balance-label">Balance</span>
+                {editing?.id === row.sourceId ? (
+                  <input
+                    className="lpl-edit-input"
+                    type="number"
+                    step="0.01"
+                    value={editing.amount}
+                    onChange={(e) => setEditing({ ...editing, amount: e.target.value })}
+                    autoFocus
+                  />
+                ) : (
+                  <span className="lpl-balance-value">
+                    {row.runningBalance === 0 ? '—' : formatCurrency(row.runningBalance)}
                   </span>
-                </div>
+                )}
+              </div>
 
-                {/* Edit / Delete */}
-                <div className="lpl-cell" style={{ display: 'flex', gap: 4 }}>
-                  {editing?.id === row.id ? (
+              {row.kind === 'payment' && (
+                <div className="lpl-row-actions">
+                  {editing?.id === row.sourceId ? (
                     <>
                       <button className="lpl-save-btn" onClick={saveEdit} disabled={updating}>
                         <Check size={12} />
@@ -275,15 +295,15 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
                   ) : (
                     <>
                       <button className="lpl-edit-btn edit-btn-purple" onClick={() => startEdit(row)}>
-                        <Edit2 size={12} /> Edit
+                        Edit
                       </button>
-                      <DeleteButton onConfirm={() => handleDelete(row.id)} iconSize={12} />
+                      <DeleteButton onConfirm={() => handleDelete(row.sourceId)} iconSize={12} />
                     </>
                   )}
                 </div>
-              </motion.div>
-            )
-          })
+              )}
+            </motion.div>
+          ))
         )}
       </div>
 
@@ -328,67 +348,46 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
         .lpl-summary-label { font-size: 10px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
         .lpl-summary-value { font-size: 15px; font-weight: 700; color: var(--text-primary); }
 
-        /* Table */
-        .lpl-table {
+        /* Unified history — card list, no fixed grid, wraps naturally */
+        .lpl-list { display: flex; flex-direction: column; gap: 8px; }
+        .lpl-no-match {
+          padding: 20px 14px; font-size: 13px; color: var(--text-muted); text-align: center;
           background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
-          overflow: hidden; overflow-x: auto;
-        }
-        .lpl-header-row {
-          display: grid;
-          grid-template-columns: 150px 90px 110px 110px 110px 110px 90px;
-          gap: 0; padding: 10px 14px;
-          background: var(--bg-elevated);
-          border-bottom: 1px solid var(--border);
-          font-size: 10px; font-weight: 600; color: var(--text-muted);
-          text-transform: uppercase; letter-spacing: 0.06em;
-          min-width: 700px;
         }
         .lpl-row {
-          display: grid;
-          grid-template-columns: 150px 90px 110px 110px 110px 110px 90px;
-          gap: 0; padding: 10px 14px;
-          border-bottom: 1px solid rgba(42,42,74,0.5);
-          align-items: center;
-          min-width: 700px;
+          display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+          padding: 12px 14px; border-radius: 12px;
+          background: var(--bg-card); border: 1px solid var(--border);
           transition: background 0.1s;
         }
-        .lpl-row:last-child { border-bottom: none; }
         .lpl-row:hover { background: var(--bg-elevated); }
-        .lpl-no-match { padding: 20px 14px; font-size: 13px; color: var(--text-muted); text-align: center; }
-
-        .lpl-cell { padding: 0 6px 0 0; }
-        .lpl-cell-muted { font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
+        .lpl-row-icon { flex-shrink: 0; display: flex; align-items: center; }
+        .lpl-row-info { flex: 1; min-width: 160px; display: flex; flex-direction: column; gap: 3px; }
+        .lpl-row-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .lpl-person-btn {
-          display: flex; align-items: center; gap: 6px;
-          background: none; border: none; cursor: pointer; padding: 0; text-align: left;
+          background: none; border: none; cursor: pointer; padding: 0;
+          font-size: 13px; font-weight: 600; color: var(--text-primary);
         }
-        .lpl-person-avatar {
-          width: 24px; height: 24px; border-radius: 7px; flex-shrink: 0;
-          background: rgba(108,99,255,0.15); color: var(--accent-primary);
-          display: flex; align-items: center; justify-content: center;
-          font-size: 11px; font-weight: 700;
-        }
-        .lpl-person-name { font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; }
-        .lpl-person-btn:hover .lpl-person-name { color: var(--accent-primary); }
+        .lpl-person-btn:hover { color: var(--accent-primary); }
+        .lpl-row-action { font-size: 13px; font-weight: 600; }
+        .lpl-row-meta { font-size: 11px; color: var(--text-muted); display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 
-        .lpl-type-chip { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+        .lpl-type-chip { font-size: 10px; font-weight: 500; padding: 1px 7px; border-radius: 20px; white-space: nowrap; }
         .lpl-type-lent { background: rgba(16,185,129,0.12); color: var(--accent-teal); }
         .lpl-type-debt { background: rgba(249,115,22,0.12); color: var(--accent-coral); }
 
-        .lpl-amount-paid { font-size: 13px; font-weight: 700; color: var(--accent-teal); }
-        .lpl-remaining { font-size: 13px; font-weight: 600; color: var(--accent-coral); }
-        .lpl-remaining-zero { font-size: 12px; color: var(--text-muted); }
-
-        .lpl-status { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
+        .lpl-row-balance { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; }
+        .lpl-balance-label { font-size: 9px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .lpl-balance-value { font-size: 13px; font-weight: 700; color: var(--text-primary); }
 
         .lpl-edit-input {
           background: var(--bg-elevated); border: 1px solid var(--border-focus); border-radius: 6px;
-          color: var(--text-primary); font-size: 12px; padding: 3px 6px; width: 100%;
-          outline: none;
+          color: var(--text-primary); font-size: 12px; padding: 3px 6px; width: 90px;
+          outline: none; text-align: right;
         }
+        .lpl-row-actions { display: flex; gap: 4px; flex-shrink: 0; }
         .lpl-edit-btn {
-          height: 26px; padding: 0 8px; border-radius: 6px; gap: 4px;
+          height: 26px; padding: 0 8px; border-radius: 6px;
           display: flex; align-items: center; font-size: 11px; font-weight: 600;
           border: 1px solid var(--border); cursor: pointer; white-space: nowrap;
           transition: background 0.1s, color 0.1s; flex-shrink: 0;

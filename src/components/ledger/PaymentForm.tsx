@@ -8,7 +8,7 @@ import { cn, toISODateString, formatCurrency } from '@/lib/utils'
 import type { PaymentMethod, Account } from '@/lib/constants'
 import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
 import { useCreatePayment } from '@/hooks/useLedger'
-import type { PersonLedger } from '@/types/ledger.types'
+import type { LedgerType } from '@/lib/constants'
 
 const schema = z.object({
   amount:         z.number({ error: 'Enter a valid amount' }).positive(),
@@ -20,13 +20,15 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 
 interface PaymentFormProps {
-  entry: PersonLedger
+  personId: string
+  personName: string
+  ledgerType: LedgerType
+  remaining: number
   onClose: () => void
 }
 
-export default function PaymentForm({ entry, onClose }: PaymentFormProps) {
+export default function PaymentForm({ personId, personName, ledgerType, remaining, onClose }: PaymentFormProps) {
   const { mutateAsync: createPayment, isPending } = useCreatePayment()
-  const remaining = entry.remaining ?? entry.total_amount
 
   const { register, handleSubmit, watch, setValue, setError, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -47,7 +49,8 @@ export default function PaymentForm({ entry, onClose }: PaymentFormProps) {
       return
     }
     await createPayment({
-      ledger_id:      entry.id,
+      person_id:      personId,
+      ledger_type:    ledgerType,
       amount:         values.amount,
       payment_date:   values.payment_date,
       payment_method: (values.payment_method || null) as PaymentMethod | null,
@@ -62,9 +65,9 @@ export default function PaymentForm({ entry, onClose }: PaymentFormProps) {
       <motion.div className="payf-panel" variants={scaleIn} initial="initial" animate="animate" exit="exit">
         <div className="payf-header">
           <div>
-            <h2 className="payf-title">Log payment</h2>
+            <h2 className="payf-title">Log payment — {personName}</h2>
             <p className="payf-sub">
-              {entry.ledger_type === 'Lent' ? 'They paid you back' : 'You paid them'}
+              {ledgerType === 'Lent' ? 'They paid you back' : 'You paid them'}
               {' · '}
               <span className="payf-remaining">Remaining: {formatCurrency(remaining)}</span>
             </p>

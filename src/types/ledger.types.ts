@@ -20,22 +20,18 @@ export interface PersonLedger {
   reason: string | null
   payment_method: PaymentMethod | null
   account: Account | null
-  settled_date: string | null
+  settled_date: string | null   // optional, user-set only — not used in any computed status
   doc_link: string | null
   notes: string | null
   created_at: string
   // joined
   person?: Person
-  payments?: LedgerPayment[]
-  // computed
-  paid_amount?: number
-  remaining?: number
-  status?: LedgerStatus
 }
 
 export interface LedgerPayment {
   id: string
-  ledger_id: string
+  person_id: string
+  ledger_type: LedgerType
   user_id: string
   amount: number
   payment_date: string
@@ -47,10 +43,17 @@ export interface LedgerPayment {
 
 export interface PersonWithLedgers extends Person {
   ledgers: PersonLedger[]
+  payments: LedgerPayment[]
   total_lent: number
   total_debt: number
   total_outstanding_lent: number
   total_outstanding_debt: number
+  lent_count: number
+  debt_count: number
+  lent_status: LedgerStatus | null
+  debt_status: LedgerStatus | null
+  overpaid_lent: number
+  overpaid_debt: number
 }
 
 export interface LedgerFormData {
@@ -66,7 +69,8 @@ export interface LedgerFormData {
 }
 
 export interface PaymentFormData {
-  ledger_id: string
+  person_id: string
+  ledger_type: LedgerType
   amount: number
   payment_date: string
   payment_method?: PaymentMethod

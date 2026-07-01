@@ -169,7 +169,7 @@ function ExportSection() {
 
   const exportPersons  = isDemo ? demoPersons  : persons
   const exportLedgers  = isDemo ? demoLedgers  : persons.flatMap((p) => p.ledgers ?? [])
-  const exportPayments = isDemo ? demoPayments : persons.flatMap((p) => (p.ledgers ?? []).flatMap((l) => l.payments ?? []))
+  const exportPayments = isDemo ? demoPayments : persons.flatMap((p) => p.payments ?? [])
 
   return (
     <section className="settings-section">

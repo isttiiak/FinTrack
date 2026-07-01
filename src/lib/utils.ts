@@ -85,3 +85,9 @@ export function getCurrentMonthRange(): { from: string; to: string } {
   const to = new Date(now.getFullYear(), now.getMonth() + 1, 0)
   return { from: toISODateString(from), to: toISODateString(to) }
 }
+
+// Rounds to 2 decimals, guarding against float drift when summing many
+// money values (e.g. across a person's lend/debt entries and payments).
+export function round2(n: number): number {
+  return Math.round((n + Number.EPSILON) * 100) / 100
+}

@@ -79,15 +79,11 @@ ${budgetLines || '  No budgets set'}`
 export function buildDebtContext(persons: PersonWithLedgers[]): string {
   const lines: string[] = []
   for (const p of persons) {
-    for (const e of p.ledgers) {
-      if ((e.remaining ?? e.total_amount) > 0) {
-        lines.push(
-          `  ${p.name} (${e.ledger_type}): total ${formatCurrency(e.total_amount)}, ` +
-          `remaining ${formatCurrency(e.remaining ?? e.total_amount)}, ` +
-          `since ${e.start_date}` +
-          (e.reason ? `, reason: ${e.reason}` : ''),
-        )
-      }
+    if (p.total_outstanding_lent > 0) {
+      lines.push(`  ${p.name} (Lent): total ${formatCurrency(p.total_lent)}, remaining ${formatCurrency(p.total_outstanding_lent)}`)
+    }
+    if (p.total_outstanding_debt > 0) {
+      lines.push(`  ${p.name} (Debt): total ${formatCurrency(p.total_debt)}, remaining ${formatCurrency(p.total_outstanding_debt)}`)
     }
   }
   return lines.length ? lines.join('\n') : '  No outstanding debts or lent amounts.'

@@ -3,21 +3,66 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
+import { round2 } from '@/lib/utils'
 import type { Person, PersonLedger, LedgerPayment, PersonWithLedgers } from '@/types/ledger.types'
+import type { LedgerStatus } from '@/lib/constants'
 
-// ── Status helper ────────────────────────────────────────────────────────
-function computeEnriched(
-  entry: Omit<PersonLedger, 'paid_amount' | 'remaining' | 'status'>,
-  payments: LedgerPayment[],
-): PersonLedger {
-  const paid = payments.reduce((s, p) => s + p.amount, 0)
-  const remaining = Math.max(0, entry.total_amount - paid)
+// ── Aggregation ──────────────────────────────────────────────────────────
+// Payments are no longer bound to one specific lend/debt entry — they
+// attach to (person, ledger_type) and reduce that type's aggregate pool.
+// This mirrors a running-balance mental model: "how much does this
+// person currently owe me / do I owe them", not "which loan is this
+// payment for".
+interface TypeAggregate {
+  total: number
+  paid: number
+  remaining: number
+  overpaid: number
+  count: number
+  status: LedgerStatus | null
+}
+
+function aggregateForType(entries: PersonLedger[], payments: LedgerPayment[]): TypeAggregate {
+  if (entries.length === 0 && payments.length === 0) {
+    return { total: 0, paid: 0, remaining: 0, overpaid: 0, count: entries.length, status: null }
+  }
+  const total = round2(entries.reduce((s, e) => s + e.total_amount, 0))
+  const paid = round2(payments.reduce((s, p) => s + p.amount, 0))
+  const remaining = round2(Math.max(0, total - paid))
+  const overpaid = round2(Math.max(0, paid - total))
+  const status: LedgerStatus | null = entries.length === 0
+    ? null
+    : remaining === 0 ? 'Settled' : paid > 0 ? 'Partial' : 'Pending'
+  return { total, paid, remaining, overpaid, count: entries.length, status }
+}
+
+function enrichPerson(
+  person: Person,
+  pLedgers: PersonLedger[],
+  pPayments: LedgerPayment[],
+): PersonWithLedgers {
+  const lentEntries = pLedgers.filter((l) => l.ledger_type === 'Lent')
+  const debtEntries = pLedgers.filter((l) => l.ledger_type === 'Debt')
+  const lentPayments = pPayments.filter((p) => p.ledger_type === 'Lent')
+  const debtPayments = pPayments.filter((p) => p.ledger_type === 'Debt')
+
+  const lentAgg = aggregateForType(lentEntries, lentPayments)
+  const debtAgg = aggregateForType(debtEntries, debtPayments)
+
   return {
-    ...entry,
-    payments,
-    paid_amount: paid,
-    remaining,
-    status: remaining === 0 ? 'Settled' : paid > 0 ? 'Partial' : 'Pending',
+    ...person,
+    ledgers: pLedgers,
+    payments: pPayments,
+    total_lent: lentAgg.total,
+    total_debt: debtAgg.total,
+    total_outstanding_lent: lentAgg.remaining,
+    total_outstanding_debt: debtAgg.remaining,
+    lent_count: lentAgg.count,
+    debt_count: debtAgg.count,
+    lent_status: lentAgg.status,
+    debt_status: debtAgg.status,
+    overpaid_lent: lentAgg.overpaid,
+    overpaid_debt: debtAgg.overpaid,
   }
 }
 
@@ -27,29 +72,18 @@ export function usePersons() {
   const isDemo = useDemoStore((s) => s.isDemo)
   const demoPersons = useDemoStore((s) => s.persons)
   const demoLedgers = useDemoStore((s) => s.ledgers)
+  const demoPayments = useDemoStore((s) => s.payments)
 
   return useQuery({
     queryKey: ['persons', userId],
     enabled: isDemo || !!userId,
     queryFn: async (): Promise<PersonWithLedgers[]> => {
       if (isDemo) {
-        return demoPersons.map((p) => {
-          const pLedgers = demoLedgers.filter((l) => l.person_id === p.id)
-          const lent = pLedgers.filter((l) => l.ledger_type === 'Lent')
-          const debt = pLedgers.filter((l) => l.ledger_type === 'Debt')
-          return {
-            ...p,
-            ledgers: pLedgers,
-            total_lent: lent.reduce((s, l) => s + l.total_amount, 0),
-            total_debt: debt.reduce((s, l) => s + l.total_amount, 0),
-            total_outstanding_lent: lent
-              .filter((l) => l.status !== 'Settled')
-              .reduce((s, l) => s + (l.remaining ?? l.total_amount), 0),
-            total_outstanding_debt: debt
-              .filter((l) => l.status !== 'Settled')
-              .reduce((s, l) => s + (l.remaining ?? l.total_amount), 0),
-          }
-        })
+        return demoPersons.map((p) => enrichPerson(
+          p,
+          demoLedgers.filter((l) => l.person_id === p.id),
+          demoPayments.filter((pay) => pay.person_id === p.id),
+        ))
       }
 
       const { data: persons, error: pErr } = await supabase
@@ -61,35 +95,22 @@ export function usePersons() {
 
       const { data: rawLedgers, error: lErr } = await supabase
         .from('person_ledger')
-        .select('*, ledger_payments(*)')
+        .select('*')
         .eq('user_id', userId!)
         .order('start_date', { ascending: false })
       if (lErr) throw lErr
 
-      return (persons ?? []).map((p) => {
-        const pLedgers: PersonLedger[] = (rawLedgers ?? [])
-          .filter((l) => l.person_id === p.id)
-          .map((l) => {
-            const payments: LedgerPayment[] = l.ledger_payments ?? []
-            return computeEnriched(l, payments)
-          })
+      const { data: rawPayments, error: payErr } = await supabase
+        .from('ledger_payments')
+        .select('*')
+        .eq('user_id', userId!)
+      if (payErr) throw payErr
 
-        const lent = pLedgers.filter((l) => l.ledger_type === 'Lent')
-        const debt = pLedgers.filter((l) => l.ledger_type === 'Debt')
-
-        return {
-          ...p,
-          ledgers: pLedgers,
-          total_lent: lent.reduce((s, l) => s + l.total_amount, 0),
-          total_debt: debt.reduce((s, l) => s + l.total_amount, 0),
-          total_outstanding_lent: lent
-            .filter((l) => l.status !== 'Settled')
-            .reduce((s, l) => s + (l.remaining ?? 0), 0),
-          total_outstanding_debt: debt
-            .filter((l) => l.status !== 'Settled')
-            .reduce((s, l) => s + (l.remaining ?? 0), 0),
-        }
-      })
+      return (persons ?? []).map((p) => enrichPerson(
+        p,
+        (rawLedgers ?? []).filter((l) => l.person_id === p.id),
+        (rawPayments ?? []).filter((pay) => pay.person_id === p.id),
+      ))
     },
   })
 }
@@ -100,6 +121,7 @@ export function usePerson(personId: string) {
   const isDemo = useDemoStore((s) => s.isDemo)
   const demoPersons = useDemoStore((s) => s.persons)
   const demoLedgers = useDemoStore((s) => s.ledgers)
+  const demoPayments = useDemoStore((s) => s.payments)
 
   return useQuery({
     queryKey: ['person', personId, userId],
@@ -108,21 +130,11 @@ export function usePerson(personId: string) {
       if (isDemo) {
         const person = demoPersons.find((p) => p.id === personId)
         if (!person) return null
-        const pLedgers = demoLedgers.filter((l) => l.person_id === personId)
-        const lent = pLedgers.filter((l) => l.ledger_type === 'Lent')
-        const debt = pLedgers.filter((l) => l.ledger_type === 'Debt')
-        return {
-          ...person,
-          ledgers: pLedgers,
-          total_lent: lent.reduce((s, l) => s + l.total_amount, 0),
-          total_debt: debt.reduce((s, l) => s + l.total_amount, 0),
-          total_outstanding_lent: lent
-            .filter((l) => l.status !== 'Settled')
-            .reduce((s, l) => s + (l.remaining ?? l.total_amount), 0),
-          total_outstanding_debt: debt
-            .filter((l) => l.status !== 'Settled')
-            .reduce((s, l) => s + (l.remaining ?? l.total_amount), 0),
-        }
+        return enrichPerson(
+          person,
+          demoLedgers.filter((l) => l.person_id === personId),
+          demoPayments.filter((pay) => pay.person_id === personId),
+        )
       }
 
       const { data: person, error: pErr } = await supabase
@@ -135,32 +147,20 @@ export function usePerson(personId: string) {
 
       const { data: rawLedgers, error: lErr } = await supabase
         .from('person_ledger')
-        .select('*, ledger_payments(*)')
+        .select('*')
         .eq('person_id', personId)
         .eq('user_id', userId!)
         .order('start_date', { ascending: false })
       if (lErr) throw lErr
 
-      const pLedgers: PersonLedger[] = (rawLedgers ?? []).map((l) => {
-        const payments: LedgerPayment[] = l.ledger_payments ?? []
-        return computeEnriched(l, payments)
-      })
+      const { data: rawPayments, error: payErr } = await supabase
+        .from('ledger_payments')
+        .select('*')
+        .eq('person_id', personId)
+        .eq('user_id', userId!)
+      if (payErr) throw payErr
 
-      const lent = pLedgers.filter((l) => l.ledger_type === 'Lent')
-      const debt = pLedgers.filter((l) => l.ledger_type === 'Debt')
-
-      return {
-        ...person,
-        ledgers: pLedgers,
-        total_lent: lent.reduce((s, l) => s + l.total_amount, 0),
-        total_debt: debt.reduce((s, l) => s + l.total_amount, 0),
-        total_outstanding_lent: lent
-          .filter((l) => l.status !== 'Settled')
-          .reduce((s, l) => s + (l.remaining ?? 0), 0),
-        total_outstanding_debt: debt
-          .filter((l) => l.status !== 'Settled')
-          .reduce((s, l) => s + (l.remaining ?? 0), 0),
-      }
+      return enrichPerson(person, rawLedgers ?? [], rawPayments ?? [])
     },
   })
 }
@@ -243,7 +243,7 @@ export function useCreateLedgerEntry() {
   const addToast = useUIStore((s) => s.addToast)
 
   return useMutation({
-    mutationFn: async (data: Omit<PersonLedger, 'id' | 'user_id' | 'created_at' | 'person' | 'payments' | 'paid_amount' | 'remaining' | 'status'>) => {
+    mutationFn: async (data: Omit<PersonLedger, 'id' | 'user_id' | 'created_at' | 'person'>) => {
       const { data: row, error } = await supabase
         .from('person_ledger')
         .insert({ ...data, user_id: userId! })
@@ -311,6 +311,8 @@ export function useDeleteLedgerEntry() {
 }
 
 // ── Payment mutations ────────────────────────────────────────────────────
+// Payments attach to (person_id, ledger_type) — the person's aggregate
+// balance for that direction — not to one specific person_ledger row.
 export function useCreatePayment() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
@@ -341,7 +343,7 @@ export function useUpdatePayment() {
   const addToast = useUIStore((s) => s.addToast)
 
   return useMutation({
-    mutationFn: async ({ id, ...data }: Partial<LedgerPayment> & { id: string }) => {
+    mutationFn: async ({ id, ...data }: { id: string; amount?: number; payment_date?: string; notes?: string | null }) => {
       const { data: row, error } = await supabase
         .from('ledger_payments')
         .update(data)

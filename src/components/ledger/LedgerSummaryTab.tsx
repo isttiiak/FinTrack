@@ -9,14 +9,6 @@ function lastActivity(ledgers: PersonLedger[]): string | null {
   return ledgers.reduce((max, e) => (e.start_date > max ? e.start_date : max), ledgers[0].start_date)
 }
 
-function aggStatus(ledgers: PersonLedger[]): 'Settled' | 'Partial' | 'Pending' {
-  if (ledgers.length === 0) return 'Pending'
-  const statuses = ledgers.map((e) => e.status ?? 'Pending')
-  if (statuses.every((s) => s === 'Settled')) return 'Settled'
-  if (statuses.every((s) => s === 'Pending')) return 'Pending'
-  return 'Partial'
-}
-
 const STATUS_STYLE = {
   Settled: { bg: 'rgba(16,185,129,0.12)', color: '#10B981', label: '✅ Settled' },
   Partial:  { bg: 'rgba(245,158,11,0.12)', color: '#F59E0B', label: '🔄 Partial' },
@@ -44,30 +36,30 @@ export default function LedgerSummaryTab({ persons }: { persons: PersonWithLedge
     else { setSortField(f); setSortDir('desc') }
   }
 
-  // Build one row per person × type (only include type if they have entries for it)
+  // Build one row per person × type, reading the pre-computed aggregate
+  // fields directly off `person` (see enrichPerson() in useLedger.ts) —
+  // no per-entry re-derivation, since entries no longer carry their own
+  // remaining/status.
   const rows: SummaryRow[] = []
   for (const person of persons) {
-    const lentEntries = person.ledgers.filter((e) => e.ledger_type === 'Lent')
-    const debtEntries = person.ledgers.filter((e) => e.ledger_type === 'Debt')
-
-    if (lentEntries.length > 0) {
-      const total = lentEntries.reduce((s, e) => s + e.total_amount, 0)
-      const remaining = lentEntries.reduce((s, e) => s + (e.remaining ?? e.total_amount), 0)
+    if (person.lent_count > 0 && person.lent_status) {
       rows.push({
         person, type: 'Lent',
-        total, paid: total - remaining, remaining,
-        status: aggStatus(lentEntries),
-        lastDate: lastActivity(lentEntries),
+        total: person.total_lent,
+        paid: person.total_lent - person.total_outstanding_lent,
+        remaining: person.total_outstanding_lent,
+        status: person.lent_status,
+        lastDate: lastActivity(person.ledgers.filter((e) => e.ledger_type === 'Lent')),
       })
     }
-    if (debtEntries.length > 0) {
-      const total = debtEntries.reduce((s, e) => s + e.total_amount, 0)
-      const remaining = debtEntries.reduce((s, e) => s + (e.remaining ?? e.total_amount), 0)
+    if (person.debt_count > 0 && person.debt_status) {
       rows.push({
         person, type: 'Debt',
-        total, paid: total - remaining, remaining,
-        status: aggStatus(debtEntries),
-        lastDate: lastActivity(debtEntries),
+        total: person.total_debt,
+        paid: person.total_debt - person.total_outstanding_debt,
+        remaining: person.total_outstanding_debt,
+        status: person.debt_status,
+        lastDate: lastActivity(person.ledgers.filter((e) => e.ledger_type === 'Debt')),
       })
     }
   }
