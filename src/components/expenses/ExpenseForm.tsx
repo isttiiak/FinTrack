@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -7,10 +7,12 @@ import { X } from 'lucide-react'
 import { useCategories } from '@/hooks/useCategories'
 import { useCreateExpense, useUpdateExpense } from '@/hooks/useExpenses'
 import { useAICategorySuggest } from '@/hooks/useAICategorySuggest'
-import { TXN_TYPES } from '@/lib/constants'
+import { useAuthStore } from '@/stores/authStore'
+import { TXN_TYPES, CURRENCIES, CURRENCY_SYMBOLS } from '@/lib/constants'
 import type { PaymentMethod, Account } from '@/lib/constants'
 import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
-import { toISODateString } from '@/lib/utils'
+import { getExchangeRates, convertAmount } from '@/lib/currency'
+import { toISODateString, formatCurrency } from '@/lib/utils'
 import { scaleIn } from '@/lib/animations'
 import { cn } from '@/lib/utils'
 import type { Transaction } from '@/types/expense.types'
@@ -41,6 +43,8 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
   const { mutateAsync: create, isPending: creating } = useCreateExpense()
   const { mutateAsync: update, isPending: updating } = useUpdateExpense()
   const isPending = creating || updating
+  const profile = useAuthStore((s) => s.profile)
+  const defaultCurrency = profile?.currency ?? 'BDT'
 
   const lastMethod = (localStorage.getItem(LS_METHOD_KEY) ?? 'Cash') as FormValues['payment_method']
   const lastAccount = (localStorage.getItem(LS_ACCOUNT_KEY) ?? 'Cash') as FormValues['account']
@@ -50,7 +54,7 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
     defaultValues: editing
       ? {
           type:           editing.type,
-          amount:         editing.amount,
+          amount:         editing.original_amount ?? editing.amount,
           category_id:    editing.category_id ?? '',
           description:    editing.description ?? '',
           txn_date:       editing.txn_date,
@@ -68,6 +72,35 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
   const selectedType  = watch('type')
   const description   = watch('description') ?? ''
   const categoryId    = watch('category_id')
+  const amountValue   = watch('amount')
+
+  // Currency — defaults to the amount's original currency when editing, else profile default
+  const [currency, setCurrency] = useState(editing?.original_currency ?? defaultCurrency)
+  const [convertedPreview, setConvertedPreview] = useState<number | null>(null)
+  const [fxLoading, setFxLoading] = useState(false)
+  const [fxError, setFxError] = useState<string | null>(null)
+  const needsConversion = currency !== defaultCurrency
+
+  useEffect(() => {
+    if (!needsConversion || !amountValue || amountValue <= 0) {
+      setConvertedPreview(null); setFxError(null); setFxLoading(false)
+      return
+    }
+    let cancelled = false
+    setFxLoading(true); setFxError(null)
+    getExchangeRates(currency)
+      .then((rates) => {
+        if (cancelled) return
+        setConvertedPreview(convertAmount(amountValue, currency, defaultCurrency, rates))
+      })
+      .catch((e: unknown) => {
+        if (cancelled) return
+        setConvertedPreview(null)
+        setFxError(e instanceof Error ? e.message : 'Currency conversion failed')
+      })
+      .finally(() => { if (!cancelled) setFxLoading(false) })
+    return () => { cancelled = true }
+  }, [needsConversion, amountValue, currency, defaultCurrency])
 
   const filteredCategories = categories.filter((c) => c.type === selectedType)
 
@@ -84,9 +117,12 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
 
     const payload = {
       ...values,
-      description:    values.description    ?? null,
-      payment_method: (values.payment_method ?? null) as PaymentMethod | null,
-      account:        (values.account        ?? null) as Account | null,
+      amount:             needsConversion ? (convertedPreview ?? values.amount) : values.amount,
+      original_amount:    needsConversion ? values.amount : null,
+      original_currency:  needsConversion ? currency : null,
+      description:        values.description    ?? null,
+      payment_method:     (values.payment_method ?? null) as PaymentMethod | null,
+      account:            (values.account        ?? null) as Account | null,
     }
     if (editing) {
       await update({ id: editing.id, ...payload })
@@ -95,6 +131,8 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
     }
     onClose()
   }
+
+  const canSubmit = !isPending && !(needsConversion && (fxLoading || !!fxError || convertedPreview == null))
 
   return (
     <div className="expense-form-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -137,18 +175,34 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
             ))}
           </div>
 
-          {/* Amount */}
+          {/* Amount + currency */}
           <div className="ef-field">
-            <label className="ef-label">Amount (৳) <span className="req">*</span></label>
-            <input
-              {...register('amount', { valueAsNumber: true })}
-              type="number"
-              step="0.01"
-              placeholder="0.00"
-              className={cn('ef-input ef-amount-input', errors.amount && 'ef-input-error')}
-              autoFocus={!editing}
-            />
+            <label className="ef-label">Amount ({CURRENCY_SYMBOLS[currency as keyof typeof CURRENCY_SYMBOLS] ?? currency}) <span className="req">*</span></label>
+            <div className="ef-amount-row">
+              <input
+                {...register('amount', { valueAsNumber: true })}
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                className={cn('ef-input ef-amount-input', errors.amount && 'ef-input-error')}
+                autoFocus={!editing}
+              />
+              <div className="ef-select-wrap ef-currency-wrap">
+                <select className="ef-select ef-currency-select" value={currency} onChange={(e) => setCurrency(e.target.value)}>
+                  {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+            </div>
             {errors.amount && <p className="ef-error">{errors.amount.message}</p>}
+            {needsConversion && amountValue > 0 && (
+              <p className="ef-fx-preview">
+                {fxLoading
+                  ? 'Converting…'
+                  : fxError
+                    ? <span className="ef-error" style={{ margin: 0 }}>{fxError}</span>
+                    : convertedPreview != null && `≈ ${formatCurrency(convertedPreview, defaultCurrency)} at today's rate`}
+              </p>
+            )}
           </div>
 
           {/* Category */}
@@ -245,7 +299,7 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
             <motion.button
               type="submit"
               className="btn-primary ef-submit"
-              disabled={isPending}
+              disabled={!canSubmit}
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.97 }}
             >
@@ -322,6 +376,12 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
         .ef-input-error { border-color: var(--accent-red) !important; }
         .ef-amount-input { font-size: 22px; font-weight: 700; padding: 12px 14px; }
         .ef-error { font-size: 12px; color: #FCA5A5; margin: 0; }
+
+        .ef-amount-row { display: flex; gap: 8px; align-items: stretch; }
+        .ef-amount-row .ef-amount-input { flex: 1; min-width: 0; }
+        .ef-currency-wrap { flex: 0 0 84px; }
+        .ef-currency-select { padding: 10px 26px 10px 10px; font-size: 13px; font-weight: 600; }
+        .ef-fx-preview { font-size: 12px; color: var(--text-muted); margin: 2px 0 0; }
 
         .ef-select-wrap { position: relative; }
         .ef-select {

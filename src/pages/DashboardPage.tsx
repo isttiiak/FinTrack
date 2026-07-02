@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
 import {
@@ -11,13 +11,11 @@ import { useExpenses } from '@/hooks/useExpenses'
 import { usePersons } from '@/hooks/useLedger'
 import { useNoSpendStreak } from '@/hooks/useNoSpendStreak'
 import { useAuthStore } from '@/stores/authStore'
+import MonthPicker from '@/components/common/MonthPicker'
 
-function getMonthRange(offset = 0) {
-  const now = new Date()
-  const y = now.getFullYear()
-  const m = now.getMonth() + offset
-  const from = toISODateString(new Date(y, m, 1))
-  const to   = toISODateString(new Date(y, m + 1, 0))
+function getMonthRange(year: number, month0: number, offset = 0) {
+  const from = toISODateString(new Date(year, month0 + offset, 1))
+  const to   = toISODateString(new Date(year, month0 + offset + 1, 0))
   return { from, to }
 }
 
@@ -25,12 +23,18 @@ export default function DashboardPage() {
   const profile = useAuthStore((s) => s.profile)
   const firstName = profile?.full_name?.split(' ')[0] ?? null
 
-  const thisMonth = getMonthRange(0)
-  const lastMonth = getMonthRange(-1)
+  const now = new Date()
+  const [selectedMonth, setSelectedMonth] = useState(
+    () => `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`,
+  )
+  const [selYear, selMon1] = selectedMonth.split('-').map(Number)
+  const selMon0 = selMon1 - 1 // JS Date month is 0-indexed
 
-  const now2 = new Date()
-  const yearFrom = toISODateString(new Date(now2.getFullYear(), 0, 1))
-  const yearTo   = toISODateString(new Date(now2.getFullYear(), 11, 31))
+  const thisMonth = getMonthRange(selYear, selMon0, 0)
+  const lastMonth = getMonthRange(selYear, selMon0, -1)
+
+  const yearFrom = toISODateString(new Date(selYear, 0, 1))
+  const yearTo   = toISODateString(new Date(selYear, 11, 31))
 
   // All-time for streak
   const { data: allTxns = [] } = useExpenses({ from: '2000-01-01', to: toISODateString(new Date()) })
@@ -70,17 +74,20 @@ export default function DashboardPage() {
   // Recent 5 transactions
   const recentTxns = thisTxns.slice(0, 5)
 
-  const now = new Date()
-  const monthLabel = now.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+  const monthLabel = new Date(selYear, selMon0, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+  const isCurrentMonth = selYear === now.getFullYear() && selMon0 === now.getMonth()
 
   return (
     <motion.div variants={staggerContainer} initial="initial" animate="animate" className="dash-page">
       {/* Greeting */}
-      <motion.div variants={staggerItem} className="dash-greeting">
-        <h1 className="dash-title">
-          {firstName ? `Hey, ${firstName} 👋` : 'Dashboard'}
-        </h1>
-        <p className="dash-subtitle">{monthLabel} · Your financial snapshot</p>
+      <motion.div variants={staggerItem} className="dash-greeting-row">
+        <div>
+          <h1 className="dash-title">
+            {firstName ? `Hey, ${firstName} 👋` : 'Dashboard'}
+          </h1>
+          <p className="dash-subtitle">{monthLabel} · Your financial snapshot</p>
+        </div>
+        <MonthPicker value={selectedMonth} onChange={setSelectedMonth} />
       </motion.div>
 
       {/* KPI grid */}
@@ -89,7 +96,7 @@ export default function DashboardPage() {
         {/* Spent this month */}
         <motion.div className="dash-kpi dash-kpi-coral" variants={staggerItem} whileHover={{ scale: 1.02 }}>
           <div className="dash-kpi-icon"><Wallet size={17} /></div>
-          <div className="dash-kpi-label">Spent this month</div>
+          <div className="dash-kpi-label">{isCurrentMonth ? 'Spent this month' : `Spent in ${monthLabel.split(' ')[0]}`}</div>
           <div className="dash-kpi-value">
             {loadingThis ? <span className="dash-kpi-skeleton" /> : formatCurrency(thisExpense)}
           </div>
@@ -104,7 +111,7 @@ export default function DashboardPage() {
         {/* Income this month */}
         <motion.div className="dash-kpi dash-kpi-teal" variants={staggerItem} whileHover={{ scale: 1.02 }}>
           <div className="dash-kpi-icon"><TrendingUp size={17} /></div>
-          <div className="dash-kpi-label">Income this month</div>
+          <div className="dash-kpi-label">{isCurrentMonth ? 'Income this month' : `Income in ${monthLabel.split(' ')[0]}`}</div>
           <div className="dash-kpi-value">
             {loadingThis ? <span className="dash-kpi-skeleton" /> : formatCurrency(thisIncome)}
           </div>
@@ -146,7 +153,7 @@ export default function DashboardPage() {
           <div className="dash-kpi-icon"><TrendingUp size={17} /></div>
           <div className="dash-kpi-label">Spent this year</div>
           <div className="dash-kpi-value">{formatCurrency(yearExpense)}</div>
-          <div className="dash-kpi-delta dash-delta-neutral">{now2.getFullYear()} total expenses</div>
+          <div className="dash-kpi-delta dash-delta-neutral">{selYear} total expenses</div>
         </motion.div>
 
       </motion.div>
@@ -282,7 +289,7 @@ export default function DashboardPage() {
 
       <style>{`
         .dash-page { max-width: 960px; }
-        .dash-greeting { margin-bottom: 24px; }
+        .dash-greeting-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
         .dash-title { font-size: 28px; font-weight: 700; color: var(--text-primary); margin: 0 0 4px; }
         .dash-subtitle { font-size: 14px; color: var(--text-secondary); margin: 0; }
 

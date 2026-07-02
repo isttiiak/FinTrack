@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import type React from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -9,7 +9,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import {
   DollarSign, Plus, Download, AlertTriangle,
   ChevronDown, Check, X, Upload, Sparkles, Eye, EyeOff,
-  Power, Trash2, Lock, Unlock,
+  Power, Trash2, Lock, Unlock, Bell,
 } from 'lucide-react'
 import DeleteButton from '@/components/common/DeleteButton'
 import { useCategories } from '@/hooks/useCategories'
@@ -533,6 +533,66 @@ function AISection() {
   )
 }
 
+// ── Notifications ────────────────────────────────────────────────────────────
+type NotifyKey = 'notify_budget_alerts' | 'notify_weekly_digest' | 'notify_monthly_digest'
+const NOTIFY_ROWS: { key: NotifyKey; label: string; desc: string }[] = [
+  { key: 'notify_budget_alerts',  label: 'Budget exceeded',  desc: 'Email when a category goes over its monthly budget.' },
+  { key: 'notify_weekly_digest',  label: 'Weekly digest',    desc: 'A summary of the last 7 days, every Monday.' },
+  { key: 'notify_monthly_digest', label: 'Monthly digest',   desc: 'Income, expenses, and top categories on the 1st of each month.' },
+]
+
+function NotificationsSection() {
+  const { profile, setProfile } = useAuthStore()
+  const isDemo = useDemoStore((s) => s.isDemo)
+  const addToast = useUIStore((s) => s.addToast)
+  const [saving, setSaving] = useState<NotifyKey | null>(null)
+
+  async function toggle(key: NotifyKey) {
+    if (isDemo || !profile) return
+    setSaving(key)
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ [key]: !profile[key] })
+      .eq('id', profile.id)
+      .select()
+      .single()
+    setSaving(null)
+    if (error) {
+      addToast({ type: 'error', message: error.message })
+    } else {
+      setProfile(data)
+    }
+  }
+
+  return (
+    <section className="settings-section">
+      <h2 className="settings-section-title"><Bell size={16} /> Notifications</h2>
+      <p className="settings-section-desc">Email alerts sent to your account email.</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 14 }}>
+        {NOTIFY_ROWS.map((row) => {
+          const enabled = profile?.[row.key] ?? true
+          return (
+            <div key={row.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{row.label}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{row.desc}</div>
+              </div>
+              <button
+                className={`ai-power-btn ${enabled ? 'ai-power-on' : 'ai-power-off'}`}
+                onClick={() => toggle(row.key)}
+                disabled={saving === row.key || isDemo}
+              >
+                <Power size={14} />
+                <span>{enabled ? 'ON' : 'OFF'}</span>
+              </button>
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
 // ── Danger Zone ───────────────────────────────────────────────────────────────
 
 function DangerSection() {
@@ -733,16 +793,7 @@ function DangerSection() {
 
 export default function SettingsPage() {
   const isDemo = useDemoStore((s) => s.isDemo)
-  const [showDataSettings, setShowDataSettings] = useState(false)
-
-  // Lazy import to keep initial bundle small
-  const [DataSettingsPage, setDataSettingsPage] = useState<React.ComponentType<{ onClose: () => void }> | null>(null)
-  function openDataSettings() {
-    import('@/pages/DataSettingsPage').then((mod) => {
-      setDataSettingsPage(() => mod.default)
-      setShowDataSettings(true)
-    })
-  }
+  const navigate = useNavigate()
 
   return (
     <motion.div
@@ -774,7 +825,7 @@ export default function SettingsPage() {
           <button
             className="btn-primary"
             style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}
-            onClick={openDataSettings}
+            onClick={() => navigate({ to: '/settings/data' })}
           >
             Manage →
           </button>
@@ -783,6 +834,7 @@ export default function SettingsPage() {
 
       <motion.div variants={staggerItem}><BudgetSection /></motion.div>
       <motion.div variants={staggerItem}><AISection /></motion.div>
+      <motion.div variants={staggerItem}><NotificationsSection /></motion.div>
       <motion.div variants={staggerItem}><ExportSection /></motion.div>
       <motion.div variants={staggerItem}><ImportSection /></motion.div>
       {!isDemo && (
@@ -793,13 +845,6 @@ export default function SettingsPage() {
           <motion.div variants={staggerItem}><DangerSection /></motion.div>
         </>
       )}
-
-      {/* Data settings slide-in panel */}
-      <AnimatePresence>
-        {showDataSettings && DataSettingsPage && (
-          <DataSettingsPage onClose={() => setShowDataSettings(false)} />
-        )}
-      </AnimatePresence>
 
       <style>{settingsStyles}</style>
     </motion.div>

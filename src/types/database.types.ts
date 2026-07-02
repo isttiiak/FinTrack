@@ -10,4 +10,7 @@ export interface UserProfile {
   timezone: string
   created_at: string
   deleted_at: string | null
+  notify_budget_alerts: boolean
+  notify_weekly_digest: boolean
+  notify_monthly_digest: boolean
 }

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, Plus, Edit2, Check, X, Trash2, ChevronDown, ChevronRight,
@@ -11,8 +12,10 @@ import { useConfirmStore } from '@/stores/confirmStore'
 import { PAYMENT_METHOD_GROUPS } from '@/lib/constants'
 import { supabase } from '@/lib/supabase'
 import type { Category } from '@/types/expense.types'
+import type { PaymentMethodGroup } from '@/lib/constants'
 
-type DSTab = 'categories' | 'methods' | 'accounts'
+type DSTab = 'categories' | 'methods'
+type TypeFilter = 'All' | 'Expense' | 'Income'
 
 const LS_CUSTOM_METHODS  = 'fintrack_custom_methods'
 const LS_CUSTOM_ACCOUNTS = 'fintrack_custom_accounts'
@@ -37,10 +40,10 @@ function CategoriesTab({ categories }: { categories: Category[] }) {
   const [editingSubcat, setEditingSubcat] = useState<{ id: string; name: string; group: string } | null>(null)
   const [addingSubTo, setAddingSubTo] = useState<string | null>(null)
   const [newSubName, setNewSubName] = useState('')
-  const [newSubType, setNewSubType] = useState<'Expense' | 'Income'>('Expense')
   const [addingGroup, setAddingGroup] = useState(false)
   const [newGroupName, setNewGroupName] = useState('')
   const [newGroupType, setNewGroupType] = useState<'Expense' | 'Income'>('Expense')
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('All')
 
   const grouped = useMemo(() => {
     const map: Record<string, Category[]> = {}
@@ -50,6 +53,11 @@ function CategoriesTab({ categories }: { categories: Category[] }) {
     }
     return Object.entries(map).sort(([a], [b]) => a.localeCompare(b))
   }, [categories])
+
+  const visibleGrouped = useMemo(() => {
+    if (typeFilter === 'All') return grouped
+    return grouped.filter(([, cats]) => cats[0]?.type === typeFilter)
+  }, [grouped, typeFilter])
 
   function toggleExpand(group: string) {
     setExpanded((prev) => {
@@ -95,7 +103,11 @@ function CategoriesTab({ categories }: { categories: Category[] }) {
   async function saveNewSub(group: string) {
     const name = newSubName.trim()
     if (!name) return
-    await createCat({ name, main_group: group, type: newSubType, color_hex: null, is_default: false })
+    // Type is always inherited from the parent group — a sub-category can't
+    // be a different type than the group it lives under.
+    const groupCats = grouped.find(([g]) => g === group)?.[1] ?? []
+    const type = groupCats[0]?.type ?? 'Expense'
+    await createCat({ name, main_group: group, type, color_hex: null, is_default: false })
     setAddingSubTo(null); setNewSubName('')
   }
 
@@ -110,36 +122,48 @@ function CategoriesTab({ categories }: { categories: Category[] }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      {/* Add new main group — pinned to top */}
-      <AnimatePresence>
-        {addingGroup ? (
-          <motion.div className="dsc-add-group-form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <Plus size={14} style={{ color: 'var(--accent-primary)', flexShrink: 0 }} />
-            <input
-              className="dsc-inline-input" style={{ flex: 1 }}
-              placeholder="New main category name…" value={newGroupName}
-              onChange={(e) => setNewGroupName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && saveNewGroup()} autoFocus
-            />
-            <select className="dsc-type-select" value={newGroupType}
-              onChange={(e) => setNewGroupType(e.target.value as 'Expense' | 'Income')}>
-              <option value="Expense">Expense</option>
-              <option value="Income">Income</option>
-            </select>
-            <button className="dsc-icon-btn dsc-ok" onClick={saveNewGroup} disabled={!newGroupName.trim()}><Check size={13} /></button>
-            <button className="dsc-icon-btn" onClick={() => setAddingGroup(false)}><X size={13} /></button>
-          </motion.div>
-        ) : (
-          <button className="dsc-add-group-btn" onClick={() => setAddingGroup(true)}>
-            <Plus size={14} /> Add main category
-          </button>
-        )}
-      </AnimatePresence>
+      {/* Add new main group + type filter */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'stretch' }}>
+        <AnimatePresence>
+          {addingGroup ? (
+            <motion.div className="dsc-add-group-form" style={{ flex: 1 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <Plus size={14} style={{ color: 'var(--accent-primary)', flexShrink: 0 }} />
+              <input
+                className="dsc-inline-input" style={{ flex: 1 }}
+                placeholder="New main category name…" value={newGroupName}
+                onChange={(e) => setNewGroupName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && saveNewGroup()} autoFocus
+              />
+              <select className="dsc-type-select" value={newGroupType}
+                onChange={(e) => setNewGroupType(e.target.value as 'Expense' | 'Income')}>
+                <option value="Expense">Expense</option>
+                <option value="Income">Income</option>
+              </select>
+              <button className="dsc-icon-btn dsc-ok" onClick={saveNewGroup} disabled={!newGroupName.trim()}><Check size={13} /></button>
+              <button className="dsc-icon-btn" onClick={() => setAddingGroup(false)}><X size={13} /></button>
+            </motion.div>
+          ) : (
+            <button className="dsc-add-group-btn" style={{ flex: 1 }} onClick={() => setAddingGroup(true)}>
+              <Plus size={14} /> Add main category
+            </button>
+          )}
+        </AnimatePresence>
 
-      {grouped.map(([group, cats]) => {
+        <div className="dsc-type-filter-wrap">
+          <select className="dsc-type-filter" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}>
+            <option value="All">All types</option>
+            <option value="Expense">Expense only</option>
+            <option value="Income">Income only</option>
+          </select>
+          <ChevronDown size={13} className="dsc-type-filter-icon" />
+        </div>
+      </div>
+
+      {visibleGrouped.map(([group, cats]) => {
         const isOpen = expanded.has(group)
         const isEditingGroup = editingGroupName?.old === group
         const isAddingSub = addingSubTo === group
+        const groupType = cats[0]?.type ?? 'Expense'
 
         return (
           <div key={group} className="dsc-group-card">
@@ -161,6 +185,7 @@ function CategoriesTab({ categories }: { categories: Category[] }) {
                 <span className="dsc-group-name">{group}</span>
               )}
 
+              <span className={`dsc-group-type-tag dsc-type-tag-${groupType.toLowerCase()}`}>{groupType}</span>
               <span className="dsc-group-count">{cats.length}</span>
 
               <div className="dsc-group-actions">
@@ -249,7 +274,7 @@ function CategoriesTab({ categories }: { categories: Category[] }) {
                       )
                     })}
 
-                    {/* Add sub-category inline */}
+                    {/* Add sub-category inline — type is inherited from the group, no selector needed */}
                     <AnimatePresence>
                       {isAddingSub && (
                         <motion.div
@@ -261,11 +286,7 @@ function CategoriesTab({ categories }: { categories: Category[] }) {
                             onChange={(e) => setNewSubName(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && saveNewSub(group)} autoFocus
                           />
-                          <select className="dsc-type-select" value={newSubType}
-                            onChange={(e) => setNewSubType(e.target.value as 'Expense' | 'Income')}>
-                            <option value="Expense">Expense</option>
-                            <option value="Income">Income</option>
-                          </select>
+                          <span className={`dsc-group-type-tag dsc-type-tag-${groupType.toLowerCase()}`}>{groupType}</span>
                           <button className="dsc-icon-btn dsc-ok" onClick={() => saveNewSub(group)}
                             disabled={!newSubName.trim()}><Check size={12} /></button>
                           <button className="dsc-icon-btn" onClick={() => setAddingSubTo(null)}><X size={12} /></button>
@@ -284,101 +305,198 @@ function CategoriesTab({ categories }: { categories: Category[] }) {
   )
 }
 
-// ── Methods / Accounts shared tag-list card ───────────────────────────────────
-function TagListSection({ lsKey, label }: { lsKey: string; label: string }) {
-  const [custom, setCustom] = useState<Record<string, string[]>>(() => readCustom(lsKey))
-  const [adding, setAdding] = useState<string | null>(null)
-  const [newVal, setNewVal] = useState('')
+// ── Payment Methods tab — one list per group, scoped to what the picker actually uses ──
+// MFS uses the "methods" entity (provider chips); Card/Bank Transfer use "accounts"
+// (only that list is ever read by PaymentMethodPicker for those groups); Cash is fixed.
+const GROUP_ICON_COLOR: Record<PaymentMethodGroup, string> = {
+  Cash: '#10B981',
+  MFS: '#6C63FF',
+  Card: '#F59E0B',
+  'Bank Transfer': '#06B6D4',
+}
+const GROUP_ORDER: PaymentMethodGroup[] = ['Cash', 'MFS', 'Card', 'Bank Transfer']
 
-  function add(group: string) {
-    const val = newVal.trim(); if (!val) return
-    const updated = { ...custom, [group]: [...(custom[group] ?? []), val] }
-    setCustom(updated); saveCustom(lsKey, updated); setAdding(null); setNewVal('')
+function PaymentMethodsTab() {
+  const [customMethods, setCustomMethods]   = useState<Record<string, string[]>>(() => readCustom(LS_CUSTOM_METHODS))
+  const [customAccounts, setCustomAccounts] = useState<Record<string, string[]>>(() => readCustom(LS_CUSTOM_ACCOUNTS))
+  const [addingTo, setAddingTo] = useState<PaymentMethodGroup | null>(null)
+  const [newVal, setNewVal] = useState('')
+  const [editing, setEditing] = useState<{ group: PaymentMethodGroup; original: string; val: string } | null>(null)
+
+  function entityFor(group: PaymentMethodGroup) {
+    return group === 'MFS' ? 'methods' : 'accounts'
   }
-  function remove(group: string, val: string) {
-    const updated = { ...custom, [group]: (custom[group] ?? []).filter((v) => v !== val) }
-    setCustom(updated); saveCustom(lsKey, updated)
+  function storageFor(group: PaymentMethodGroup) {
+    return entityFor(group) === 'methods'
+      ? { key: LS_CUSTOM_METHODS, state: customMethods, setState: setCustomMethods }
+      : { key: LS_CUSTOM_ACCOUNTS, state: customAccounts, setState: setCustomAccounts }
+  }
+  function defaultItemsFor(group: PaymentMethodGroup): string[] {
+    return entityFor(group) === 'methods'
+      ? PAYMENT_METHOD_GROUPS[group].methods as unknown as string[]
+      : PAYMENT_METHOD_GROUPS[group].accounts as unknown as string[]
+  }
+
+  function add(group: PaymentMethodGroup) {
+    const val = newVal.trim(); if (!val) return
+    const { key, state, setState } = storageFor(group)
+    // Match PaymentMethodPicker's own convention: custom MFS providers are
+    // stored with the "MFS - " prefix, same as the built-in ones.
+    const stored = group === 'MFS' ? `MFS - ${val}` : val
+    const updated = { ...state, [group]: [...(state[group] ?? []), stored] }
+    setState(updated); saveCustom(key, updated); setAddingTo(null); setNewVal('')
+  }
+  function remove(group: PaymentMethodGroup, val: string) {
+    const { key, state, setState } = storageFor(group)
+    const updated = { ...state, [group]: (state[group] ?? []).filter((v) => v !== val) }
+    setState(updated); saveCustom(key, updated)
+  }
+  function saveEdit() {
+    if (!editing) return
+    const val = editing.val.trim(); if (!val) { setEditing(null); return }
+    const { key, state, setState } = storageFor(editing.group)
+    const stored = editing.group === 'MFS' && !val.startsWith('MFS - ') ? `MFS - ${val}` : val
+    const updated = {
+      ...state,
+      [editing.group]: (state[editing.group] ?? []).map((v) => (v === editing.original ? stored : v)),
+    }
+    setState(updated); saveCustom(key, updated); setEditing(null)
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {Object.entries(PAYMENT_METHOD_GROUPS).map(([group, cfg]) => (
-        <div key={group} className="dsc-tag-card">
-          <div className="dsc-tag-header">{cfg.icon} {cfg.label} {label}</div>
-          <div className="dsc-tag-body">
-            {(lsKey === LS_CUSTOM_METHODS ? cfg.methods : cfg.accounts).map((item) => (
-              <span key={item} className="dsc-tag dsc-tag-default" title="Built-in — cannot be removed">{item}</span>
-            ))}
-            {(custom[group] ?? []).map((item) => (
-              <span key={item} className="dsc-tag dsc-tag-custom">
-                {item}
-                <button className="dsc-tag-del" onClick={() => remove(group, item)}><X size={10} /></button>
-              </span>
-            ))}
-            {adding === group ? (
-              <span className="dsc-tag-input-row">
-                <input className="dsc-tag-input" placeholder={`Add ${label.toLowerCase()}…`} value={newVal}
-                  onChange={(e) => setNewVal(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && add(group)} autoFocus />
-                <button className="dsc-tag-save" onClick={() => add(group)} disabled={!newVal.trim()}><Check size={11} /></button>
-                <button className="dsc-tag-cancel" onClick={() => { setAdding(null); setNewVal('') }}><X size={11} /></button>
-              </span>
-            ) : (
-              <button className="dsc-tag-add" onClick={() => { setAdding(group); setNewVal('') }}>
-                <Plus size={11} /> Add
-              </button>
-            )}
+      {GROUP_ORDER.map((group) => {
+        const cfg = PAYMENT_METHOD_GROUPS[group]
+        const color = GROUP_ICON_COLOR[group]
+        const isFixed = group === 'Cash'
+        const defaults = defaultItemsFor(group)
+        const customs = storageFor(group).state[group] ?? []
+        const isAdding = addingTo === group
+
+        return (
+          <div key={group} className="dsc-tag-card">
+            <div className="dsc-pm-header">
+              <div className="dsc-pm-icon" style={{ background: `${color}1c`, color }}>{cfg.icon}</div>
+              <div style={{ flex: 1 }}>
+                <div className="dsc-pm-title">{cfg.label}</div>
+                <div className="dsc-pm-sub">{entityFor(group) === 'methods' ? 'Providers' : 'Accounts'}</div>
+              </div>
+              {!isFixed && (
+                <button className="dsc-tag-add" onClick={() => { setAddingTo(isAdding ? null : group); setNewVal('') }}>
+                  <Plus size={11} /> Add
+                </button>
+              )}
+            </div>
+
+            <div className="dsc-pm-list">
+              {defaults.map((item) => (
+                <div key={item} className="dsc-sub-row" title="Built-in — cannot be edited or removed">
+                  <span className="dsc-sub-name">{group === 'MFS' ? item.replace('MFS - ', '') : item}</span>
+                  <span className="dsc-builtin-tag">Built-in</span>
+                </div>
+              ))}
+              {customs.map((item) => {
+                const isEditingThis = editing?.group === group && editing.original === item
+                return (
+                  <div key={item} className="dsc-sub-row">
+                    {isEditingThis ? (
+                      <input
+                        className="dsc-inline-input" style={{ flex: 1 }}
+                        value={editing.val}
+                        onChange={(e) => setEditing({ ...editing, val: e.target.value })}
+                        onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
+                        autoFocus
+                      />
+                    ) : (
+                      <span className="dsc-sub-name">{group === 'MFS' ? item.replace('MFS - ', '') : item}</span>
+                    )}
+                    <div className="dsc-sub-actions">
+                      {isEditingThis ? (
+                        <>
+                          <button className="dsc-icon-btn dsc-ok" onClick={saveEdit}><Check size={12} /></button>
+                          <button className="dsc-icon-btn" onClick={() => setEditing(null)}><X size={12} /></button>
+                        </>
+                      ) : (
+                        <>
+                          <button className="dsc-icon-btn" title="Edit"
+                            onClick={() => setEditing({ group, original: item, val: group === 'MFS' ? item.replace('MFS - ', '') : item })}>
+                            <Edit2 size={12} />
+                          </button>
+                          <button className="dsc-icon-btn dsc-del" title="Delete" onClick={() => remove(group, item)}>
+                            <Trash2 size={12} />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+
+              <AnimatePresence>
+                {isAdding && (
+                  <motion.div className="dsc-add-sub-form" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                    <input
+                      className="dsc-inline-input" style={{ flex: 1 }}
+                      placeholder={entityFor(group) === 'methods' ? 'Provider name…' : 'Account name…'}
+                      value={newVal}
+                      onChange={(e) => setNewVal(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && add(group)} autoFocus
+                    />
+                    <button className="dsc-icon-btn dsc-ok" onClick={() => add(group)} disabled={!newVal.trim()}><Check size={12} /></button>
+                    <button className="dsc-icon-btn" onClick={() => setAddingTo(null)}><X size={12} /></button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {isFixed && (
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', padding: '6px 12px 2px', margin: 0 }}>
+                  Cash is always a single fixed entry.
+                </p>
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
 
 // ── Root ──────────────────────────────────────────────────────────────────────
-export default function DataSettingsPage({ onClose }: { onClose: () => void }) {
+export default function DataSettingsPage() {
+  const navigate = useNavigate()
   const { data: categories = [] } = useCategories()
   const [tab, setTab] = useState<DSTab>('categories')
 
   const TABS: { id: DSTab; label: string }[] = [
     { id: 'categories', label: '🏷️ Categories' },
     { id: 'methods',    label: '💳 Payment Methods' },
-    { id: 'accounts',   label: '🏦 Accounts' },
   ]
 
   return (
-    <motion.div className="dsp-overlay"
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      transition={{ duration: 0.15 }}>
-      <motion.div className="dsp-panel"
-        initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30 }}>
+    <motion.div className="dsp-page" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15 }}>
+      <button className="dsp-back-btn" onClick={() => navigate({ to: '/settings' })}>
+        <ArrowLeft size={16} /> Back to Settings
+      </button>
+      <h1 className="dsp-title">Data Preferences</h1>
+      <p className="dsp-sub">Categories and payment methods</p>
 
-        <div className="dsp-header">
-          <button className="dsp-back-btn" onClick={onClose}><ArrowLeft size={18} /> Back to Settings</button>
-          <h1 className="dsp-title">Data Preferences</h1>
-          <p className="dsp-sub">Categories, payment methods, and accounts</p>
-        </div>
+      <div className="dsp-tabs">
+        {TABS.map((t) => (
+          <button key={t.id} className={`dsp-tab ${tab === t.id ? 'dsp-tab-active' : ''}`}
+            onClick={() => setTab(t.id)}>{t.label}</button>
+        ))}
+      </div>
 
-        <div className="dsp-tabs">
-          {TABS.map((t) => (
-            <button key={t.id} className={`dsp-tab ${tab === t.id ? 'dsp-tab-active' : ''}`}
-              onClick={() => setTab(t.id)}>{t.label}</button>
-          ))}
-        </div>
-
-        <div className="dsp-content">
-          <AnimatePresence mode="wait">
-            <motion.div key={tab}
-              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.15 }}>
-              {tab === 'categories' && <CategoriesTab categories={categories} />}
-              {tab === 'methods'    && <TagListSection lsKey={LS_CUSTOM_METHODS}  label="Methods" />}
-              {tab === 'accounts'   && <TagListSection lsKey={LS_CUSTOM_ACCOUNTS} label="Accounts" />}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </motion.div>
+      <div className="dsp-content">
+        <AnimatePresence mode="wait">
+          <motion.div key={tab}
+            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.15 }}>
+            {tab === 'categories' && <CategoriesTab categories={categories} />}
+            {tab === 'methods'    && <PaymentMethodsTab />}
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
       <style>{STYLES}</style>
     </motion.div>
@@ -386,22 +504,16 @@ export default function DataSettingsPage({ onClose }: { onClose: () => void }) {
 }
 
 const STYLES = `
-  .dsp-overlay { position: fixed; inset: 0; z-index: 800; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
-  .dsp-panel {
-    position: absolute; top: 0; right: 0; bottom: 0; width: 100%; max-width: 640px;
-    background: var(--bg-page); overflow: hidden; display: flex; flex-direction: column;
-    box-shadow: -24px 0 60px rgba(0,0,0,0.4);
-  }
-  .dsp-header { padding: 18px 22px 14px; border-bottom: 1px solid var(--border); background: var(--bg-elevated); flex-shrink: 0; }
-  .dsp-back-btn { display: inline-flex; align-items: center; gap: 6px; background: none; border: none; color: var(--text-muted); font-size: 13px; cursor: pointer; margin-bottom: 8px; padding: 0; transition: color 0.12s; }
+  .dsp-page { max-width: 720px; }
+  .dsp-back-btn { display: inline-flex; align-items: center; gap: 6px; background: none; border: none; color: var(--text-muted); font-size: 13px; cursor: pointer; margin-bottom: 16px; padding: 0; transition: color 0.12s; }
   .dsp-back-btn:hover { color: var(--text-primary); }
-  .dsp-title { font-size: 20px; font-weight: 700; color: var(--text-primary); margin: 0 0 2px; }
-  .dsp-sub { font-size: 12px; color: var(--text-muted); margin: 0; }
-  .dsp-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--bg-card); flex-shrink: 0; overflow-x: auto; }
+  .dsp-title { font-size: 28px; font-weight: 700; color: var(--text-primary); margin: 0 0 4px; }
+  .dsp-sub { font-size: 14px; color: var(--text-secondary); margin: 0 0 20px; }
+  .dsp-tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--border); margin-bottom: 20px; overflow-x: auto; }
   .dsp-tab { padding: 11px 16px; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); transition: color 0.15s, border-color 0.15s; }
   .dsp-tab:hover { color: var(--text-primary); }
   .dsp-tab-active { color: var(--accent-primary) !important; border-bottom-color: var(--accent-primary); }
-  .dsp-content { flex: 1; overflow-y: auto; padding: 18px 22px 32px; }
+  .dsp-content { padding-bottom: 48px; }
 
   /* Group cards */
   .dsc-group-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
@@ -410,9 +522,22 @@ const STYLES = `
   .dsc-expand-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0; display: flex; align-items: center; flex-shrink: 0; }
   .dsc-expand-btn:hover { color: var(--text-primary); }
   .dsc-group-name { font-size: 14px; font-weight: 600; color: var(--text-primary); flex: 1; }
+  .dsc-group-type-tag { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.04em; flex-shrink: 0; }
+  .dsc-type-tag-expense { background: rgba(249,115,22,0.14); color: var(--accent-coral); }
+  .dsc-type-tag-income  { background: rgba(16,185,129,0.14); color: var(--accent-teal); }
   .dsc-group-count { font-size: 11px; color: var(--text-muted); background: var(--bg-card); padding: 1px 7px; border-radius: 20px; border: 1px solid var(--border); flex-shrink: 0; }
   .dsc-group-input { flex: 1; }
   .dsc-group-actions { display: flex; gap: 4px; flex-shrink: 0; }
+
+  /* Type filter */
+  .dsc-type-filter-wrap { position: relative; flex-shrink: 0; }
+  .dsc-type-filter {
+    appearance: none; cursor: pointer; padding: 9px 30px 9px 14px; border-radius: 10px; height: 100%;
+    background: var(--bg-card); border: 2px dashed var(--border); color: var(--text-secondary);
+    font-size: 13px; font-weight: 500;
+  }
+  .dsc-type-filter:focus { outline: none; border-color: var(--border-focus); }
+  .dsc-type-filter-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
 
   /* Sub-category rows */
   .dsc-sub-list { display: flex; flex-direction: column; }
@@ -426,6 +551,7 @@ const STYLES = `
   .dsc-add-sub-form { display: flex; align-items: center; gap: 6px; padding: 8px 12px; flex-wrap: wrap; background: rgba(108,99,255,0.04); border-top: 1px dashed rgba(108,99,255,0.2); }
   .dsc-type-select { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 11px; padding: 4px 6px; cursor: pointer; }
   .dsc-type-select:focus { outline: none; }
+  .dsc-builtin-tag { font-size: 10px; color: var(--text-muted); background: var(--bg-elevated); border: 1px solid var(--border); padding: 1px 7px; border-radius: 20px; flex-shrink: 0; }
 
   /* Add group */
   .dsc-add-group-btn { display: flex; align-items: center; gap: 7px; padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer; background: none; border: 2px dashed var(--border); color: var(--accent-primary); transition: background 0.12s, border-color 0.12s; width: 100%; }
@@ -444,21 +570,18 @@ const STYLES = `
   .dsc-icon-btn.dsc-add-sub:hover { background: rgba(108,99,255,0.1); }
   .dsc-icon-btn.dsc-del:hover { background: rgba(239,68,68,0.1); color: var(--accent-red); border-color: rgba(239,68,68,0.3); }
 
-  /* Tag cards (methods/accounts) */
+  /* Payment method group cards */
   .dsc-tag-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-  .dsc-tag-header { padding: 9px 14px; background: var(--bg-elevated); font-size: 13px; font-weight: 600; color: var(--text-primary); border-bottom: 1px solid var(--border); }
-  .dsc-tag-body { display: flex; flex-wrap: wrap; gap: 7px; padding: 12px 14px; align-items: center; }
-  .dsc-tag { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
-  .dsc-tag-default { background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-secondary); }
-  .dsc-tag-custom { background: rgba(108,99,255,0.1); border: 1px solid rgba(108,99,255,0.25); color: var(--accent-primary); }
-  .dsc-tag-del { display: flex; align-items: center; background: none; border: none; color: inherit; cursor: pointer; opacity: 0.7; padding: 0; }
-  .dsc-tag-del:hover { opacity: 1; }
-  .dsc-tag-add { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 12px; cursor: pointer; background: none; border: 1px dashed var(--border); color: var(--accent-primary); transition: background 0.12s; }
+  .dsc-pm-header { display: flex; align-items: center; gap: 12px; padding: 14px; background: var(--bg-elevated); border-bottom: 1px solid var(--border); }
+  .dsc-pm-icon {
+    width: 44px; height: 44px; border-radius: 12px; font-size: 22px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .dsc-tag-card:hover .dsc-pm-icon { transform: scale(1.08); box-shadow: 0 0 0 4px rgba(108,99,255,0.08); }
+  .dsc-pm-title { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+  .dsc-pm-sub { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .dsc-pm-list { display: flex; flex-direction: column; }
+  .dsc-tag-add { display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; background: none; border: 1px dashed var(--border); color: var(--accent-primary); transition: background 0.12s; flex-shrink: 0; }
   .dsc-tag-add:hover { background: rgba(108,99,255,0.06); }
-  .dsc-tag-input-row { display: inline-flex; align-items: center; gap: 4px; }
-  .dsc-tag-input { background: var(--bg-elevated); border: 1px solid var(--border-focus); border-radius: 6px; color: var(--text-primary); font-size: 12px; padding: 3px 8px; width: 130px; }
-  .dsc-tag-input:focus { outline: none; }
-  .dsc-tag-save { width: 22px; height: 22px; border-radius: 5px; display: flex; align-items: center; justify-content: center; background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: var(--accent-teal); cursor: pointer; }
-  .dsc-tag-save:disabled { opacity: 0.4; cursor: not-allowed; }
-  .dsc-tag-cancel { width: 22px; height: 22px; border-radius: 5px; display: flex; align-items: center; justify-content: center; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; }
 `

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Users, TrendingUp, TrendingDown, ArrowRightLeft, ArrowUp, ArrowDown } from 'lucide-react'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
@@ -7,7 +8,6 @@ import { usePersons } from '@/hooks/useLedger'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
 import PersonCard from '@/components/ledger/PersonCard'
-import PersonManagementPanel from '@/components/ledger/PersonManagementPanel'
 import PaymentForm from '@/components/ledger/PaymentForm'
 import QuickLedgerEntry from '@/components/ledger/QuickLedgerEntry'
 import LedgerPaymentLogs from '@/components/ledger/LedgerPaymentLogs'
@@ -17,6 +17,7 @@ import type { LedgerType } from '@/lib/constants'
 type Tab = 'lent' | 'debt' | 'all' | 'logs' | 'summary'
 
 export default function LedgerPage() {
+  const navigate = useNavigate()
   const { data: persons = [], isLoading } = usePersons()
   const isDemo = useDemoStore((s) => s.isDemo)
   const addToast = useUIStore((s) => s.addToast)
@@ -24,7 +25,6 @@ export default function LedgerPage() {
   const [activeTab, setActiveTab] = useState<Tab>('all')
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
   const [showAddEntry, setShowAddEntry] = useState(false)
-  const [showPeoplePanel, setShowPeoplePanel] = useState(false)
   const [quickPay, setQuickPay] = useState<{ personId: string; personName: string; ledgerType: LedgerType; remaining: number } | null>(null)
 
   // Aggregate totals
@@ -53,7 +53,7 @@ export default function LedgerPage() {
   }
 
   function handleOpenPeoplePanel() {
-    setShowPeoplePanel(true)
+    navigate({ to: '/ledger/people' })
   }
 
   return (
@@ -98,11 +98,9 @@ export default function LedgerPage() {
             <div className="ledger-sum-icon"><TrendingDown size={18} /></div>
             <div className="ledger-sum-label">Total borrowed</div>
             <div className="ledger-sum-value">{formatCurrency(totalOutstandingDebt)}</div>
-          </motion.div>
-          <motion.div className={`ledger-sum-card ${netPosition >= 0 ? 'ledger-sum-net-positive' : 'ledger-sum-net-negative'}`} variants={staggerItem}>
-            <div className="ledger-sum-icon"><ArrowRightLeft size={18} /></div>
-            <div className="ledger-sum-label">Net position</div>
-            <div className="ledger-sum-value">{netPosition >= 0 ? '+' : '−'}{formatCurrency(Math.abs(netPosition))}</div>
+            <div className={`ledger-sum-net-inline ${netPosition >= 0 ? 'ledger-net-positive' : 'ledger-net-negative'}`}>
+              <ArrowRightLeft size={11} /> Net: {netPosition >= 0 ? '+' : '−'}{formatCurrency(Math.abs(netPosition))}
+            </div>
           </motion.div>
         </motion.div>
       )}
@@ -199,9 +197,6 @@ export default function LedgerPage() {
         {showAddEntry && (
           <QuickLedgerEntry onClose={() => setShowAddEntry(false)} />
         )}
-        {showPeoplePanel && (
-          <PersonManagementPanel onClose={() => setShowPeoplePanel(false)} />
-        )}
         {quickPay && (
           <PaymentForm
             personId={quickPay.personId}
@@ -220,10 +215,9 @@ export default function LedgerPage() {
         .page-subtitle { font-size: 14px; color: var(--text-secondary); margin: 0; }
 
         .ledger-summary-grid {
-          display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px;
+          display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px;
         }
-        @media (max-width: 640px) { .ledger-summary-grid { grid-template-columns: 1fr 1fr; } }
-        @media (max-width: 400px) { .ledger-summary-grid { grid-template-columns: 1fr; gap: 8px; } }
+        @media (max-width: 480px) { .ledger-summary-grid { grid-template-columns: 1fr; gap: 8px; } }
 
         .ledger-sum-card {
           border-radius: 14px; padding: 16px; border: 1px solid var(--border);
@@ -241,12 +235,9 @@ export default function LedgerPage() {
         .ledger-sum-debt .ledger-sum-icon { background: rgba(249,115,22,0.15); color: var(--accent-coral); }
         .ledger-sum-debt .ledger-sum-value { color: var(--accent-coral); }
 
-        .ledger-sum-net-positive { background: rgba(16,185,129,0.04); border-color: rgba(16,185,129,0.12); }
-        .ledger-sum-net-positive .ledger-sum-icon { background: rgba(16,185,129,0.12); color: var(--accent-teal); }
-        .ledger-sum-net-positive .ledger-sum-value { color: var(--accent-teal); }
-        .ledger-sum-net-negative { background: rgba(239,68,68,0.04); border-color: rgba(239,68,68,0.12); }
-        .ledger-sum-net-negative .ledger-sum-icon { background: rgba(239,68,68,0.12); color: var(--accent-red); }
-        .ledger-sum-net-negative .ledger-sum-value { color: var(--accent-red); }
+        .ledger-sum-net-inline { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; margin-top: 2px; }
+        .ledger-net-positive { color: var(--accent-teal); }
+        .ledger-net-negative { color: var(--accent-red); }
 
         .ledger-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
         .ledger-sort-btn {

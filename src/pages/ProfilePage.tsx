@@ -9,8 +9,8 @@ import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { cn } from '@/lib/utils'
+import { CURRENCIES } from '@/lib/constants'
 
-const CURRENCIES = ['BDT', 'USD', 'EUR', 'GBP', 'SGD', 'AED', 'INR'] as const
 const TIMEZONES = [
   'Asia/Dhaka',
   'Asia/Kolkata',

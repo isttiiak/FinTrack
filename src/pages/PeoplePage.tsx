@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Plus, Edit2, Check, X, Users, TrendingUp, TrendingDown, Trash2 } from 'lucide-react'
+import { ArrowLeft, Plus, Edit2, Check, X, Users, Trash2, ChevronDown } from 'lucide-react'
+import { fadeUp } from '@/lib/animations'
 import { usePersons, useCreatePerson, useUpdatePerson, useDeletePerson } from '@/hooks/useLedger'
 import { useConfirmStore } from '@/stores/confirmStore'
 import { formatCurrency } from '@/lib/utils'
@@ -17,27 +19,7 @@ const RELATIONSHIP_COLORS: Record<string, string> = {
   Other:              '#9D9AB8',
 }
 
-// ── KPI Card ──────────────────────────────────────────────────────────────────
-interface KpiCardProps {
-  label: string
-  value: string | number
-  sub?: string
-  colorClass: 'teal' | 'coral'
-  icon: React.ReactNode
-}
-
-function KpiCard({ label, value, sub, colorClass, icon }: KpiCardProps) {
-  return (
-    <div className={`pmp-kpi pmp-kpi-${colorClass}`}>
-      <div className="pmp-kpi-icon">{icon}</div>
-      <div className="pmp-kpi-body">
-        <div className="pmp-kpi-label">{label}</div>
-        <div className="pmp-kpi-value">{value}</div>
-        {sub && <div className="pmp-kpi-sub">{sub}</div>}
-      </div>
-    </div>
-  )
-}
+type PeopleTab = 'all' | 'lent' | 'debt'
 
 // ── Person Row ────────────────────────────────────────────────────────────────
 interface PersonRowProps {
@@ -279,7 +261,8 @@ function AddPersonForm({ onSave, onCancel, isSaving }: AddPersonFormProps) {
 }
 
 // ── Root ──────────────────────────────────────────────────────────────────────
-export default function PersonManagementPanel({ onClose }: { onClose: () => void }) {
+export default function PeoplePage() {
+  const navigate = useNavigate()
   const { data: persons = [] } = usePersons()
   const { mutateAsync: createPerson, isPending: isCreating } = useCreatePerson()
   const { mutateAsync: updatePerson, isPending: isUpdating } = useUpdatePerson()
@@ -288,23 +271,24 @@ export default function PersonManagementPanel({ onClose }: { onClose: () => void
 
   const [showAddForm, setShowAddForm] = useState(false)
   const [expandedEditId, setExpandedEditId] = useState<string | null>(null)
+  const [tab, setTab] = useState<PeopleTab>('all')
+  const [relFilter, setRelFilter] = useState<Relationship | ''>('')
 
-  // ── KPI computations
-  const kpi = useMemo(() => {
-    const lenders = persons.filter((p) => p.total_outstanding_lent > 0)
-    const borrowers = persons.filter((p) => p.total_outstanding_debt > 0)
+  // ── Stats
+  const stats = useMemo(() => ({
+    total: persons.length,
+    owedToYou: persons.filter((p) => p.total_outstanding_lent > 0).length,
+    youOwe: persons.filter((p) => p.total_outstanding_debt > 0).length,
+  }), [persons])
 
-    const topLent = lenders.reduce<PersonWithLedgers | null>(
-      (best, p) => (!best || p.total_outstanding_lent > best.total_outstanding_lent ? p : best),
-      null,
-    )
-    const topDebt = borrowers.reduce<PersonWithLedgers | null>(
-      (best, p) => (!best || p.total_outstanding_debt > best.total_outstanding_debt ? p : best),
-      null,
-    )
-
-    return { topLent, topDebt, lenderCount: lenders.length, borrowerCount: borrowers.length }
-  }, [persons])
+  const filtered = useMemo(() => {
+    return persons.filter((p) => {
+      if (tab === 'lent' && p.total_outstanding_lent <= 0) return false
+      if (tab === 'debt' && p.total_outstanding_debt <= 0) return false
+      if (relFilter && p.relationship !== relFilter) return false
+      return true
+    })
+  }, [persons, tab, relFilter])
 
   async function handleCreatePerson(data: { name: string; relationship: Relationship | null; phone: string }) {
     await createPerson({ name: data.name, relationship: data.relationship, phone: data.phone || null, notes: null })
@@ -330,106 +314,100 @@ export default function PersonManagementPanel({ onClose }: { onClose: () => void
   }
 
   return (
-    <motion.div
-      className="pmp-overlay"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.15 }}
-    >
-      <motion.div
-        className="pmp-panel"
-        initial={{ x: '100%' }}
-        animate={{ x: 0 }}
-        exit={{ x: '100%' }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      >
-        {/* ── Header ── */}
-        <div className="pmp-header">
-          <div className="pmp-header-top">
-            <button className="pmp-back-btn" onClick={onClose}>
-              <ArrowLeft size={18} /> Back
-            </button>
+    <motion.div className="pmp-page" variants={fadeUp} initial="initial" animate="animate">
+      {/* Header */}
+      <button className="pd-back" onClick={() => navigate({ to: '/ledger' })}>
+        <ArrowLeft size={15} /> Back to Lent &amp; Debt
+      </button>
+
+      <div className="pmp-header-row">
+        <div>
+          <h1 className="page-title">People</h1>
+          <p className="page-subtitle">Manage people in your lent &amp; debt ledger</p>
+        </div>
+        <motion.button
+          className="btn-primary"
+          style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+          onClick={() => { setShowAddForm((v) => !v); setExpandedEditId(null) }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.97 }}
+        >
+          <Plus size={16} /> Add person
+        </motion.button>
+      </div>
+
+      {/* Compact stats strip */}
+      <div className="pmp-stats-strip">
+        <div className="pmp-stat"><strong>{stats.total}</strong> total people</div>
+        <div className="pmp-stat-sep" />
+        <div className="pmp-stat pmp-stat-teal"><strong>{stats.owedToYou}</strong> owe you</div>
+        <div className="pmp-stat-sep" />
+        <div className="pmp-stat pmp-stat-coral"><strong>{stats.youOwe}</strong> you owe</div>
+      </div>
+
+      {/* Tabs + relationship filter */}
+      <div className="pmp-controls-row">
+        <div className="pmp-tabs">
+          {([['all', 'All people'], ['lent', '💸 Lent'], ['debt', '🏦 Debt']] as [PeopleTab, string][]).map(([t, label]) => (
             <button
-              className="pmp-add-person-btn"
-              onClick={() => { setShowAddForm((v) => !v); setExpandedEditId(null) }}
+              key={t}
+              className={`pmp-tab ${tab === t ? 'pmp-tab-active' : ''}`}
+              onClick={() => setTab(t)}
             >
-              <Plus size={15} />
-              Add person
+              {label}
             </button>
-          </div>
-          <h1 className="pmp-title">People</h1>
-          <p className="pmp-sub">Manage people in your lent &amp; debt ledger</p>
+          ))}
         </div>
-
-        {/* ── KPI Grid ── */}
-        <div className="pmp-kpi-grid">
-          <KpiCard
-            label="Top lent"
-            value={kpi.topLent ? formatCurrency(kpi.topLent.total_outstanding_lent) : '—'}
-            sub={kpi.topLent?.name}
-            colorClass="teal"
-            icon={<TrendingUp size={16} />}
-          />
-          <KpiCard
-            label="Top debt"
-            value={kpi.topDebt ? formatCurrency(kpi.topDebt.total_outstanding_debt) : '—'}
-            sub={kpi.topDebt?.name}
-            colorClass="coral"
-            icon={<TrendingDown size={16} />}
-          />
-          <KpiCard
-            label="Owe you"
-            value={kpi.lenderCount}
-            sub="people with balance"
-            colorClass="teal"
-            icon={<Users size={16} />}
-          />
-          <KpiCard
-            label="You owe"
-            value={kpi.borrowerCount}
-            sub="people with balance"
-            colorClass="coral"
-            icon={<Users size={16} />}
-          />
+        <div className="pmp-rel-filter-wrap">
+          <select
+            className="pmp-rel-filter"
+            value={relFilter}
+            onChange={(e) => setRelFilter(e.target.value as Relationship | '')}
+          >
+            <option value="">All relationships</option>
+            {RELATIONSHIPS.map((r) => <option key={r} value={r}>{r}</option>)}
+          </select>
+          <ChevronDown size={13} className="pmp-rel-filter-icon" />
         </div>
+      </div>
 
-        {/* ── Person list ── */}
-        <div className="pmp-content">
-          <AnimatePresence>
-            {showAddForm && (
-              <AddPersonForm
-                key="add-form"
-                onSave={handleCreatePerson}
-                onCancel={() => setShowAddForm(false)}
-                isSaving={isCreating}
-              />
-            )}
-          </AnimatePresence>
-
-          {persons.length === 0 && !showAddForm && (
-            <div className="pmp-empty">
-              <Users size={36} style={{ color: 'var(--text-muted)', marginBottom: 10 }} />
-              <p>No people yet</p>
-              <p style={{ fontSize: 12 }}>Add someone to start tracking lent &amp; debt</p>
-            </div>
+      {/* Person list */}
+      <div className="pmp-content">
+        <AnimatePresence>
+          {showAddForm && (
+            <AddPersonForm
+              key="add-form"
+              onSave={handleCreatePerson}
+              onCancel={() => setShowAddForm(false)}
+              isSaving={isCreating}
+            />
           )}
+        </AnimatePresence>
 
-          <div className="pmp-list">
-            {persons.map((person) => (
-              <PersonRow
-                key={person.id}
-                person={person}
-                isExpanded={expandedEditId === person.id}
-                onToggleEdit={() => toggleEdit(person.id)}
-                onSave={(data) => handleUpdatePerson(person.id, data)}
-                onDelete={() => handleDeletePerson(person)}
-                isSaving={isUpdating}
-              />
-            ))}
+        {filtered.length === 0 && !showAddForm && (
+          <div className="pmp-empty">
+            <Users size={36} style={{ color: 'var(--text-muted)', marginBottom: 10 }} />
+            <p>{persons.length === 0 ? 'No people yet' : 'No people match this filter'}</p>
+            <p style={{ fontSize: 12 }}>
+              {persons.length === 0 ? 'Add someone to start tracking lent & debt' : 'Try a different tab or relationship filter'}
+            </p>
           </div>
+        )}
+
+        <div className="pmp-list">
+          {filtered.map((person) => (
+            <PersonRow
+              key={person.id}
+              person={person}
+              isExpanded={expandedEditId === person.id}
+              onToggleEdit={() => toggleEdit(person.id)}
+              onSave={(data) => handleUpdatePerson(person.id, data)}
+              onDelete={() => handleDeletePerson(person)}
+              isSaving={isUpdating}
+            />
+          ))}
         </div>
-      </motion.div>
+      </div>
 
       <style>{STYLES}</style>
     </motion.div>
@@ -438,75 +416,52 @@ export default function PersonManagementPanel({ onClose }: { onClose: () => void
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const STYLES = `
-  .pmp-overlay {
-    position: fixed; inset: 0; z-index: 800;
-    background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
-  }
-  .pmp-panel {
-    position: absolute; top: 0; right: 0; bottom: 0; width: 100%; max-width: 600px;
-    background: var(--bg-page); overflow: hidden; display: flex; flex-direction: column;
-    box-shadow: -24px 0 60px rgba(0,0,0,0.4);
-  }
-
-  /* Header */
-  .pmp-header {
-    padding: 18px 22px 14px; border-bottom: 1px solid var(--border);
-    background: var(--bg-elevated); flex-shrink: 0;
-  }
-  .pmp-header-top {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 8px;
-  }
-  .pmp-back-btn {
+  .pmp-page { max-width: 900px; }
+  .pd-back {
     display: inline-flex; align-items: center; gap: 6px; background: none; border: none;
-    color: var(--text-muted); font-size: 13px; cursor: pointer; padding: 0;
+    color: var(--text-muted); font-size: 13px; cursor: pointer; padding: 0; margin-bottom: 16px;
     transition: color 0.12s;
   }
-  .pmp-back-btn:hover { color: var(--text-primary); }
-  .pmp-title { font-size: 20px; font-weight: 700; color: var(--text-primary); margin: 0 0 2px; }
-  .pmp-sub { font-size: 12px; color: var(--text-muted); margin: 0; }
-  .pmp-add-person-btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 8px 14px; border-radius: 10px; border: none; cursor: pointer;
-    font-size: 13px; font-weight: 600;
-    background: linear-gradient(135deg, #6C63FF, #A855F7); color: #fff;
-    transition: opacity 0.12s, transform 0.12s;
-  }
-  .pmp-add-person-btn:hover { opacity: 0.88; transform: scale(1.02); }
+  .pd-back:hover { color: var(--text-primary); }
 
-  /* KPI grid */
-  .pmp-kpi-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-    padding: 14px 22px; border-bottom: 1px solid var(--border);
-    background: var(--bg-card); flex-shrink: 0;
+  .pmp-header-row { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; gap: 16px; flex-wrap: wrap; }
+  .page-title { font-size: 28px; font-weight: 700; color: var(--text-primary); margin: 0 0 4px; }
+  .page-subtitle { font-size: 14px; color: var(--text-secondary); margin: 0; }
+
+  /* Stats strip */
+  .pmp-stats-strip {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 12px 16px; border-radius: 12px; margin-bottom: 16px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    font-size: 13px; color: var(--text-secondary);
   }
-  .pmp-kpi {
-    display: flex; align-items: center; gap: 10px;
-    padding: 12px 14px; border-radius: 12px; border: 1px solid;
+  .pmp-stat strong { color: var(--text-primary); font-size: 15px; margin-right: 4px; }
+  .pmp-stat-teal strong { color: var(--accent-teal); }
+  .pmp-stat-coral strong { color: var(--accent-coral); }
+  .pmp-stat-sep { width: 1px; height: 14px; background: var(--border); }
+
+  /* Controls row */
+  .pmp-controls-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .pmp-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pmp-tab {
+    padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer;
+    background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary);
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
   }
-  .pmp-kpi-teal {
-    background: rgba(16,185,129,0.07);
-    border-color: rgba(16,185,129,0.2);
+  .pmp-tab:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .pmp-tab-active { background: linear-gradient(135deg, #6C63FF, #A855F7); border-color: transparent; color: #fff; }
+
+  .pmp-rel-filter-wrap { position: relative; }
+  .pmp-rel-filter {
+    appearance: none; cursor: pointer; padding: 7px 30px 7px 14px; border-radius: 20px;
+    background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary);
+    font-size: 13px; font-weight: 500;
   }
-  .pmp-kpi-coral {
-    background: rgba(249,115,22,0.07);
-    border-color: rgba(249,115,22,0.2);
-  }
-  .pmp-kpi-icon {
-    width: 32px; height: 32px; border-radius: 8px; display: flex;
-    align-items: center; justify-content: center; flex-shrink: 0;
-  }
-  .pmp-kpi-teal .pmp-kpi-icon { background: rgba(16,185,129,0.15); color: var(--accent-teal); }
-  .pmp-kpi-coral .pmp-kpi-icon { background: rgba(249,115,22,0.15); color: var(--accent-coral); }
-  .pmp-kpi-body { min-width: 0; }
-  .pmp-kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 2px; }
-  .pmp-kpi-value { font-size: 16px; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .pmp-kpi-teal .pmp-kpi-value { color: var(--accent-teal); }
-  .pmp-kpi-coral .pmp-kpi-value { color: var(--accent-coral); }
-  .pmp-kpi-sub { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pmp-rel-filter:focus { outline: none; border-color: var(--border-focus); }
+  .pmp-rel-filter-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
 
   /* Content + list */
-  .pmp-content { flex: 1; overflow-y: auto; padding: 16px 22px 32px; display: flex; flex-direction: column; gap: 10px; }
+  .pmp-content { display: flex; flex-direction: column; gap: 10px; }
   .pmp-list { display: flex; flex-direction: column; gap: 8px; }
   .pmp-empty {
     text-align: center; padding: 48px 16px; color: var(--text-muted);

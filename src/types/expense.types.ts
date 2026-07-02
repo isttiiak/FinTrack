@@ -22,6 +22,10 @@ export interface Transaction {
   payment_method: PaymentMethod | null
   account: Account | null
   created_at: string
+  // Set only when entered in a non-default currency — `amount` above is
+  // always already converted to the user's default currency.
+  original_amount: number | null
+  original_currency: string | null
   // joined
   category?: Category | null
 }
@@ -44,6 +48,8 @@ export interface TransactionFormData {
   type: TxnType
   payment_method?: PaymentMethod
   account?: Account
+  original_amount?: number | null
+  original_currency?: string | null
 }
 
 export interface TransactionFilters {

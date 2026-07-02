@@ -23,10 +23,12 @@ import DashboardPage from '@/pages/DashboardPage'
 import ExpensesPage from '@/pages/ExpensesPage'
 import LedgerPage from '@/pages/LedgerPage'
 import PersonDetailPage from '@/pages/PersonDetailPage'
+import PeoplePage from '@/pages/PeoplePage'
 import InvestmentsPage from '@/pages/InvestmentsPage'
 import InvestmentDetailPage from '@/pages/InvestmentDetailPage'
 import AnalyticsPage from '@/pages/AnalyticsPage'
 import SettingsPage from '@/pages/SettingsPage'
+import DataSettingsPage from '@/pages/DataSettingsPage'
 import ProfilePage from '@/pages/ProfilePage'
 import LandingPage from '@/pages/LandingPage'
 
@@ -214,11 +216,13 @@ const appRoute = createRoute({
 const dashboardRoute      = createRoute({ getParentRoute: () => appRoute, path: '/dashboard',         component: DashboardPage })
 const expensesRoute       = createRoute({ getParentRoute: () => appRoute, path: '/expenses',          component: ExpensesPage })
 const ledgerRoute         = createRoute({ getParentRoute: () => appRoute, path: '/ledger',            component: LedgerPage })
+const peopleRoute         = createRoute({ getParentRoute: () => appRoute, path: '/ledger/people',     component: PeoplePage })
 const personDetailRoute   = createRoute({ getParentRoute: () => appRoute, path: '/ledger/$personId',  component: PersonDetailPage })
 const investmentsRoute       = createRoute({ getParentRoute: () => appRoute, path: '/investments',                 component: InvestmentsPage })
 const investmentDetailRoute  = createRoute({ getParentRoute: () => appRoute, path: '/investments/$investmentId',   component: InvestmentDetailPage })
 const analyticsRoute      = createRoute({ getParentRoute: () => appRoute, path: '/analytics',         component: AnalyticsPage })
 const settingsRoute       = createRoute({ getParentRoute: () => appRoute, path: '/settings',          component: SettingsPage })
+const dataSettingsRoute   = createRoute({ getParentRoute: () => appRoute, path: '/settings/data',     component: DataSettingsPage })
 const profileRoute        = createRoute({ getParentRoute: () => appRoute, path: '/profile',           component: ProfilePage })
 
 // ── Router ────────────────────────────────────────
@@ -232,11 +236,13 @@ const routeTree = rootRoute.addChildren([
     dashboardRoute,
     expensesRoute,
     ledgerRoute,
+    peopleRoute,
     personDetailRoute,
     investmentsRoute,
     investmentDetailRoute,
     analyticsRoute,
     settingsRoute,
+    dataSettingsRoute,
     profileRoute,
   ]),
 ])

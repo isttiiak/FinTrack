@@ -11,24 +11,12 @@ import QuickAddFAB from '@/components/expenses/QuickAddFAB'
 import EmptyState from '@/components/common/EmptyState'
 import { SkeletonList } from '@/components/common/SkeletonCard'
 import AnimatedNumber from '@/components/common/AnimatedNumber'
+import MonthPicker from '@/components/common/MonthPicker'
 import type { Transaction, TransactionFilters } from '@/types/expense.types'
 import { PAYMENT_METHODS } from '@/lib/constants'
 import { formatCurrency, toISODateString } from '@/lib/utils'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { cn } from '@/lib/utils'
-
-function MonthPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  return (
-    <div className="month-picker">
-      <input
-        type="month"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="month-input"
-      />
-    </div>
-  )
-}
 
 export default function ExpensesPage() {
   const now = new Date()
@@ -339,14 +327,6 @@ export default function ExpensesPage() {
         .budgets-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
 
         .filters-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
-
-        .month-picker {}
-        .month-input {
-          background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
-          color: var(--text-primary); font-size: 13px; padding: 7px 12px;
-          cursor: pointer;
-        }
-        .month-input:focus { outline: none; border-color: var(--border-focus); }
 
         .filter-toggle-btn {
           display: flex; align-items: center; gap: 6px; position: relative;

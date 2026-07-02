@@ -26,7 +26,7 @@ function formatResult(text: string) {
   })
 }
 
-// ── Individual feature card ───────────────────────────────────────────────────
+// ── Individual feature row — collapsed by default, expands once run ──────────
 interface FeatureCardProps {
   icon: string
   title: string
@@ -47,14 +47,13 @@ function FeatureCard({ icon, title, desc, onRun, children, accent = '#6C63FF' }:
     finally { setLoading(false) }
   }
 
+  const expanded = !!children || !!error || !!result || loading
+
   return (
-    <div className="aih-card">
-      <div className="aih-card-header">
-        <div className="aih-card-icon" style={{ background: `${accent}18`, color: accent }}>{icon}</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="aih-card-title">{title}</div>
-          <div className="aih-card-desc">{desc}</div>
-        </div>
+    <div className={`aih-row ${expanded ? 'aih-row-expanded' : ''}`}>
+      <div className="aih-row-header" title={desc}>
+        <div className="aih-row-icon" style={{ background: `${accent}18`, color: accent }}>{icon}</div>
+        <div className="aih-row-title">{title}</div>
         <button className="aih-run-btn" onClick={run} disabled={loading}
           style={{ borderColor: `${accent}44`, color: accent }}>
           {loading ? <span className="aih-spinner" /> : <><RefreshCw size={12} /> Run</>}
@@ -307,35 +306,44 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
         <span className="aih-header-sub">Powered by Groq free tier · Click any feature to analyze</span>
       </div>
 
-      {/* Feature grid */}
-      <div className="aih-grid">
-        <FeatureCard icon="🚨" title="Anomaly Detection" accent="#EF4444"
-          desc="Flags categories with unusual spending spikes vs your 3-month average."
-          onRun={runAnomalyDetection} />
+      {/* Spending Analysis — collapsed rows, expand on Run */}
+      <div className="aih-section">
+        <div className="aih-section-title">Spending Analysis</div>
+        <div className="aih-row-list">
+          <FeatureCard icon="🚨" title="Anomaly Detection" accent="#EF4444"
+            desc="Flags categories with unusual spending spikes vs your 3-month average."
+            onRun={runAnomalyDetection} />
 
-        <FeatureCard icon="📋" title="Weekly Digest" accent="#10B981"
-          desc="A friendly summary of your last 7 days — highlights, concerns, and a tip."
-          onRun={runWeeklyDigest} />
+          <FeatureCard icon="📋" title="Weekly Digest" accent="#10B981"
+            desc="A friendly summary of your last 7 days — highlights, concerns, and a tip."
+            onRun={runWeeklyDigest} />
 
-        <FeatureCard icon="⚖️" title="Budget vs Actual Analysis" accent="#F59E0B"
-          desc="Explains WHY you're over or under budget and what to do about it."
-          onRun={runBudgetAnalysis} />
+          <FeatureCard icon="⚖️" title="Budget vs Actual Analysis" accent="#F59E0B"
+            desc="Explains WHY you're over or under budget and what to do about it."
+            onRun={runBudgetAnalysis} />
 
-        <FeatureCard icon="🔄" title="Spending Patterns" accent="#06B6D4"
-          desc="Identifies recurring habits and expensive patterns in your 6-month history."
-          onRun={runSpendingPatterns} />
+          <FeatureCard icon="🔄" title="Spending Patterns" accent="#06B6D4"
+            desc="Identifies recurring habits and expensive patterns in your 6-month history."
+            onRun={runSpendingPatterns} />
 
-        <FeatureCard icon="💡" title="Budget Recommendations" accent="#6C63FF"
-          desc="Suggests realistic budget targets based on your actual spending averages."
-          onRun={runBudgetRecommendations} />
+          <FeatureCard icon="📊" title="Benchmarking" accent="#A855F7"
+            desc="Compares your spending to typical Bangladesh household benchmarks."
+            onRun={runBenchmarking} />
 
-        <FeatureCard icon="📊" title="Benchmarking" accent="#A855F7"
-          desc="Compares your spending to typical Bangladesh household benchmarks."
-          onRun={runBenchmarking} />
+          <FeatureCard icon="🏦" title="Debt Payoff Strategy" accent="#F97316"
+            desc="Analyzes your lent/debt entries and recommends Snowball vs Avalanche strategy."
+            onRun={runDebtStrategy} />
+        </div>
+      </div>
 
-        <FeatureCard icon="🏦" title="Debt Payoff Strategy" accent="#F97316"
-          desc="Analyzes your lent/debt entries and recommends Snowball vs Avalanche strategy."
-          onRun={runDebtStrategy} />
+      {/* Planning */}
+      <div className="aih-section">
+        <div className="aih-section-title">Planning</div>
+        <div className="aih-row-list">
+          <FeatureCard icon="💡" title="Budget Recommendations" accent="#6C63FF"
+            desc="Suggests realistic budget targets based on your actual spending averages."
+            onRun={runBudgetRecommendations} />
+        </div>
       </div>
 
       {/* Goal Planner — needs user input */}
@@ -449,11 +457,12 @@ const STYLES = `
   .aih-provider-badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 20px; background: rgba(16,185,129,0.12); color: var(--accent-teal); }
   .aih-header-sub { font-size: 12px; color: var(--text-muted); }
 
-  /* Feature grid */
-  .aih-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  @media (max-width: 640px) { .aih-grid { grid-template-columns: 1fr; } }
+  /* Sections */
+  .aih-section { display: flex; flex-direction: column; gap: 8px; }
+  .aih-section-title { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .aih-row-list { display: flex; flex-direction: column; gap: 6px; }
 
-  /* Feature card */
+  /* Feature card (used by Goal Planner + Chat) */
   .aih-card {
     background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
     padding: 16px; display: flex; flex-direction: column; gap: 10px;
@@ -464,17 +473,28 @@ const STYLES = `
   .aih-card-icon { width: 36px; height: 36px; border-radius: 10px; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .aih-card-title { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
   .aih-card-desc { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+
+  /* Collapsed-by-default feature row (Spending Analysis / Planning lists) */
+  .aih-row {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 10px 12px; transition: border-color 0.15s;
+  }
+  .aih-row:hover { border-color: rgba(108,99,255,0.2); }
+  .aih-row-expanded { padding-bottom: 12px; }
+  .aih-row-header { display: flex; align-items: center; gap: 10px; cursor: default; }
+  .aih-row-icon { width: 30px; height: 30px; border-radius: 9px; font-size: 15px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .aih-row-title { flex: 1; font-size: 13px; font-weight: 600; color: var(--text-primary); }
+
   .aih-run-btn {
     display: flex; align-items: center; gap: 5px; flex-shrink: 0;
     padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer;
     background: none; border: 1px solid; transition: background 0.12s; white-space: nowrap;
-    align-self: flex-start;
   }
   .aih-run-btn:hover { background: rgba(108,99,255,0.06); }
   .aih-run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  .aih-error { display: flex; align-items: flex-start; gap: 7px; padding: 10px 12px; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); border-radius: 8px; font-size: 12px; color: var(--accent-red); }
-  .aih-result { padding: 10px 0 0; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 2px; }
+  .aih-error { display: flex; align-items: flex-start; gap: 7px; padding: 10px 12px; margin-top: 10px; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); border-radius: 8px; font-size: 12px; color: var(--accent-red); }
+  .aih-result { padding: 10px 0 0; margin-top: 4px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 2px; }
 
   /* Goal planner */
   .aih-goal-inputs { display: flex; gap: 10px; flex-wrap: wrap; }

@@ -113,5 +113,18 @@ export type TxnType = (typeof TXN_TYPES)[number]
 export const LEDGER_TYPES = ['Lent', 'Debt'] as const
 export type LedgerType = (typeof LEDGER_TYPES)[number]
 
+export const CURRENCIES = ['BDT', 'USD', 'EUR', 'GBP', 'SGD', 'AED', 'INR'] as const
+export type Currency = (typeof CURRENCIES)[number]
+
+export const CURRENCY_SYMBOLS: Record<Currency, string> = {
+  BDT: '৳',
+  USD: '$',
+  EUR: '€',
+  GBP: '£',
+  SGD: 'S$',
+  AED: 'د.إ',
+  INR: '₹',
+}
+
 export const LEDGER_STATUSES = ['Pending', 'Partial', 'Settled'] as const
 export type LedgerStatus = (typeof LEDGER_STATUSES)[number]
