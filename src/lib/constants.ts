@@ -59,6 +59,13 @@ export const ACCOUNTS = [
 ] as const
 export type Account = (typeof ACCOUNTS)[number]
 
+// Card and Bank Transfer both draw from the same real-world set of bank
+// accounts — there's no reason to make a user maintain "BRAC Bank Savings"
+// as two separate custom entries. This is the single shared default list;
+// user customization (add/hide/reorder) is also shared via
+// lib/paymentMethodPrefs.ts's `getBankAccounts()`/`setBankAccounts()`.
+export const BANK_ACCOUNTS = ['BRAC Bank Savings', 'Islami Bank', 'Prime Bank', 'Dutch Bangla Bank', 'Other'] as Account[]
+
 // UI grouping: method group → specific methods + default accounts
 export const PAYMENT_METHOD_GROUPS = {
   Cash: {
@@ -76,13 +83,13 @@ export const PAYMENT_METHOD_GROUPS = {
   Card: {
     label: 'Card', icon: '💳',
     methods: ['Card'] as PaymentMethod[],
-    accounts: ['BRAC Bank Savings', 'Islami Bank', 'Prime Bank', 'Dutch Bangla Bank', 'Other'] as Account[],
+    accounts: BANK_ACCOUNTS,
     autoAccount: null,
   },
   'Bank Transfer': {
     label: 'Bank Transfer', icon: '🏦',
     methods: ['Bank Transfer'] as PaymentMethod[],
-    accounts: ['BRAC Bank Savings', 'Islami Bank', 'Prime Bank', 'Dutch Bangla Bank', 'Other'] as Account[],
+    accounts: BANK_ACCOUNTS,
     autoAccount: null,
   },
 } as const
@@ -115,16 +122,6 @@ export type LedgerType = (typeof LEDGER_TYPES)[number]
 
 export const CURRENCIES = ['BDT', 'USD', 'EUR', 'GBP', 'SGD', 'AED', 'INR'] as const
 export type Currency = (typeof CURRENCIES)[number]
-
-export const CURRENCY_SYMBOLS: Record<Currency, string> = {
-  BDT: '৳',
-  USD: '$',
-  EUR: '€',
-  GBP: '£',
-  SGD: 'S$',
-  AED: 'د.إ',
-  INR: '₹',
-}
 
 export const LEDGER_STATUSES = ['Pending', 'Partial', 'Settled'] as const
 export type LedgerStatus = (typeof LEDGER_STATUSES)[number]

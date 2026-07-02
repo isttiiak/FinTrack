@@ -2,29 +2,22 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  ArrowLeft, Plus, Edit2, Check, X, Trash2, ChevronDown, ChevronRight,
+  ArrowLeft, Plus, Edit2, Check, X, Trash2, ChevronDown, ChevronUp, ChevronRight,
 } from 'lucide-react'
 import {
   useCategories, useCreateCategory, useUpdateCategory,
   useDeleteCategory, useRenameMainGroup, useDeleteMainGroup,
 } from '@/hooks/useCategories'
 import { useConfirmStore } from '@/stores/confirmStore'
-import { PAYMENT_METHOD_GROUPS } from '@/lib/constants'
+import {
+  getMfsProviders, setMfsProviders, resetMfsProviders,
+  getBankAccounts, setBankAccounts, resetBankAccounts,
+} from '@/lib/paymentMethodPrefs'
 import { supabase } from '@/lib/supabase'
 import type { Category } from '@/types/expense.types'
-import type { PaymentMethodGroup } from '@/lib/constants'
 
 type DSTab = 'categories' | 'methods'
 type TypeFilter = 'All' | 'Expense' | 'Income'
-
-const LS_CUSTOM_METHODS  = 'fintrack_custom_methods'
-const LS_CUSTOM_ACCOUNTS = 'fintrack_custom_accounts'
-function readCustom(key: string): Record<string, string[]> {
-  try { return JSON.parse(localStorage.getItem(key) ?? '{}') } catch { return {} }
-}
-function saveCustom(key: string, val: Record<string, string[]>) {
-  localStorage.setItem(key, JSON.stringify(val))
-}
 
 // ── Categories tab — unified tree view ───────────────────────────────────────
 function CategoriesTab({ categories }: { categories: Category[] }) {
@@ -305,158 +298,188 @@ function CategoriesTab({ categories }: { categories: Category[] }) {
   )
 }
 
-// ── Payment Methods tab — one list per group, scoped to what the picker actually uses ──
-// MFS uses the "methods" entity (provider chips); Card/Bank Transfer use "accounts"
-// (only that list is ever read by PaymentMethodPicker for those groups); Cash is fixed.
-const GROUP_ICON_COLOR: Record<PaymentMethodGroup, string> = {
-  Cash: '#10B981',
-  MFS: '#6C63FF',
-  Card: '#F59E0B',
-  'Bank Transfer': '#06B6D4',
+// ── Payment Methods tab ──────────────────────────────────────────────────────
+// Cash is fixed (the picker never lets it vary). MFS providers and bank
+// accounts are both fully user-customizable: reorder, rename, remove, add,
+// or reset to defaults — built-ins aren't a protected subset, they're just
+// the starting list. Card and Bank Transfer share ONE bank-accounts list
+// (see lib/paymentMethodPrefs.ts) since they were previously two separate
+// but identical account lists — merging removes duplicate upkeep without
+// losing the Card-vs-Bank-Transfer distinction itself (that's a different
+// field, `payment_method`, unaffected by this).
+
+interface EditableListProps {
+  items: string[]
+  onChange: (items: string[]) => void
+  onReset: () => void
+  placeholder: string
+  toDisplay?: (raw: string) => string
+  toStored?: (display: string) => string
 }
-const GROUP_ORDER: PaymentMethodGroup[] = ['Cash', 'MFS', 'Card', 'Bank Transfer']
 
-function PaymentMethodsTab() {
-  const [customMethods, setCustomMethods]   = useState<Record<string, string[]>>(() => readCustom(LS_CUSTOM_METHODS))
-  const [customAccounts, setCustomAccounts] = useState<Record<string, string[]>>(() => readCustom(LS_CUSTOM_ACCOUNTS))
-  const [addingTo, setAddingTo] = useState<PaymentMethodGroup | null>(null)
+function EditableList({ items, onChange, onReset, placeholder, toDisplay = (v) => v, toStored = (v) => v }: EditableListProps) {
+  const [adding, setAdding] = useState(false)
   const [newVal, setNewVal] = useState('')
-  const [editing, setEditing] = useState<{ group: PaymentMethodGroup; original: string; val: string } | null>(null)
+  const [editingIdx, setEditingIdx] = useState<number | null>(null)
+  const [editVal, setEditVal] = useState('')
 
-  function entityFor(group: PaymentMethodGroup) {
-    return group === 'MFS' ? 'methods' : 'accounts'
+  function move(i: number, dir: -1 | 1) {
+    const j = i + dir
+    if (j < 0 || j >= items.length) return
+    const next = [...items]
+    ;[next[i], next[j]] = [next[j], next[i]]
+    onChange(next)
   }
-  function storageFor(group: PaymentMethodGroup) {
-    return entityFor(group) === 'methods'
-      ? { key: LS_CUSTOM_METHODS, state: customMethods, setState: setCustomMethods }
-      : { key: LS_CUSTOM_ACCOUNTS, state: customAccounts, setState: setCustomAccounts }
+  function removeAt(i: number) {
+    onChange(items.filter((_, idx) => idx !== i))
   }
-  function defaultItemsFor(group: PaymentMethodGroup): string[] {
-    return entityFor(group) === 'methods'
-      ? PAYMENT_METHOD_GROUPS[group].methods as unknown as string[]
-      : PAYMENT_METHOD_GROUPS[group].accounts as unknown as string[]
-  }
-
-  function add(group: PaymentMethodGroup) {
-    const val = newVal.trim(); if (!val) return
-    const { key, state, setState } = storageFor(group)
-    // Match PaymentMethodPicker's own convention: custom MFS providers are
-    // stored with the "MFS - " prefix, same as the built-in ones.
-    const stored = group === 'MFS' ? `MFS - ${val}` : val
-    const updated = { ...state, [group]: [...(state[group] ?? []), stored] }
-    setState(updated); saveCustom(key, updated); setAddingTo(null); setNewVal('')
-  }
-  function remove(group: PaymentMethodGroup, val: string) {
-    const { key, state, setState } = storageFor(group)
-    const updated = { ...state, [group]: (state[group] ?? []).filter((v) => v !== val) }
-    setState(updated); saveCustom(key, updated)
+  function startEdit(i: number) {
+    setEditingIdx(i); setEditVal(toDisplay(items[i]))
   }
   function saveEdit() {
-    if (!editing) return
-    const val = editing.val.trim(); if (!val) { setEditing(null); return }
-    const { key, state, setState } = storageFor(editing.group)
-    const stored = editing.group === 'MFS' && !val.startsWith('MFS - ') ? `MFS - ${val}` : val
-    const updated = {
-      ...state,
-      [editing.group]: (state[editing.group] ?? []).map((v) => (v === editing.original ? stored : v)),
-    }
-    setState(updated); saveCustom(key, updated); setEditing(null)
+    if (editingIdx == null) return
+    const val = editVal.trim()
+    if (!val) { setEditingIdx(null); return }
+    const next = [...items]
+    next[editingIdx] = toStored(val)
+    onChange(next); setEditingIdx(null)
+  }
+  function addItem() {
+    const val = newVal.trim(); if (!val) return
+    onChange([...items, toStored(val)])
+    setAdding(false); setNewVal('')
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {GROUP_ORDER.map((group) => {
-        const cfg = PAYMENT_METHOD_GROUPS[group]
-        const color = GROUP_ICON_COLOR[group]
-        const isFixed = group === 'Cash'
-        const defaults = defaultItemsFor(group)
-        const customs = storageFor(group).state[group] ?? []
-        const isAdding = addingTo === group
-
-        return (
-          <div key={group} className="dsc-tag-card">
-            <div className="dsc-pm-header">
-              <div className="dsc-pm-icon" style={{ background: `${color}1c`, color }}>{cfg.icon}</div>
-              <div style={{ flex: 1 }}>
-                <div className="dsc-pm-title">{cfg.label}</div>
-                <div className="dsc-pm-sub">{entityFor(group) === 'methods' ? 'Providers' : 'Accounts'}</div>
+    <>
+      <div className="dsc-pm-list">
+        {items.map((item, i) => {
+          const isEditingThis = editingIdx === i
+          return (
+            <div key={`${item}-${i}`} className="dsc-sub-row">
+              <div className="dsc-reorder-btns">
+                <button className="dsc-reorder-btn" disabled={i === 0} onClick={() => move(i, -1)} title="Move up"><ChevronUp size={12} /></button>
+                <button className="dsc-reorder-btn" disabled={i === items.length - 1} onClick={() => move(i, 1)} title="Move down"><ChevronDown size={12} /></button>
               </div>
-              {!isFixed && (
-                <button className="dsc-tag-add" onClick={() => { setAddingTo(isAdding ? null : group); setNewVal('') }}>
-                  <Plus size={11} /> Add
-                </button>
+              {isEditingThis ? (
+                <input
+                  className="dsc-inline-input" style={{ flex: 1 }}
+                  value={editVal}
+                  onChange={(e) => setEditVal(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
+                  autoFocus
+                />
+              ) : (
+                <span className="dsc-sub-name">{toDisplay(item)}</span>
               )}
-            </div>
-
-            <div className="dsc-pm-list">
-              {defaults.map((item) => (
-                <div key={item} className="dsc-sub-row" title="Built-in — cannot be edited or removed">
-                  <span className="dsc-sub-name">{group === 'MFS' ? item.replace('MFS - ', '') : item}</span>
-                  <span className="dsc-builtin-tag">Built-in</span>
-                </div>
-              ))}
-              {customs.map((item) => {
-                const isEditingThis = editing?.group === group && editing.original === item
-                return (
-                  <div key={item} className="dsc-sub-row">
-                    {isEditingThis ? (
-                      <input
-                        className="dsc-inline-input" style={{ flex: 1 }}
-                        value={editing.val}
-                        onChange={(e) => setEditing({ ...editing, val: e.target.value })}
-                        onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
-                        autoFocus
-                      />
-                    ) : (
-                      <span className="dsc-sub-name">{group === 'MFS' ? item.replace('MFS - ', '') : item}</span>
-                    )}
-                    <div className="dsc-sub-actions">
-                      {isEditingThis ? (
-                        <>
-                          <button className="dsc-icon-btn dsc-ok" onClick={saveEdit}><Check size={12} /></button>
-                          <button className="dsc-icon-btn" onClick={() => setEditing(null)}><X size={12} /></button>
-                        </>
-                      ) : (
-                        <>
-                          <button className="dsc-icon-btn" title="Edit"
-                            onClick={() => setEditing({ group, original: item, val: group === 'MFS' ? item.replace('MFS - ', '') : item })}>
-                            <Edit2 size={12} />
-                          </button>
-                          <button className="dsc-icon-btn dsc-del" title="Delete" onClick={() => remove(group, item)}>
-                            <Trash2 size={12} />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-
-              <AnimatePresence>
-                {isAdding && (
-                  <motion.div className="dsc-add-sub-form" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-                    <input
-                      className="dsc-inline-input" style={{ flex: 1 }}
-                      placeholder={entityFor(group) === 'methods' ? 'Provider name…' : 'Account name…'}
-                      value={newVal}
-                      onChange={(e) => setNewVal(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && add(group)} autoFocus
-                    />
-                    <button className="dsc-icon-btn dsc-ok" onClick={() => add(group)} disabled={!newVal.trim()}><Check size={12} /></button>
-                    <button className="dsc-icon-btn" onClick={() => setAddingTo(null)}><X size={12} /></button>
-                  </motion.div>
+              <div className="dsc-sub-actions">
+                {isEditingThis ? (
+                  <>
+                    <button className="dsc-icon-btn dsc-ok" onClick={saveEdit}><Check size={12} /></button>
+                    <button className="dsc-icon-btn" onClick={() => setEditingIdx(null)}><X size={12} /></button>
+                  </>
+                ) : (
+                  <>
+                    <button className="dsc-icon-btn" title="Edit" onClick={() => startEdit(i)}><Edit2 size={12} /></button>
+                    <button className="dsc-icon-btn dsc-del" title="Remove" onClick={() => removeAt(i)}><Trash2 size={12} /></button>
+                  </>
                 )}
-              </AnimatePresence>
-
-              {isFixed && (
-                <p style={{ fontSize: 11, color: 'var(--text-muted)', padding: '6px 12px 2px', margin: 0 }}>
-                  Cash is always a single fixed entry.
-                </p>
-              )}
+              </div>
             </div>
+          )
+        })}
+        {items.length === 0 && (
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', padding: '10px 12px', margin: 0 }}>
+            Nothing here — add one below, or reset to defaults.
+          </p>
+        )}
+        <AnimatePresence>
+          {adding && (
+            <motion.div className="dsc-add-sub-form" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              <input
+                className="dsc-inline-input" style={{ flex: 1 }}
+                placeholder={placeholder}
+                value={newVal}
+                onChange={(e) => setNewVal(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addItem()} autoFocus
+              />
+              <button className="dsc-icon-btn dsc-ok" onClick={addItem} disabled={!newVal.trim()}><Check size={12} /></button>
+              <button className="dsc-icon-btn" onClick={() => setAdding(false)}><X size={12} /></button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+      <div className="dsc-pm-footer">
+        <button className="dsc-tag-add" onClick={() => { setAdding((v) => !v); setNewVal('') }}><Plus size={11} /> Add</button>
+        <button className="dsc-reset-link" onClick={onReset}>Reset to defaults</button>
+      </div>
+    </>
+  )
+}
+
+function PaymentMethodsTab() {
+  const [mfsProviders, setMfsProvidersState] = useState<string[]>(getMfsProviders)
+  const [bankAccounts, setBankAccountsState] = useState<string[]>(getBankAccounts)
+
+  function updateMfs(list: string[]) { setMfsProvidersState(list); setMfsProviders(list) }
+  function updateBank(list: string[]) { setBankAccountsState(list); setBankAccounts(list) }
+  function handleResetMfs() { resetMfsProviders(); setMfsProvidersState(getMfsProviders()) }
+  function handleResetBank() { resetBankAccounts(); setBankAccountsState(getBankAccounts()) }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* Cash — fixed */}
+      <div className="dsc-tag-card">
+        <div className="dsc-pm-header">
+          <div className="dsc-pm-icon" style={{ background: '#10B9811c', color: '#10B981' }}>💵</div>
+          <div style={{ flex: 1 }}>
+            <div className="dsc-pm-title">Cash</div>
+            <div className="dsc-pm-sub">Fixed</div>
           </div>
-        )
-      })}
+        </div>
+        <div className="dsc-pm-list">
+          <div className="dsc-sub-row"><span className="dsc-sub-name">Cash</span></div>
+        </div>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', padding: '6px 12px 10px', margin: 0 }}>
+          Cash is always a single fixed entry — there's nothing to customize here.
+        </p>
+      </div>
+
+      {/* MFS providers */}
+      <div className="dsc-tag-card">
+        <div className="dsc-pm-header">
+          <div className="dsc-pm-icon" style={{ background: '#6C63FF1c', color: '#6C63FF' }}>📱</div>
+          <div style={{ flex: 1 }}>
+            <div className="dsc-pm-title">MFS</div>
+            <div className="dsc-pm-sub">Providers — reorder, rename, or remove any of them</div>
+          </div>
+        </div>
+        <EditableList
+          items={mfsProviders}
+          onChange={updateMfs}
+          onReset={handleResetMfs}
+          placeholder="Provider name…"
+          toDisplay={(v) => v.replace('MFS - ', '')}
+          toStored={(v) => (v.startsWith('MFS - ') ? v : `MFS - ${v}`)}
+        />
+      </div>
+
+      {/* Bank accounts — shared by Card + Bank Transfer */}
+      <div className="dsc-tag-card">
+        <div className="dsc-pm-header">
+          <div className="dsc-pm-icon" style={{ background: '#F59E0B1c', color: '#F59E0B' }}>🏦</div>
+          <div style={{ flex: 1 }}>
+            <div className="dsc-pm-title">Bank Accounts</div>
+            <div className="dsc-pm-sub">Shared by both Card and Bank Transfer payments</div>
+          </div>
+        </div>
+        <EditableList
+          items={bankAccounts}
+          onChange={updateBank}
+          onReset={handleResetBank}
+          placeholder="Account name…"
+        />
+      </div>
     </div>
   )
 }
@@ -584,4 +607,11 @@ const STYLES = `
   .dsc-pm-list { display: flex; flex-direction: column; }
   .dsc-tag-add { display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; background: none; border: 1px dashed var(--border); color: var(--accent-primary); transition: background 0.12s; flex-shrink: 0; }
   .dsc-tag-add:hover { background: rgba(108,99,255,0.06); }
+  .dsc-pm-footer { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-top: 1px solid var(--border); }
+  .dsc-reset-link { background: none; border: none; color: var(--text-muted); font-size: 11px; cursor: pointer; padding: 0; text-decoration: underline; text-underline-offset: 2px; }
+  .dsc-reset-link:hover { color: var(--text-secondary); }
+  .dsc-reorder-btns { display: flex; flex-direction: column; gap: 1px; flex-shrink: 0; }
+  .dsc-reorder-btn { width: 18px; height: 14px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0; transition: color 0.1s; }
+  .dsc-reorder-btn:hover:not(:disabled) { color: var(--accent-primary); }
+  .dsc-reorder-btn:disabled { opacity: 0.25; cursor: not-allowed; }
 `

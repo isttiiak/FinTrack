@@ -1,18 +1,9 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, Plus, Check, X } from 'lucide-react'
-import { PAYMENT_METHOD_GROUPS, getMethodGroup } from '@/lib/constants'
+import { getMethodGroup } from '@/lib/constants'
 import type { PaymentMethod, Account, PaymentMethodGroup } from '@/lib/constants'
-
-const LS_CUSTOM_METHODS  = 'fintrack_custom_methods'
-const LS_CUSTOM_ACCOUNTS = 'fintrack_custom_accounts'
-
-function readCustom(key: string): Record<string, string[]> {
-  try { return JSON.parse(localStorage.getItem(key) ?? '{}') } catch { return {} }
-}
-function saveCustom(key: string, val: Record<string, string[]>) {
-  localStorage.setItem(key, JSON.stringify(val))
-}
+import { getMfsProviders, setMfsProviders, getBankAccounts, setBankAccounts } from '@/lib/paymentMethodPrefs'
 
 interface PaymentMethodPickerProps {
   method: PaymentMethod | string | undefined
@@ -22,6 +13,12 @@ interface PaymentMethodPickerProps {
 }
 
 const GROUP_ORDER: PaymentMethodGroup[] = ['Cash', 'MFS', 'Card', 'Bank Transfer']
+const GROUP_META: Record<PaymentMethodGroup, { icon: string; label: string }> = {
+  Cash: { icon: '💵', label: 'Cash' },
+  MFS: { icon: '📱', label: 'MFS' },
+  Card: { icon: '💳', label: 'Card' },
+  'Bank Transfer': { icon: '🏦', label: 'Bank Transfer' },
+}
 
 export default function PaymentMethodPicker({
   method, account, onMethodChange, onAccountChange,
@@ -29,34 +26,21 @@ export default function PaymentMethodPicker({
   const [selectedGroup, setSelectedGroup] = useState<PaymentMethodGroup | null>(
     () => getMethodGroup(method ?? null),
   )
-  // Custom method addition
+  // Custom MFS provider addition — Card/Bank Transfer never use a "methods"
+  // list (only Cash/MFS do; Card & Bank Transfer are the method itself, the
+  // picker below just needs which bank *account* it went through).
   const [addingMethod, setAddingMethod] = useState(false)
   const [newMethodName, setNewMethodName] = useState('')
-  const [newMethodGroup, setNewMethodGroup] = useState<PaymentMethodGroup>('Cash')
-  // Custom account
+  // Custom bank account (shared by Card + Bank Transfer)
   const [customAccountMode, setCustomAccountMode] = useState(false)
   const [customAccountVal, setCustomAccountVal] = useState('')
 
-  const [customMethods, setCustomMethods] = useState<Record<string, string[]>>(() => readCustom(LS_CUSTOM_METHODS))
-  const [customAccounts, setCustomAccounts] = useState<Record<string, string[]>>(() => readCustom(LS_CUSTOM_ACCOUNTS))
+  const [mfsProviders, setMfsProvidersState] = useState<string[]>(getMfsProviders)
+  const [bankAccounts, setBankAccountsState] = useState<string[]>(getBankAccounts)
 
   const isMFS     = selectedGroup === 'MFS'
   const isCash    = selectedGroup === 'Cash'
   const needsDropdownAccount = selectedGroup && !isCash && !isMFS
-
-  // All methods for the selected group (default + custom)
-  function groupMethods(g: PaymentMethodGroup): string[] {
-    return [
-      ...(PAYMENT_METHOD_GROUPS[g].methods as string[]),
-      ...(customMethods[g] ?? []),
-    ]
-  }
-  function groupAccounts(g: PaymentMethodGroup): string[] {
-    return [
-      ...(PAYMENT_METHOD_GROUPS[g].accounts as string[]),
-      ...(customAccounts[g] ?? []),
-    ]
-  }
 
   function selectGroup(group: PaymentMethodGroup) {
     if (selectedGroup === group) {
@@ -83,18 +67,17 @@ export default function PaymentMethodPicker({
   function saveCustomMethod() {
     const name = newMethodName.trim()
     if (!name) return
-    const fullName = newMethodGroup === 'MFS' ? `MFS - ${name}` : name
-    const updated = { ...customMethods, [newMethodGroup]: [...(customMethods[newMethodGroup] ?? []), fullName] }
-    setCustomMethods(updated); saveCustom(LS_CUSTOM_METHODS, updated)
+    const fullName = `MFS - ${name}`
+    const updated = [...mfsProviders, fullName]
+    setMfsProvidersState(updated); setMfsProviders(updated)
     setAddingMethod(false); setNewMethodName('')
   }
 
   function saveCustomAccount() {
     const val = customAccountVal.trim()
     if (!val || !selectedGroup) return
-    // persist
-    const updated = { ...customAccounts, [selectedGroup]: [...(customAccounts[selectedGroup] ?? []), val] }
-    setCustomAccounts(updated); saveCustom(LS_CUSTOM_ACCOUNTS, updated)
+    const updated = [...bankAccounts, val]
+    setBankAccountsState(updated); setBankAccounts(updated)
     onAccountChange(val)
     setCustomAccountMode(false); setCustomAccountVal('')
   }
@@ -102,15 +85,9 @@ export default function PaymentMethodPicker({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 
-      {/* Group chips + add button */}
+      {/* Group chips */}
       <div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
-          <label className="pmp-label" style={{ margin: 0 }}>Payment method</label>
-          <button type="button" className="pmp-add-trigger" onClick={() => setAddingMethod((v) => !v)}
-            title="Add custom payment method">
-            <Plus size={12} /> Add method
-          </button>
-        </div>
+        <label className="pmp-label">Payment method</label>
         <div className="pmp-group-row">
           <button type="button"
             className={`pmp-group-chip ${!selectedGroup ? 'pmp-group-none-active' : 'pmp-group-none'}`}
@@ -121,52 +98,50 @@ export default function PaymentMethodPicker({
             <button key={g} type="button"
               className={`pmp-group-chip ${selectedGroup === g ? 'pmp-group-active' : ''}`}
               onClick={() => selectGroup(g)}>
-              {PAYMENT_METHOD_GROUPS[g].icon} {PAYMENT_METHOD_GROUPS[g].label}
+              {GROUP_META[g].icon} {GROUP_META[g].label}
             </button>
           ))}
         </div>
       </div>
-
-      {/* Inline add-method form */}
-      <AnimatePresence>
-        {addingMethod && (
-          <motion.div className="pmp-add-form"
-            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }} style={{ overflow: 'hidden' }}>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '10px 0 4px' }}>
-              <input className="pmp-add-input" placeholder="Method name…" value={newMethodName}
-                onChange={(e) => setNewMethodName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && saveCustomMethod()} autoFocus />
-              <div className="pmp-select-wrap" style={{ flex: '0 0 130px' }}>
-                <select className="pmp-select pmp-select-sm"
-                  value={newMethodGroup} onChange={(e) => setNewMethodGroup(e.target.value as PaymentMethodGroup)}>
-                  {GROUP_ORDER.map((g) => <option key={g} value={g}>{g}</option>)}
-                </select>
-                <ChevronDown size={12} className="pmp-select-icon" />
-              </div>
-              <button type="button" className="pmp-add-save" onClick={saveCustomMethod}
-                disabled={!newMethodName.trim()}>
-                <Check size={13} /> Save
-              </button>
-              <button type="button" className="pmp-add-cancel"
-                onClick={() => { setAddingMethod(false); setNewMethodName('') }}>
-                <X size={13} />
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* MFS sub-chips (default + custom) */}
       <AnimatePresence>
         {isMFS && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }} style={{ overflow: 'hidden' }}>
-            <label className="pmp-label">
-              MFS provider <span style={{ color: 'var(--accent-red)', fontSize: 11 }}>*</span>
-            </label>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
+              <label className="pmp-label" style={{ margin: 0 }}>
+                MFS provider <span style={{ color: 'var(--accent-red)', fontSize: 11 }}>*</span>
+              </label>
+              <button type="button" className="pmp-add-trigger" onClick={() => setAddingMethod((v) => !v)}
+                title="Add a custom MFS provider">
+                <Plus size={12} /> Add provider
+              </button>
+            </div>
+            {/* Inline add-provider form */}
+            <AnimatePresence>
+              {addingMethod && (
+                <motion.div className="pmp-add-form"
+                  initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }} style={{ overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '0 0 10px' }}>
+                    <input className="pmp-add-input" placeholder="MFS provider name…" value={newMethodName}
+                      onChange={(e) => setNewMethodName(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && saveCustomMethod()} autoFocus />
+                    <button type="button" className="pmp-add-save" onClick={saveCustomMethod}
+                      disabled={!newMethodName.trim()}>
+                      <Check size={13} /> Save
+                    </button>
+                    <button type="button" className="pmp-add-cancel"
+                      onClick={() => { setAddingMethod(false); setNewMethodName('') }}>
+                      <X size={13} />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
             <div className="pmp-group-row">
-              {groupMethods('MFS').map((m) => (
+              {mfsProviders.map((m) => (
                 <button key={m} type="button"
                   className={`pmp-sub-chip ${method === m ? 'pmp-sub-active' : ''}`}
                   onClick={() => selectMFSSub(m)}>
@@ -203,7 +178,7 @@ export default function PaymentMethodPicker({
                   <select className="pmp-select" value={account ?? ''}
                     onChange={(e) => onAccountChange(e.target.value || undefined)}>
                     <option value="">— Select bank —</option>
-                    {groupAccounts(selectedGroup).map((a) => (
+                    {bankAccounts.map((a) => (
                       <option key={a} value={a}>{a}</option>
                     ))}
                   </select>

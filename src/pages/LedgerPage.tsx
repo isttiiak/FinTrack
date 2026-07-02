@@ -31,6 +31,8 @@ export default function LedgerPage() {
   const totalOutstandingLent = persons.reduce((s, p) => s + p.total_outstanding_lent, 0)
   const totalOutstandingDebt = persons.reduce((s, p) => s + p.total_outstanding_debt, 0)
   const netPosition = totalOutstandingLent - totalOutstandingDebt
+  const lentPersonCount = persons.filter((p) => p.total_outstanding_lent > 0).length
+  const debtPersonCount = persons.filter((p) => p.total_outstanding_debt > 0).length
 
   // Filter by tab
   const filtered = persons
@@ -100,6 +102,23 @@ export default function LedgerPage() {
             <div className="ledger-sum-value">{formatCurrency(totalOutstandingDebt)}</div>
             <div className={`ledger-sum-net-inline ${netPosition >= 0 ? 'ledger-net-positive' : 'ledger-net-negative'}`}>
               <ArrowRightLeft size={11} /> Net: {netPosition >= 0 ? '+' : '−'}{formatCurrency(Math.abs(netPosition))}
+            </div>
+          </motion.div>
+          <motion.div className="ledger-sum-card ledger-sum-people" variants={staggerItem}>
+            <div className="ledger-sum-people-row">
+              <div className="ledger-sum-icon ledger-sum-icon-sm"><TrendingUp size={14} /></div>
+              <div>
+                <div className="ledger-sum-people-value">{lentPersonCount}</div>
+                <div className="ledger-sum-people-label">{lentPersonCount === 1 ? 'person owes' : 'people owe'} you</div>
+              </div>
+            </div>
+            <div className="ledger-sum-people-divider" />
+            <div className="ledger-sum-people-row">
+              <div className="ledger-sum-icon ledger-sum-icon-sm ledger-sum-icon-coral"><TrendingDown size={14} /></div>
+              <div>
+                <div className="ledger-sum-people-value">{debtPersonCount}</div>
+                <div className="ledger-sum-people-label">you owe {debtPersonCount === 1 ? 'person' : 'people'}</div>
+              </div>
             </div>
           </motion.div>
         </motion.div>
@@ -215,8 +234,9 @@ export default function LedgerPage() {
         .page-subtitle { font-size: 14px; color: var(--text-secondary); margin: 0; }
 
         .ledger-summary-grid {
-          display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px;
+          display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px;
         }
+        @media (max-width: 640px) { .ledger-summary-grid { grid-template-columns: 1fr 1fr; } }
         @media (max-width: 480px) { .ledger-summary-grid { grid-template-columns: 1fr; gap: 8px; } }
 
         .ledger-sum-card {
@@ -238,6 +258,17 @@ export default function LedgerPage() {
         .ledger-sum-net-inline { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; margin-top: 2px; }
         .ledger-net-positive { color: var(--accent-teal); }
         .ledger-net-negative { color: var(--accent-red); }
+
+        .ledger-sum-people {
+          background: rgba(108,99,255,0.04); border-color: rgba(108,99,255,0.12);
+          justify-content: center; gap: 0;
+        }
+        .ledger-sum-people-row { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
+        .ledger-sum-icon-sm { width: 26px; height: 26px; margin-bottom: 0; flex-shrink: 0; background: rgba(16,185,129,0.15); color: var(--accent-teal); }
+        .ledger-sum-icon-coral { background: rgba(249,115,22,0.15); color: var(--accent-coral); }
+        .ledger-sum-people-value { font-size: 18px; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
+        .ledger-sum-people-label { font-size: 11px; color: var(--text-muted); }
+        .ledger-sum-people-divider { height: 1px; background: var(--border); margin: 6px 0; }
 
         .ledger-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
         .ledger-sort-btn {

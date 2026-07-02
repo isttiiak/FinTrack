@@ -79,11 +79,6 @@ export default function ExpenseCard({ txn, onEdit }: ExpenseCardProps) {
             <div className={`expense-card-amount ${isIncome ? 'expense-amount-income' : 'expense-amount-expense'}`}>
               {isIncome ? '+' : '-'}{formatCurrency(txn.amount)}
             </div>
-            {txn.original_currency && txn.original_amount != null && (
-              <div className="expense-card-original">
-                originally {formatCurrency(txn.original_amount, txn.original_currency)}
-              </div>
-            )}
 
             <AnimatePresence>
               {showActions && (
@@ -145,7 +140,6 @@ export const expenseCardStyles = `
 .expense-card-amount { font-size: 14px; font-weight: 600; }
 .expense-amount-income { color: var(--accent-teal); }
 .expense-amount-expense { color: var(--text-primary); }
-.expense-card-original { font-size: 10px; color: var(--text-muted); }
 
 .expense-card-actions { display: flex; gap: 4px; }
 .expense-action-btn {

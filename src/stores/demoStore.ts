@@ -51,8 +51,6 @@ function buildDemoData() {
   ]
   const transactions: Transaction[] = rawTransactions.map((t) => ({
     ...t,
-    original_amount: null,
-    original_currency: null,
     category: categories.find((c) => c.id === t.category_id) ?? null,
   }))
 
