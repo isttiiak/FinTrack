@@ -9,6 +9,7 @@ import ExpenseForm from '@/components/expenses/ExpenseForm'
 import BudgetIndicator from '@/components/expenses/BudgetIndicator'
 import QuickAddFAB from '@/components/expenses/QuickAddFAB'
 import EmptyState from '@/components/common/EmptyState'
+import ErrorBanner from '@/components/common/ErrorBanner'
 import { SkeletonList } from '@/components/common/SkeletonCard'
 import AnimatedNumber from '@/components/common/AnimatedNumber'
 import MonthPicker from '@/components/common/MonthPicker'
@@ -44,7 +45,8 @@ export default function ExpensesPage() {
     payment_method: methodFilter === 'All' ? undefined : (methodFilter as TransactionFilters['payment_method']),
   }
 
-  const { data: transactions = [], isLoading } = useExpenses(filters)
+  const transactionsQ = useExpenses(filters)
+  const { data: transactions = [], isLoading } = transactionsQ
   const { data: budgets = [] } = useBudgets()
   const streak = useNoSpendStreak(transactions)
 
@@ -107,6 +109,8 @@ export default function ExpensesPage() {
           <Plus size={16} /> Add
         </motion.button>
       </div>
+
+      {transactionsQ.isError && <ErrorBanner onRetry={() => transactionsQ.refetch()} />}
 
       {/* Summary cards */}
       <motion.div

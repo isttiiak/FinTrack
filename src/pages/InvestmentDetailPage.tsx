@@ -80,7 +80,10 @@ export default function InvestmentDetailPage() {
   // enrich() — reused here so the list page and this page never disagree.
   const profitLoss   = inv.profit_loss
   const roi          = inv.roi_percent
-  const portfolioValue = inv.market_value ?? totalPaid
+  // Only shown when the user has actually entered a market_value — falling
+  // back to totalPaid made this silently equal "Paid in" whenever no
+  // valuation was set, contradicting a correctly negative ROI right next to it.
+  const portfolioValue = inv.market_value ?? null
   const paymentProgress = committed > 0 ? Math.min(100, (totalPaid / committed) * 100) : 0
 
   const payments  = (inv.payments  ?? []) as InvestmentPayment[]
@@ -178,8 +181,8 @@ export default function InvestmentDetailPage() {
         <motion.div className="idp-kpi idp-kpi-purple" variants={staggerItem}>
           <div className="idp-kpi-icon"><TrendingUp size={16} /></div>
           <div className="idp-kpi-label">Portfolio value</div>
-          <div className="idp-kpi-value">{formatCurrency(portfolioValue)}</div>
-          <div className="idp-kpi-sub">{inv.market_value ? 'Market value' : 'Based on paid in'}</div>
+          <div className="idp-kpi-value">{portfolioValue != null ? formatCurrency(portfolioValue) : '—'}</div>
+          <div className="idp-kpi-sub">{portfolioValue != null ? 'Market value' : 'Not valued yet'}</div>
         </motion.div>
       </motion.div>
 

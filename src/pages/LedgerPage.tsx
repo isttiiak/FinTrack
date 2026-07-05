@@ -126,7 +126,7 @@ export default function LedgerPage() {
 
       {/* Tabs + sort controls */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-        <div className="ledger-tabs" style={{ marginBottom: 0, flex: 1 }}>
+        <div className="ledger-tabs" style={{ marginBottom: 0, flex: '1 1 240px', minWidth: 0 }}>
           {([['all', 'All'], ['lent', '💸 Lent'], ['debt', '🏦 Debt'], ['summary', '📊 Summary'], ['logs', '💳 Payment logs']] as [Tab, string][]).map(([t, label]) => (
             <button
               key={t}
@@ -138,7 +138,7 @@ export default function LedgerPage() {
           ))}
         </div>
         {activeTab !== 'summary' && activeTab !== 'logs' && (
-          <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: 4, flexShrink: 0, marginLeft: 'auto' }}>
             <button
               className={`ledger-sort-btn ${sortOrder === 'newest' ? 'ledger-sort-active' : ''}`}
               onClick={() => setSortOrder('newest')}

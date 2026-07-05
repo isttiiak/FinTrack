@@ -32,7 +32,12 @@ export default function InvestmentsPage() {
   // Portfolio summary
   const totalCommitted  = investments.reduce((s, i) => s + (i.committed_amount ?? 0), 0)
   const totalReturned   = investments.reduce((s, i) => s + (i.total_returned ?? 0), 0)
-  const totalMarketValue = investments.reduce((s, i) => s + (i.market_value ?? i.committed_amount ?? 0), 0)
+  // Only sum investments where the user actually entered a market_value —
+  // falling back to committed_amount made "Portfolio value" silently equal
+  // "Total committed" whenever nobody had set a valuation, which read as a
+  // contradiction next to a correctly negative ROI.
+  const valuedInvestments = investments.filter((i) => i.market_value != null)
+  const totalMarketValue = valuedInvestments.reduce((s, i) => s + (i.market_value ?? 0), 0)
   const overallPL = totalReturned - totalCommitted
   const overallROI = totalCommitted > 0 ? ((totalReturned - totalCommitted) / totalCommitted) * 100 : null
 
@@ -86,8 +91,16 @@ export default function InvestmentsPage() {
           <motion.div className="inv-sum-card inv-sum-purple" variants={staggerItem}>
             <div className="inv-sum-icon"><BarChart3 size={17} /></div>
             <div className="inv-sum-label">Portfolio value</div>
-            <div className="inv-sum-value">{formatCurrency(totalMarketValue)}</div>
-            <div className="inv-sum-sub">current / committed</div>
+            <div className="inv-sum-value">
+              {valuedInvestments.length > 0 ? formatCurrency(totalMarketValue) : '—'}
+            </div>
+            <div className="inv-sum-sub">
+              {valuedInvestments.length === 0
+                ? 'No valuations entered yet'
+                : valuedInvestments.length === investments.length
+                  ? 'current value'
+                  : `valued: ${valuedInvestments.length} of ${investments.length}`}
+            </div>
           </motion.div>
         </motion.div>
       )}

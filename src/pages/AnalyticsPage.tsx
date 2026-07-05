@@ -11,14 +11,9 @@ import { useExpenses } from '@/hooks/useExpenses'
 import { useBudgets } from '@/hooks/useBudgets'
 import { useNoSpendStreak } from '@/hooks/useNoSpendStreak'
 import AIHub from '@/components/ai/AIHub'
+import ErrorBanner from '@/components/common/ErrorBanner'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-function getMonthRange(offset = 0) {
-  const now = new Date()
-  const from = toISODateString(new Date(now.getFullYear(), now.getMonth() + offset, 1))
-  const to   = toISODateString(new Date(now.getFullYear(), now.getMonth() + offset + 1, 0))
-  return { from, to }
-}
 function fmtMonth(ym: string) {
   const [y, m] = ym.split('-')
   return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' })
@@ -59,8 +54,19 @@ export default function AnalyticsPage() {
     const d = new Date(); d.setMonth(d.getMonth() - 11); d.setDate(1)
     return toISODateString(d)
   }, [])
-  const { data: allTxns = [] }  = useExpenses({ from: twelveAgo, to: toISODateString(new Date()) })
-  const { data: thisTxns = [] } = useExpenses({ from: `${selectedMonth}-01`, to: getMonthRange(0).to })
+  const allTxnsQ  = useExpenses({ from: twelveAgo, to: toISODateString(new Date()) })
+  // End-of-month bound must be derived from selectedMonth, not "today" —
+  // using today's date here ignored the month picker entirely for any month
+  // other than the current one.
+  const selectedMonthRange = useMemo(() => {
+    const [y, m] = selectedMonth.split('-').map(Number)
+    return { from: `${selectedMonth}-01`, to: toISODateString(new Date(y, m, 0)) }
+  }, [selectedMonth])
+  const thisTxnsQ = useExpenses(selectedMonthRange)
+  const { data: allTxns = [] }  = allTxnsQ
+  const { data: thisTxns = [] } = thisTxnsQ
+  const hasError = allTxnsQ.isError || thisTxnsQ.isError
+  const retryAll = () => { allTxnsQ.refetch(); thisTxnsQ.refetch() }
   const { data: budgets = [] }  = useBudgets()
   const streak = useNoSpendStreak(allTxns)
 
@@ -173,6 +179,8 @@ export default function AnalyticsPage() {
           onChange={(e) => setSelectedMonth(e.target.value)}
         />
       </motion.div>
+
+      {hasError && <ErrorBanner onRetry={retryAll} />}
 
       {/* Summary KPIs */}
       <motion.div className="analytics-kpis" variants={staggerItem}>

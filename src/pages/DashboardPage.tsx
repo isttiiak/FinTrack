@@ -12,6 +12,7 @@ import { usePersons } from '@/hooks/useLedger'
 import { useNoSpendStreak } from '@/hooks/useNoSpendStreak'
 import { useAuthStore } from '@/stores/authStore'
 import MonthPicker from '@/components/common/MonthPicker'
+import ErrorBanner from '@/components/common/ErrorBanner'
 
 function getMonthRange(year: number, month0: number, offset = 0) {
   const from = toISODateString(new Date(year, month0 + offset, 1))
@@ -37,11 +38,24 @@ export default function DashboardPage() {
   const yearTo   = toISODateString(new Date(selYear, 11, 31))
 
   // All-time for streak
-  const { data: allTxns = [] } = useExpenses({ from: '2000-01-01', to: toISODateString(new Date()) })
-  const { data: thisTxns = [], isLoading: loadingThis } = useExpenses(thisMonth)
-  const { data: lastTxns = [] } = useExpenses(lastMonth)
-  const { data: yearTxns = [] } = useExpenses({ from: yearFrom, to: yearTo })
-  const { data: persons = [] } = usePersons()
+  const allTxnsQ = useExpenses({ from: '2000-01-01', to: toISODateString(new Date()) })
+  const thisTxnsQ = useExpenses(thisMonth)
+  const lastTxnsQ = useExpenses(lastMonth)
+  const yearTxnsQ = useExpenses({ from: yearFrom, to: yearTo })
+  const personsQ = usePersons()
+
+  const { data: allTxns = [] } = allTxnsQ
+  const { data: thisTxns = [], isLoading: loadingThis } = thisTxnsQ
+  const { data: lastTxns = [] } = lastTxnsQ
+  const { data: yearTxns = [] } = yearTxnsQ
+  const { data: persons = [] } = personsQ
+
+  // A failed fetch renders pixel-identical to "genuinely zero transactions"
+  // otherwise — this dashboard alone fires 5 concurrent queries, so it's the
+  // page most exposed to a single transient failure looking like missing data.
+  const queries = [allTxnsQ, thisTxnsQ, lastTxnsQ, yearTxnsQ, personsQ]
+  const hasError = queries.some((q) => q.isError)
+  const retryAll = () => queries.forEach((q) => q.refetch())
 
   const streak = useNoSpendStreak(allTxns)
 
@@ -89,6 +103,8 @@ export default function DashboardPage() {
         </div>
         <MonthPicker value={selectedMonth} onChange={setSelectedMonth} />
       </motion.div>
+
+      {hasError && <ErrorBanner onRetry={retryAll} />}
 
       {/* KPI grid */}
       <motion.div className="dash-kpi-grid" variants={staggerContainer}>
