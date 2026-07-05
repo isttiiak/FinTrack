@@ -4,6 +4,7 @@ import { Menu } from 'lucide-react'
 import Sidebar from './Sidebar'
 import MobileNav from './MobileNav'
 import ConfirmDialog from '@/components/common/ConfirmDialog'
+import FloatingCalculatorFAB from '@/components/common/FloatingCalculatorFAB'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
 
@@ -51,6 +52,7 @@ export default function AppShell() {
 
       <MobileNav />
       <ConfirmDialog />
+      <FloatingCalculatorFAB />
 
       <style>{`
         .app-shell {

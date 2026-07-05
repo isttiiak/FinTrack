@@ -10,6 +10,7 @@ import { useAICategorySuggest } from '@/hooks/useAICategorySuggest'
 import { TXN_TYPES } from '@/lib/constants'
 import type { PaymentMethod, Account } from '@/lib/constants'
 import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
+import SmartAmountInput from '@/components/common/SmartAmountInput'
 import { toISODateString } from '@/lib/utils'
 import { scaleIn } from '@/lib/animations'
 import { cn } from '@/lib/utils'
@@ -140,13 +141,18 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
           {/* Amount */}
           <div className="ef-field">
             <label className="ef-label">Amount (৳) <span className="req">*</span></label>
-            <input
-              {...register('amount', { valueAsNumber: true })}
-              type="number"
-              step="0.01"
-              placeholder="0.00"
-              className={cn('ef-input ef-amount-input', errors.amount && 'ef-input-error')}
-              autoFocus={!editing}
+            <Controller
+              control={control}
+              name="amount"
+              render={({ field }) => (
+                <SmartAmountInput
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="0.00"
+                  className={cn('ef-input ef-amount-input', errors.amount && 'ef-input-error')}
+                  autoFocus={!editing}
+                />
+              )}
             />
             {errors.amount && <p className="ef-error">{errors.amount.message}</p>}
           </div>
