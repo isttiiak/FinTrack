@@ -15,6 +15,7 @@ import { useUIStore } from '@/stores/uiStore'
 import LedgerEntryForm from '@/components/ledger/LedgerEntryForm'
 import PaymentForm from '@/components/ledger/PaymentForm'
 import LedgerPaymentLogs from '@/components/ledger/LedgerPaymentLogs'
+import ErrorBanner from '@/components/common/ErrorBanner'
 import type { PersonLedger, PersonWithLedgers } from '@/types/ledger.types'
 import type { LedgerType } from '@/lib/constants'
 
@@ -27,7 +28,7 @@ const STATUS_STYLE = {
 export default function PersonDetailPage() {
   const { personId } = useParams({ strict: false }) as { personId: string }
   const navigate = useNavigate()
-  const { data: person, isLoading } = usePerson(personId)
+  const { data: person, isLoading, isError, refetch } = usePerson(personId)
   const { mutate: deleteEntry } = useDeleteLedgerEntry()
   const { mutateAsync: deletePerson } = useDeletePerson()
   const confirm = useConfirmStore((s) => s.confirm)
@@ -56,6 +57,18 @@ export default function PersonDetailPage() {
         <div className="pd-skeleton-list">
           {[1, 2].map((i) => <div key={i} className="pd-skeleton-card" />)}
         </div>
+        <style>{skeletonStyles}</style>
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="pd-page">
+        <button className="pd-back" onClick={() => navigate({ to: '/ledger' })}>
+          <ArrowLeft size={16} /> Back
+        </button>
+        <ErrorBanner message="Couldn't load this person — your connection or session may have hiccuped." onRetry={refetch} />
         <style>{skeletonStyles}</style>
       </div>
     )

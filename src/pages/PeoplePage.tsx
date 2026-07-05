@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Plus, Edit2, Check, X, Users, Trash2, ChevronDown } from 'lucide-react'
 import { fadeUp } from '@/lib/animations'
+import ErrorBanner from '@/components/common/ErrorBanner'
 import { usePersons, useCreatePerson, useUpdatePerson, useDeletePerson } from '@/hooks/useLedger'
 import { useConfirmStore } from '@/stores/confirmStore'
 import { formatCurrency } from '@/lib/utils'
@@ -263,7 +264,8 @@ function AddPersonForm({ onSave, onCancel, isSaving }: AddPersonFormProps) {
 // ── Root ──────────────────────────────────────────────────────────────────────
 export default function PeoplePage() {
   const navigate = useNavigate()
-  const { data: persons = [] } = usePersons()
+  const personsQ = usePersons()
+  const { data: persons = [] } = personsQ
   const { mutateAsync: createPerson, isPending: isCreating } = useCreatePerson()
   const { mutateAsync: updatePerson, isPending: isUpdating } = useUpdatePerson()
   const { mutate: deletePerson } = useDeletePerson()
@@ -335,6 +337,8 @@ export default function PeoplePage() {
           <Plus size={16} /> Add person
         </motion.button>
       </div>
+
+      {personsQ.isError && <ErrorBanner onRetry={() => personsQ.refetch()} />}
 
       {/* Compact stats strip */}
       <div className="pmp-stats-strip">

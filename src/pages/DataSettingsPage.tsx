@@ -14,6 +14,7 @@ import {
   getBankAccounts, setBankAccounts, resetBankAccounts,
 } from '@/lib/paymentMethodPrefs'
 import { supabase } from '@/lib/supabase'
+import ErrorBanner from '@/components/common/ErrorBanner'
 import type { Category } from '@/types/expense.types'
 
 type DSTab = 'categories' | 'methods'
@@ -487,7 +488,8 @@ function PaymentMethodsTab() {
 // ── Root ──────────────────────────────────────────────────────────────────────
 export default function DataSettingsPage() {
   const navigate = useNavigate()
-  const { data: categories = [] } = useCategories()
+  const categoriesQ = useCategories()
+  const { data: categories = [] } = categoriesQ
   const [tab, setTab] = useState<DSTab>('categories')
 
   const TABS: { id: DSTab; label: string }[] = [
@@ -502,6 +504,8 @@ export default function DataSettingsPage() {
       </button>
       <h1 className="dsp-title">Data Preferences</h1>
       <p className="dsp-sub">Categories and payment methods</p>
+
+      {categoriesQ.isError && <ErrorBanner onRetry={() => categoriesQ.refetch()} />}
 
       <div className="dsp-tabs">
         {TABS.map((t) => (

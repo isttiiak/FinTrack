@@ -3,6 +3,7 @@
 > **Personal finance management — track expenses, lent & debt, and investments with AI-powered insights.**
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-fin--track--eight--blue.vercel.app-6C63FF?style=flat-square)](https://fin-track-eight-blue.vercel.app/)
+[![Version](https://img.shields.io/badge/version-1.0.0-6C63FF?style=flat-square)](https://github.com/isttiiak/FinTrack/releases)
 [![Built with React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript)](https://typescriptlang.org)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=flat-square&logo=supabase)](https://supabase.com)
@@ -29,6 +30,8 @@ FinTrack is an open-source personal finance app built for the Bangladeshi contex
 - No-spend streak tracker with calendar heatmap
 - CSV import with column preview and Supabase bulk insert
 - Export to Excel (multi-sheet) or CSV
+- **Inline expression amount field** — type `60*4` directly into the Amount field and it evaluates live as you type
+- **Floating calculator** — a global, draggable calculator reachable from every page, with copy-to-clipboard
 
 ### 🏦 Lent & Debt
 - Track money you've lent and owe across people
@@ -226,7 +229,7 @@ All tables have **Row Level Security** — users can only see their own data.
 1. Fork the repo
 2. Create a branch: `git checkout -b feature/your-feature`
 3. Make your changes (TypeScript strict, `.tsx` only)
-4. Run `npx tsc --noEmit` to verify no type errors
+4. Run `pnpm build` to verify it type-checks and builds cleanly
 5. Open a PR
 
 ### Code conventions

@@ -22,6 +22,8 @@ import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
 import { supabase } from '@/lib/supabase'
 import { exportTransactionsExcel, exportTransactionsCSV, exportFullExcel } from '@/lib/export'
+import { getCurrentMonthRange } from '@/lib/utils'
+import ErrorBanner from '@/components/common/ErrorBanner'
 import { formatCurrency } from '@/lib/utils'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { cn } from '@/lib/utils'
@@ -36,7 +38,8 @@ type BudgetForm = z.infer<typeof budgetSchema>
 
 function BudgetSection() {
   const { data: categories = [] } = useCategories('Expense')
-  const { data: budgets = [], isLoading } = useBudgets()
+  const budgetsQ = useBudgets()
+  const { data: budgets = [], isLoading } = budgetsQ
   const { mutate: upsert, isPending: upserting } = useUpsertBudget()
   const { mutate: deleteBudget } = useDeleteBudget()
   const [addOpen, setAddOpen] = useState(false)
@@ -68,6 +71,8 @@ function BudgetSection() {
           <Plus size={14} /> Add limit
         </button>
       </div>
+
+      {budgetsQ.isError && <ErrorBanner onRetry={() => budgetsQ.refetch()} />}
 
       <AnimatePresence>
         {addOpen && (
@@ -153,19 +158,23 @@ function ExportSection() {
   const demoPersons = useDemoStore((s) => s.persons)
 
   // Current month
-  const { data: transactions = [] } = useExpenses()
+  const transactionsQ = useExpenses()
+  const { data: transactions = [] } = transactionsQ
   // All-time (empty filter object bypasses the current-month default)
   const { data: allTransactions = [] } = useExpenses({})
   // Persons with nested ledgers + payments
-  const { data: persons = [] } = usePersons()
+  const personsQ = usePersons()
+  const { data: persons = [] } = personsQ
+  const hasError = transactionsQ.isError || personsQ.isError
+  const retryAll = () => { transactionsQ.refetch(); personsQ.refetch() }
 
-  const now = new Date()
-  const thisYear = now.getFullYear()
-  const thisMon  = String(now.getMonth() + 1).padStart(2, '0')
-  const from = `${thisYear}-${thisMon}-01`
-  const to   = new Date(thisYear, now.getMonth() + 1, 0).toISOString().split('T')[0]
+  // Reuses the same range useExpenses() already defaults to internally above —
+  // was previously hand-rolled here via `.toISOString().split('T')[0]`, which
+  // shifts the end-of-month date back a day in any UTC+ timezone (e.g. Asia/Dhaka).
+  const { from, to } = getCurrentMonthRange()
 
   const thisMonthTxns = transactions.filter((t) => t.txn_date >= from && t.txn_date <= to)
+  const thisMonthLabel = from.slice(0, 7) // "YYYY-MM", used in export filenames below
 
   const exportPersons  = isDemo ? demoPersons  : persons
   const exportLedgers  = isDemo ? demoLedgers  : persons.flatMap((p) => p.ledgers ?? [])
@@ -180,15 +189,17 @@ function ExportSection() {
         </div>
       </div>
 
+      {hasError && <ErrorBanner onRetry={retryAll} />}
+
       <div className="export-grid">
         <div className="export-card">
           <div className="export-card-title">This month</div>
           <div className="export-card-sub">{thisMonthTxns.length} transactions</div>
           <div className="export-card-actions">
-            <button className="export-btn" onClick={() => exportTransactionsExcel(thisMonthTxns, `fintrack-${thisYear}-${thisMon}`)}>
+            <button className="export-btn" onClick={() => exportTransactionsExcel(thisMonthTxns, `fintrack-${thisMonthLabel}`)}>
               Excel
             </button>
-            <button className="export-btn export-btn-secondary" onClick={() => exportTransactionsCSV(thisMonthTxns, `fintrack-${thisYear}-${thisMon}`)}>
+            <button className="export-btn export-btn-secondary" onClick={() => exportTransactionsCSV(thisMonthTxns, `fintrack-${thisMonthLabel}`)}>
               CSV
             </button>
           </div>

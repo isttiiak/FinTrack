@@ -8,6 +8,7 @@ import { useBudgets } from '@/hooks/useBudgets'
 import { usePersons } from '@/hooks/useLedger'
 import { formatCurrency, toISODateString } from '@/lib/utils'
 import { fadeUp } from '@/lib/animations'
+import ErrorBanner from '@/components/common/ErrorBanner'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function formatResult(text: string) {
@@ -85,12 +86,26 @@ interface Msg { role: 'user' | 'ai'; text: string }
 export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
   const configured = isGroqConfigured()
 
-  // Data
-  const twelveAgo = (() => { const d = new Date(); d.setMonth(d.getMonth() - 11); d.setDate(1); return toISODateString(d) })()
-  const { data: allTxns   = [] } = useExpenses({ from: twelveAgo, to: toISODateString(new Date()) })
-  const { data: thisTxns  = [] } = useExpenses({ from: `${selectedMonth}-01`, to: (() => { const [y,m] = selectedMonth.split('-'); return toISODateString(new Date(Number(y), Number(m), 0)) })() })
+  // Data — both queries anchored to selectedMonth (not "today"), since every
+  // AI feature below builds context relative to whichever month the user is
+  // analyzing (e.g. anomaly detection's "3-month average" baseline needs the
+  // 3 months before selectedMonth, not before real-today).
+  const [selYear, selMon] = selectedMonth.split('-').map(Number)
+  const selectedMonthEnd = toISODateString(new Date(selYear, selMon, 0))
+  const twelveAgo = toISODateString(new Date(selYear, selMon - 1 - 11, 1))
+  const allTxnsQ = useExpenses({ from: twelveAgo, to: selectedMonthEnd })
+  const thisTxnsQ = useExpenses({ from: `${selectedMonth}-01`, to: selectedMonthEnd })
+  const { data: allTxns   = [] } = allTxnsQ
+  const { data: thisTxns  = [] } = thisTxnsQ
+  // Weekly digest is always "the real last 7 days," independent of whatever
+  // month is selected elsewhere in the hub — needs its own query since
+  // allTxns above is now capped at selectedMonthEnd, which may be in the past.
+  const sevenDaysAgo = (() => { const d = new Date(); d.setDate(d.getDate() - 7); return toISODateString(d) })()
+  const { data: last7DaysTxns = [] } = useExpenses({ from: sevenDaysAgo, to: toISODateString(new Date()) })
   const { data: budgets   = [] } = useBudgets()
   const { data: persons   = [] } = usePersons()
+  const hasError = allTxnsQ.isError || thisTxnsQ.isError
+  const retryAll = () => { allTxnsQ.refetch(); thisTxnsQ.refetch() }
 
   const ctx = buildMonthlyContext(thisTxns, allTxns, budgets, selectedMonth)
 
@@ -152,8 +167,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
   }
 
   async function runWeeklyDigest() {
-    const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7)
-    const weekTxns = allTxns.filter((t) => t.txn_date >= toISODateString(weekAgo))
+    const weekTxns = last7DaysTxns
     const weekMap  = catBreakdown(weekTxns)
     const weekTotal = Object.values(weekMap).reduce((s, v) => s + v, 0)
     const top = Object.entries(weekMap).sort(([,a],[,b]) => b-a).slice(0,5)
@@ -305,6 +319,8 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
         </div>
         <span className="aih-header-sub">Powered by Groq free tier · Click any feature to analyze</span>
       </div>
+
+      {hasError && <ErrorBanner onRetry={retryAll} />}
 
       {/* Spending Analysis — collapsed rows, expand on Run */}
       <div className="aih-section">

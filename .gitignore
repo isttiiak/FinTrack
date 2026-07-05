@@ -10,6 +10,9 @@ CLAUDE.md
 dist/
 dist-ssr/
 
+# TypeScript incremental build cache — machine-specific, regenerated every build
+*.tsbuildinfo
+
 # Node
 node_modules/
 
