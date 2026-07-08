@@ -179,8 +179,8 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
                     onClick={() => field.onChange(t)}
                     style={field.value === t ? {
                       background: t === 'Lent'
-                        ? 'linear-gradient(135deg, #10B981, #06B6D4)'
-                        : 'linear-gradient(135deg, #F97316, #EF4444)',
+                        ? 'linear-gradient(135deg, #4FA981, #3E9B72)'
+                        : 'linear-gradient(135deg, #C9736E, #C25B55)',
                     } : undefined}
                   >
                     {t === 'Lent' ? '💸 Lent' : '🏦 Debt'}
@@ -500,7 +500,7 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
           transition: border-color 0.15s, box-shadow 0.15s;
         }
         .qle-input::placeholder { color: var(--text-muted); }
-        .qle-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(108,99,255,0.15); }
+        .qle-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(79, 169, 129,0.15); }
         .qle-input-error { border-color: var(--accent-red) !important; }
         .qle-amount-input { font-size: 22px; font-weight: 700; padding: 12px 14px; }
         .qle-error { font-size: 12px; color: #FCA5A5; margin: 0; }
@@ -526,8 +526,8 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
           font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px;
           pointer-events: none;
         }
-        .qle-person-badge-existing { background: rgba(108,99,255,0.15); color: var(--accent-primary); }
-        .qle-person-badge-new { background: rgba(16,185,129,0.15); color: var(--accent-teal); }
+        .qle-person-badge-existing { background: rgba(79, 169, 129,0.15); color: var(--accent-primary); }
+        .qle-person-badge-new { background: rgba(79, 169, 129,0.15); color: var(--accent-teal); }
 
         /* Dropdown */
         .qle-person-dropdown {
@@ -549,11 +549,11 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
         .qle-dropdown-item:hover { background: var(--bg-hover); }
         .qle-dropdown-avatar {
           width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
-          background: rgba(108,99,255,0.15); color: var(--accent-primary);
+          background: rgba(79, 169, 129,0.15); color: var(--accent-primary);
           display: flex; align-items: center; justify-content: center;
           font-size: 13px; font-weight: 700;
         }
-        .qle-avatar-new { background: rgba(16,185,129,0.15); color: var(--accent-teal); }
+        .qle-avatar-new { background: rgba(79, 169, 129,0.15); color: var(--accent-teal); }
         .qle-dropdown-create .qle-dropdown-name { color: var(--accent-teal); }
         .qle-dropdown-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
         .qle-dropdown-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
@@ -567,13 +567,13 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
           color: var(--text-primary); font-size: 14px; padding: 10px 30px 10px 14px; cursor: pointer;
         }
         .qle-select:focus { outline: none; border-color: var(--border-focus); }
-        .qle-select option { background: #1E1E38; }
+        .qle-select option { background: #18201A; }
         .qle-select-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
         .qle-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
         /* New person fields */
         .qle-new-person-fields {
-          background: rgba(16,185,129,0.05); border: 1px solid rgba(16,185,129,0.15); border-radius: 12px;
+          background: rgba(79, 169, 129,0.05); border: 1px solid rgba(79, 169, 129,0.15); border-radius: 12px;
           padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;
         }
         .qle-new-person-heading {

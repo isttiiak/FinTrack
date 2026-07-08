@@ -495,7 +495,7 @@ function AISection() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <label className="pf-label">Groq API Key</label>
               {configured && (
-                <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: 'rgba(16,185,129,0.12)', color: 'var(--accent-teal)', fontWeight: 600 }}>
+                <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: 'rgba(79, 169, 129,0.12)', color: 'var(--accent-teal)', fontWeight: 600 }}>
                   ✓ Connected
                 </span>
               )}
@@ -715,7 +715,7 @@ function DangerSection() {
             onClick={() => handleDeleteLogs(key)}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {activeOp === key ? <span className="auth-spinner" style={{ borderTopColor: 'var(--accent-red)', borderColor: 'rgba(239,68,68,0.3)' }} /> : <Trash2 size={14} />}
+              {activeOp === key ? <span className="auth-spinner" style={{ borderTopColor: 'var(--accent-red)', borderColor: 'rgba(194, 91, 85,0.3)' }} /> : <Trash2 size={14} />}
               <span style={{ fontWeight: 600, fontSize: 13 }}>{label}</span>
             </div>
             <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{desc}</span>
@@ -869,7 +869,7 @@ const settingsStyles = `
 
   .demo-notice {
     margin-bottom: 20px; padding: 10px 16px;
-    background: rgba(108,99,255,0.08); border: 1px solid rgba(108,99,255,0.2); border-radius: 10px;
+    background: rgba(79, 169, 129,0.08); border: 1px solid rgba(79, 169, 129,0.2); border-radius: 10px;
     font-size: 13px; color: var(--accent-primary);
   }
 
@@ -877,17 +877,17 @@ const settingsStyles = `
     background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
     padding: 24px; margin-bottom: 20px;
   }
-  .settings-danger-section { border-color: rgba(239,68,68,0.2); }
+  .settings-danger-section { border-color: rgba(194, 91, 85,0.2); }
   .settings-section-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
   .settings-section-title { font-size: 16px; font-weight: 600; color: var(--text-primary); margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
   .settings-section-desc { font-size: 13px; color: var(--text-secondary); margin: 0; }
   .settings-add-btn {
     display: flex; align-items: center; gap: 6px;
     padding: 7px 14px; border-radius: 8px; font-size: 13px;
-    background: rgba(108,99,255,0.1); border: 1px solid rgba(108,99,255,0.25); color: var(--accent-primary);
+    background: rgba(79, 169, 129,0.1); border: 1px solid rgba(79, 169, 129,0.25); color: var(--accent-primary);
     cursor: pointer; transition: background 0.15s; flex-shrink: 0;
   }
-  .settings-add-btn:hover { background: rgba(108,99,255,0.18); }
+  .settings-add-btn:hover { background: rgba(79, 169, 129,0.18); }
 
   .budget-add-form { overflow: hidden; }
   .budget-add-inner {
@@ -911,7 +911,7 @@ const settingsStyles = `
     display: flex; align-items: center; justify-content: center;
     transition: background 0.15s, color 0.15s;
   }
-  .budget-delete-btn:hover { background: rgba(239,68,68,0.1); color: var(--accent-red); border-color: rgba(239,68,68,0.3); }
+  .budget-delete-btn:hover { background: rgba(194, 91, 85,0.1); color: var(--accent-red); border-color: rgba(194, 91, 85,0.3); }
 
   .export-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
   .export-card {
@@ -924,11 +924,11 @@ const settingsStyles = `
   .export-btn {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 7px 16px; border-radius: 8px; font-size: 13px; font-weight: 500;
-    background: linear-gradient(135deg, #6C63FF, #A855F7); color: #fff;
+    background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E); color: #fff;
     border: none; cursor: pointer;
     transition: opacity 0.15s, box-shadow 0.15s;
   }
-  .export-btn:hover { opacity: 0.9; box-shadow: 0 4px 14px rgba(108,99,255,0.35); }
+  .export-btn:hover { opacity: 0.9; box-shadow: 0 4px 14px rgba(79, 169, 129,0.35); }
   .export-btn-secondary {
     background: var(--bg-card); color: var(--text-secondary);
     border: 1px solid var(--border);
@@ -937,23 +937,23 @@ const settingsStyles = `
 
   .danger-btn {
     padding: 9px 20px; border-radius: 8px; font-size: 13px; font-weight: 600;
-    background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35); color: var(--accent-red);
+    background: rgba(194, 91, 85,0.12); border: 1px solid rgba(194, 91, 85,0.35); color: var(--accent-red);
     cursor: pointer; transition: background 0.15s; display: inline-flex; align-items: center; gap: 8px;
     min-height: 38px; min-width: 120px; justify-content: center;
   }
-  .danger-btn:hover:not(:disabled) { background: rgba(239,68,68,0.22); }
+  .danger-btn:hover:not(:disabled) { background: rgba(194, 91, 85,0.22); }
   .danger-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
   .danger-confirm-card {
     padding: 16px; background: var(--bg-elevated);
-    border: 1px solid rgba(239,68,68,0.2); border-radius: 12px;
+    border: 1px solid rgba(194, 91, 85,0.2); border-radius: 12px;
   }
 
   /* ── AI section ── */
   .ai-section { transition: border-color 0.3s, box-shadow 0.3s; }
   .ai-section-on {
-    border-color: rgba(108,99,255,0.35);
-    box-shadow: 0 0 0 1px rgba(108,99,255,0.15), 0 4px 24px rgba(108,99,255,0.1);
+    border-color: rgba(79, 169, 129,0.35);
+    box-shadow: 0 0 0 1px rgba(79, 169, 129,0.15), 0 4px 24px rgba(79, 169, 129,0.1);
   }
   .ai-power-btn {
     display: flex; align-items: center; gap: 6px;
@@ -962,9 +962,9 @@ const settingsStyles = `
     letter-spacing: 0.04em;
   }
   .ai-power-on {
-    background: linear-gradient(135deg, #6C63FF, #A855F7);
+    background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E);
     color: #fff;
-    box-shadow: 0 0 16px rgba(108,99,255,0.5);
+    box-shadow: 0 0 16px rgba(79, 169, 129,0.5);
     animation: ai-pulse 2.5s ease-in-out infinite;
   }
   .ai-power-off {
@@ -972,8 +972,8 @@ const settingsStyles = `
     color: var(--text-muted);
   }
   @keyframes ai-pulse {
-    0%, 100% { box-shadow: 0 0 12px rgba(108,99,255,0.4); }
-    50%       { box-shadow: 0 0 24px rgba(168,85,247,0.7); }
+    0%, 100% { box-shadow: 0 0 12px rgba(79, 169, 129,0.4); }
+    50%       { box-shadow: 0 0 24px rgba(62, 155, 114,0.7); }
   }
 
   /* ── Danger zone ── */
@@ -986,22 +986,22 @@ const settingsStyles = `
     cursor: pointer; transition: all 0.2s; letter-spacing: 0.03em; flex-shrink: 0;
   }
   .danger-unlock-off {
-    background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2);
-    color: rgba(239,68,68,0.5);
+    background: rgba(194, 91, 85,0.08); border: 1px solid rgba(194, 91, 85,0.2);
+    color: rgba(194, 91, 85,0.5);
   }
   .danger-unlock-on {
-    background: linear-gradient(135deg, rgba(239,68,68,0.25), rgba(249,115,22,0.25));
-    border: 1px solid rgba(239,68,68,0.5); color: #EF4444;
-    box-shadow: 0 0 14px rgba(239,68,68,0.3);
+    background: linear-gradient(135deg, rgba(194, 91, 85,0.25), rgba(201, 115, 110,0.25));
+    border: 1px solid rgba(194, 91, 85,0.5); color: #C25B55;
+    box-shadow: 0 0 14px rgba(194, 91, 85,0.3);
     animation: danger-pulse 1.8s ease-in-out infinite;
   }
   @keyframes danger-pulse {
-    0%, 100% { box-shadow: 0 0 10px rgba(239,68,68,0.25); }
-    50%       { box-shadow: 0 0 22px rgba(239,68,68,0.5); }
+    0%, 100% { box-shadow: 0 0 10px rgba(194, 91, 85,0.25); }
+    50%       { box-shadow: 0 0 22px rgba(194, 91, 85,0.5); }
   }
   .danger-unlocked {
-    border-color: rgba(239,68,68,0.4) !important;
-    box-shadow: 0 0 0 1px rgba(239,68,68,0.2), 0 8px 32px rgba(239,68,68,0.12);
+    border-color: rgba(194, 91, 85,0.4) !important;
+    box-shadow: 0 0 0 1px rgba(194, 91, 85,0.2), 0 8px 32px rgba(194, 91, 85,0.12);
   }
   .danger-actions-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px;
@@ -1010,15 +1010,15 @@ const settingsStyles = `
   .danger-data-btn {
     display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
     padding: 12px 14px; border-radius: 10px; cursor: pointer; text-align: left;
-    background: rgba(239,68,68,0.05); border: 1px solid rgba(239,68,68,0.15);
+    background: rgba(194, 91, 85,0.05); border: 1px solid rgba(194, 91, 85,0.15);
     color: var(--text-secondary); transition: all 0.15s;
   }
   .danger-data-btn:not(:disabled):hover {
-    background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.35);
+    background: rgba(194, 91, 85,0.12); border-color: rgba(194, 91, 85,0.35);
     color: var(--text-primary);
   }
   .danger-data-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-  .danger-section-divider { height: 1px; background: rgba(239,68,68,0.15); margin: 16px 0; }
+  .danger-section-divider { height: 1px; background: rgba(194, 91, 85,0.15); margin: 16px 0; }
 
   /* shared field styles referenced from sub-components */
   .pf-field { display: flex; flex-direction: column; gap: 5px; }
@@ -1030,7 +1030,7 @@ const settingsStyles = `
     transition: border-color 0.15s, box-shadow 0.15s; width: 100%;
   }
   .pf-input::placeholder { color: var(--text-muted); }
-  .pf-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(108,99,255,0.15); }
+  .pf-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(79, 169, 129,0.15); }
   .pf-input-error { border-color: var(--accent-red) !important; }
   .pf-error { font-size: 12px; color: #FCA5A5; margin: 0; }
   .pf-select {
@@ -1055,7 +1055,7 @@ const settingsStyles = `
     cursor: pointer; transition: border-color 0.15s, background 0.15s;
     background: var(--bg-elevated);
   }
-  .import-drop-zone:hover { border-color: var(--accent-primary); background: rgba(108,99,255,0.04); }
+  .import-drop-zone:hover { border-color: var(--accent-primary); background: rgba(79, 169, 129,0.04); }
   .import-drop-text { font-size: 13px; color: var(--text-muted); }
   .import-error { font-size: 12px; color: #FCA5A5; margin: 8px 0 0; }
   .import-success {
@@ -1072,7 +1072,7 @@ const settingsStyles = `
     letter-spacing: 0.05em; border-bottom: 1px solid var(--border);
   }
   .import-preview-table td {
-    padding: 8px 12px; color: var(--text-secondary); border-bottom: 1px solid rgba(42,42,74,0.4);
+    padding: 8px 12px; color: var(--text-secondary); border-bottom: 1px solid rgba(33, 42, 36,0.4);
   }
   .import-preview-table tr:last-child td { border-bottom: none; }
 
@@ -1083,7 +1083,7 @@ const settingsStyles = `
     position: relative; transition: background 0.2s, border-color 0.2s; flex-shrink: 0;
     padding: 0;
   }
-  .ai-toggle-on { background: linear-gradient(135deg,#6C63FF,#A855F7); border-color: transparent; }
+  .ai-toggle-on { background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E); border-color: transparent; }
   .ai-toggle-knob {
     position: absolute; top: 3px; left: 3px;
     width: 16px; height: 16px; border-radius: 50%; background: var(--text-muted);
@@ -1100,14 +1100,14 @@ const settingsStyles = `
     background: var(--bg-elevated); border: 2px solid var(--border);
     transition: border-color 0.15s, background 0.15s;
   }
-  .ai-provider-btn:hover { border-color: rgba(108,99,255,0.3); background: rgba(108,99,255,0.04); }
-  .ai-provider-active { border-color: var(--accent-primary) !important; background: rgba(108,99,255,0.07) !important; }
+  .ai-provider-btn:hover { border-color: rgba(79, 169, 129,0.3); background: rgba(79, 169, 129,0.04); }
+  .ai-provider-active { border-color: var(--accent-primary) !important; background: rgba(79, 169, 129,0.07) !important; }
   .ai-provider-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
   .ai-provider-badge {
     font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px;
     letter-spacing: 0.02em;
   }
-  .ai-badge-groq { background: rgba(16,185,129,0.15); color: var(--accent-teal); }
-  .ai-badge-gemini { background: rgba(108,99,255,0.12); color: var(--accent-primary); }
+  .ai-badge-groq { background: rgba(79, 169, 129,0.15); color: var(--accent-teal); }
+  .ai-badge-gemini { background: rgba(79, 169, 129,0.12); color: var(--accent-primary); }
   .ai-provider-free { font-size: 11px; color: var(--text-muted); }
 `

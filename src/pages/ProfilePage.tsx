@@ -211,7 +211,7 @@ export default function ProfilePage() {
 
         .demo-notice {
           margin-bottom: 16px; padding: 10px 16px;
-          background: rgba(108,99,255,0.08); border: 1px solid rgba(108,99,255,0.2); border-radius: 10px;
+          background: rgba(79, 169, 129,0.08); border: 1px solid rgba(79, 169, 129,0.2); border-radius: 10px;
           font-size: 13px; color: var(--accent-primary);
         }
 
@@ -229,7 +229,7 @@ export default function ProfilePage() {
         .profile-avatar-img { width: 100%; height: 100%; object-fit: cover; }
         .profile-avatar-fallback {
           width: 100%; height: 100%;
-          background: linear-gradient(135deg, #6C63FF, #A855F7);
+          background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E);
           display: flex; align-items: center; justify-content: center;
           font-size: 32px; font-weight: 700; color: #fff;
         }
@@ -249,7 +249,7 @@ export default function ProfilePage() {
           padding: 24px; display: flex; flex-direction: column; gap: 16px;
         }
         .profile-error {
-          padding: 10px 14px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25);
+          padding: 10px 14px; background: rgba(194, 91, 85,0.1); border: 1px solid rgba(194, 91, 85,0.25);
           border-radius: 8px; font-size: 13px; color: #FCA5A5;
         }
 
@@ -262,7 +262,7 @@ export default function ProfilePage() {
           transition: border-color 0.15s, box-shadow 0.15s; width: 100%;
         }
         .pf-input::placeholder { color: var(--text-muted); }
-        .pf-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(108,99,255,0.15); }
+        .pf-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(79, 169, 129,0.15); }
         .pf-input:disabled { opacity: 0.5; cursor: not-allowed; }
         .pf-input-error { border-color: var(--accent-red) !important; }
         .pf-error { font-size: 12px; color: #FCA5A5; margin: 0; }

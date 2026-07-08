@@ -24,12 +24,16 @@ function fmtK(v: number) {
   return `৳${v.toLocaleString()}`
 }
 
-// First 7 map to the app's design-system tokens; the rest are supplementary
-// hues for category variety (no dedicated token exists for them).
+// Deliberately literal hex, not var(--accent-*) tokens: the new Emerald & Gold
+// palette intentionally collapses several semantic tokens to the same value
+// (accent-teal === accent-primary, accent-amber === accent-gold), which is
+// fine for single-value usage but would silently merge two category slices
+// into an indistinguishable color in this donut/legend. These 10 are curated
+// to stay visually distinct while remaining inside the muted emerald/gold family.
 const CHART_COLORS = [
-  'var(--accent-primary)', 'var(--accent-teal)', 'var(--accent-coral)', 'var(--accent-amber)',
-  'var(--accent-red)', 'var(--accent-teal-2)', 'var(--accent-secondary)',
-  '#EC4899', '#8B5CF6', '#14B8A6',
+  '#4FA981', '#C2A24E', '#C9736E', '#3E9B72',
+  '#C25B55', '#B4923F', '#8A968C',
+  '#B5677A', '#6B8CAE', '#5FA88F',
 ]
 const TOOLTIP_STYLE = {
   contentStyle: {
@@ -190,8 +194,8 @@ export default function AnalyticsPage() {
             { label: 'Spent this month',   value: formatCurrency(thisExpense),       color: 'var(--accent-coral)' },
             { label: 'Income this month',  value: formatCurrency(thisIncome),        color: 'var(--accent-teal)' },
             { label: 'Net (income−spent)', value: `${net >= 0 ? '+' : ''}${formatCurrency(net)}`, color: net >= 0 ? 'var(--accent-teal)' : 'var(--accent-red)' },
-            { label: 'Daily avg (month)',  value: formatCurrency(Math.round(avgDaily)), color: '#F59E0B' },
-            { label: `${selectedMonth.slice(0,4)} total spent`, value: formatCurrency(yearlyExpense), color: '#A855F7' },
+            { label: 'Daily avg (month)',  value: formatCurrency(Math.round(avgDaily)), color: '#C2A24E' },
+            { label: `${selectedMonth.slice(0,4)} total spent`, value: formatCurrency(yearlyExpense), color: '#3E9B72' },
             { label: 'No-spend streak',   value: `${streak} day${streak !== 1 ? 's' : ''}`, color: 'var(--accent-primary)' },
           ]
         })().map((k) => (
@@ -226,13 +230,13 @@ export default function AnalyticsPage() {
             ) : (
               <ResponsiveContainer width="100%" height={220}>
                 <LineChart data={trendData} margin={{ top: 4, right: 16, bottom: 0, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#2A2A4A" vertical={false} />
-                  <XAxis dataKey="month" tick={{ fill: '#9D9AB8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <YAxis tickFormatter={fmtK} tick={{ fill: '#9D9AB8', fontSize: 11 }} axisLine={false} tickLine={false} width={60} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#212A24" vertical={false} />
+                  <XAxis dataKey="month" tick={{ fill: '#8A968C', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis tickFormatter={fmtK} tick={{ fill: '#8A968C', fontSize: 11 }} axisLine={false} tickLine={false} width={60} />
                   <Tooltip {...TOOLTIP_STYLE} formatter={(v) => formatCurrency(Number(v ?? 0))} />
-                  <Legend wrapperStyle={{ fontSize: 12, color: '#9D9AB8' }} />
-                  <Line type="monotone" dataKey="Expense" stroke="#F97316" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="Income"  stroke="#10B981" strokeWidth={2} dot={false} />
+                  <Legend wrapperStyle={{ fontSize: 12, color: '#8A968C' }} />
+                  <Line type="monotone" dataKey="Expense" stroke="#C9736E" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="Income"  stroke="#4FA981" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             )}
@@ -283,12 +287,12 @@ export default function AnalyticsPage() {
             ) : (
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={dailyData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }} barSize={6}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#2A2A4A" vertical={false} />
-                  <XAxis dataKey="day" tick={{ fill: '#9D9AB8', fontSize: 10 }} axisLine={false} tickLine={false}
+                  <CartesianGrid strokeDasharray="3 3" stroke="#212A24" vertical={false} />
+                  <XAxis dataKey="day" tick={{ fill: '#8A968C', fontSize: 10 }} axisLine={false} tickLine={false}
                     tickFormatter={(v) => Number(v) % 5 === 0 ? v : ''} />
-                  <YAxis tickFormatter={fmtK} tick={{ fill: '#9D9AB8', fontSize: 10 }} axisLine={false} tickLine={false} width={50} />
+                  <YAxis tickFormatter={fmtK} tick={{ fill: '#8A968C', fontSize: 10 }} axisLine={false} tickLine={false} width={50} />
                   <Tooltip {...TOOLTIP_STYLE} formatter={(v) => formatCurrency(Number(v ?? 0))} labelFormatter={(l) => `Day ${l}`} />
-                  <Bar dataKey="amount" fill="#6C63FF" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="amount" fill="#4FA981" radius={[3, 3, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -336,15 +340,15 @@ export default function AnalyticsPage() {
             ) : (
               <ResponsiveContainer width="100%" height={Math.max(200, budgetData.length * 42)}>
                 <BarChart data={budgetData} layout="vertical" margin={{ top: 4, right: 16, bottom: 0, left: 0 }} barSize={10}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#2A2A4A" horizontal={false} />
-                  <XAxis type="number" tickFormatter={fmtK} tick={{ fill: '#9D9AB8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <YAxis type="category" dataKey="name" width={90} tick={{ fill: '#9D9AB8', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#212A24" horizontal={false} />
+                  <XAxis type="number" tickFormatter={fmtK} tick={{ fill: '#8A968C', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="name" width={90} tick={{ fill: '#8A968C', fontSize: 11 }} axisLine={false} tickLine={false} />
                   <Tooltip {...TOOLTIP_STYLE} formatter={(v) => formatCurrency(Number(v ?? 0))} />
-                  <Legend wrapperStyle={{ fontSize: 12, color: '#9D9AB8' }} />
-                  <Bar dataKey="Budget" fill="#2A2A4A" radius={[0, 4, 4, 0]} />
+                  <Legend wrapperStyle={{ fontSize: 12, color: '#8A968C' }} />
+                  <Bar dataKey="Budget" fill="#212A24" radius={[0, 4, 4, 0]} />
                   <Bar dataKey="Actual"
                     radius={[0, 4, 4, 0]}
-                    fill="#6C63FF"
+                    fill="#4FA981"
                     // Red if over budget
                     label={false}
                   />
@@ -386,7 +390,7 @@ export default function AnalyticsPage() {
                             className="analytics-top-day-bar"
                             style={{
                               width: `${(d.amount / dailyData.reduce((mx, x) => Math.max(mx, x.amount), 0)) * 100}%`,
-                              background: i === 0 ? 'linear-gradient(90deg,#EF4444,#F97316)' : 'linear-gradient(90deg,#6C63FF,#A855F7)',
+                              background: i === 0 ? 'linear-gradient(90deg,#C25B55,#C9736E)' : 'linear-gradient(90deg,#4FA981,#3E9B72)',
                             }}
                           />
                         </div>
@@ -445,7 +449,7 @@ export default function AnalyticsPage() {
         }
         .analytics-tab:hover { background: var(--bg-hover); color: var(--text-primary); }
         .analytics-tab-active {
-          background: linear-gradient(135deg, #6C63FF, #A855F7);
+          background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E);
           border-color: transparent; color: #fff;
         }
 
@@ -463,7 +467,7 @@ export default function AnalyticsPage() {
         }
         .analytics-streak-badge {
           font-size: 12px; font-weight: 500; color: var(--accent-primary);
-          background: rgba(108,99,255,0.1); padding: 2px 8px; border-radius: 20px;
+          background: rgba(79, 169, 129,0.1); padding: 2px 8px; border-radius: 20px;
         }
         .analytics-empty { font-size: 13px; color: var(--text-muted); padding: 20px 0; text-align: center; }
 
@@ -484,11 +488,11 @@ export default function AnalyticsPage() {
           font-size: 11px; font-weight: 500; position: relative; cursor: default;
         }
         .nsc-day-num { color: var(--text-secondary); z-index: 1; position: relative; }
-        .nsc-no-spend { background: rgba(16,185,129,0.15); }
+        .nsc-no-spend { background: rgba(79, 169, 129,0.15); }
         .nsc-no-spend .nsc-day-num { color: var(--accent-teal); }
-        .nsc-spend-low { background: rgba(249,115,22,0.1); }
-        .nsc-spend-med { background: rgba(249,115,22,0.25); }
-        .nsc-spend-high { background: rgba(239,68,68,0.35); }
+        .nsc-spend-low { background: rgba(201, 115, 110,0.1); }
+        .nsc-spend-med { background: rgba(201, 115, 110,0.25); }
+        .nsc-spend-high { background: rgba(194, 91, 85,0.35); }
         .nsc-today { outline: 2px solid var(--accent-primary); outline-offset: -2px; }
         .nsc-empty { }
         .nsc-legend { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
@@ -504,7 +508,7 @@ export default function AnalyticsPage() {
         .analytics-top-day-bar { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
         .analytics-top-day-amount { font-size: 12px; font-weight: 600; color: var(--text-primary); flex-shrink: 0; width: 70px; text-align: right; }
 
-        .analytics-tab-ai { background: linear-gradient(135deg,#6C63FF,#A855F7) !important; }
+        .analytics-tab-ai { background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E) !important; }
       `}</style>
     </motion.div>
   )
@@ -556,9 +560,9 @@ function NoSpendCalendar({
         })}
       </div>
       <div className="nsc-legend">
-        <div className="nsc-legend-item"><div className="nsc-legend-swatch" style={{ background: 'rgba(16,185,129,0.4)' }} />No spend</div>
-        <div className="nsc-legend-item"><div className="nsc-legend-swatch" style={{ background: 'rgba(249,115,22,0.25)' }} />Low spend</div>
-        <div className="nsc-legend-item"><div className="nsc-legend-swatch" style={{ background: 'rgba(239,68,68,0.5)' }} />High spend</div>
+        <div className="nsc-legend-item"><div className="nsc-legend-swatch" style={{ background: 'rgba(79, 169, 129,0.4)' }} />No spend</div>
+        <div className="nsc-legend-item"><div className="nsc-legend-swatch" style={{ background: 'rgba(201, 115, 110,0.25)' }} />Low spend</div>
+        <div className="nsc-legend-item"><div className="nsc-legend-swatch" style={{ background: 'rgba(194, 91, 85,0.5)' }} />High spend</div>
       </div>
     </div>
   )

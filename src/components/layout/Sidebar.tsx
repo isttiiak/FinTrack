@@ -16,6 +16,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
 import { cn } from '@/lib/utils'
+import { Logo } from '@/components/common/Logo'
 
 const NAV_ITEMS = [
   { to: '/dashboard',   label: 'Dashboard',   icon: LayoutDashboard },
@@ -70,12 +71,10 @@ export default function Sidebar() {
 
         {/* Brand */}
         <div className="sidebar-brand">
-          <div className="sidebar-logo">
-            <span>৳</span>
-          </div>
+          <Logo size={30} />
           <div>
             <div className="sidebar-brand-name">FinTrack</div>
-            <div className="sidebar-brand-tagline">Personal Finance</div>
+            <div className="sidebar-brand-tagline">Finance, Tracked</div>
           </div>
         </div>
 
@@ -196,20 +195,13 @@ const sidebarStyles = `
   display: flex; align-items: center; gap: 10px;
   padding: 0 8px 20px;
 }
-.sidebar-logo {
-  width: 36px; height: 36px; border-radius: 10px;
-  background: linear-gradient(135deg, #6C63FF, #A855F7);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px; font-weight: 700; color: #fff; flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(108,99,255,0.3);
-}
 .sidebar-brand-name { font-size: 16px; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
-.sidebar-brand-tagline { font-size: 11px; color: var(--text-muted); }
+.sidebar-brand-tagline { font-size: 10px; font-weight: 500; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; }
 
 .sidebar-demo-banner {
   display: flex; align-items: center; gap: 6px; justify-content: center;
   padding: 5px 10px; margin: 0 0 12px;
-  background: rgba(108,99,255,0.1); border: 1px solid rgba(108,99,255,0.25); border-radius: 8px;
+  background: rgba(79, 169, 129,0.1); border: 1px solid rgba(79, 169, 129,0.25); border-radius: 8px;
   font-size: 11px; font-weight: 500; color: var(--accent-primary);
 }
 
@@ -226,7 +218,7 @@ const sidebarStyles = `
 .sidebar-active-bg {
   position: absolute; inset: 0; border-radius: 10px;
   background: var(--bg-elevated);
-  border: 1px solid rgba(108,99,255,0.2);
+  border: 1px solid rgba(79, 169, 129,0.2);
   z-index: -1;
 }
 
@@ -239,7 +231,7 @@ const sidebarStyles = `
 }
 .sidebar-avatar {
   width: 32px; height: 32px; border-radius: 50%; overflow: hidden; flex-shrink: 0;
-  background: linear-gradient(135deg, #6C63FF, #A855F7);
+  background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E);
   display: flex; align-items: center; justify-content: center;
   font-size: 13px; font-weight: 600; color: #fff;
 }
@@ -252,5 +244,5 @@ const sidebarStyles = `
   padding: 4px; border-radius: 6px; flex-shrink: 0;
   transition: color 0.15s, background 0.15s;
 }
-.sidebar-signout-btn:hover { color: var(--accent-red); background: rgba(239,68,68,0.1); }
+.sidebar-signout-btn:hover { color: var(--accent-red); background: rgba(194, 91, 85,0.1); }
 `

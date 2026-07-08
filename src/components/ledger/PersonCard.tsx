@@ -9,13 +9,15 @@ import { useDemoStore } from '@/stores/demoStore'
 import type { PersonWithLedgers } from '@/types/ledger.types'
 import type { LedgerType } from '@/lib/constants'
 
+// Literal hex (not CSS vars) — these get a hex-alpha suffix appended below
+// (e.g. `${relColor}33`), which only works with plain hex strings.
 const RELATIONSHIP_COLORS: Record<string, string> = {
-  Friend:           '#6C63FF',
-  Family:           '#10B981',
-  'Business Partner': '#F59E0B',
-  Colleague:        '#06B6D4',
-  Self:             '#A855F7',
-  Other:            '#9D9AB8',
+  Friend:           '#4FA981',
+  Family:           '#3E9B72',
+  'Business Partner': '#C2A24E',
+  Colleague:        '#B4923F',
+  Self:             '#8A968C',
+  Other:            '#5F6B62',
 }
 
 interface PersonCardProps {
@@ -31,7 +33,7 @@ export default function PersonCard({ person, onLogPayment }: PersonCardProps) {
 
   const hasOutstanding = person.total_outstanding_lent > 0 || person.total_outstanding_debt > 0
   const netPosition = person.total_outstanding_lent - person.total_outstanding_debt
-  const relColor = RELATIONSHIP_COLORS[person.relationship ?? ''] ?? '#9D9AB8'
+  const relColor = RELATIONSHIP_COLORS[person.relationship ?? ''] ?? '#8A968C'
 
   function handleDelete() {
     if (isDemo) { addToast({ type: 'info', message: 'Demo mode — changes are not saved' }); return }
@@ -128,7 +130,7 @@ export default function PersonCard({ person, onLogPayment }: PersonCardProps) {
           background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
           transition: border-color 0.15s, box-shadow 0.15s;
         }
-        .pc-card:hover { border-color: rgba(108,99,255,0.25); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+        .pc-card:hover { border-color: rgba(79, 169, 129,0.25); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
         .pc-inner { display: flex; align-items: center; gap: 0; }
         .pc-main {
           display: flex; align-items: center; gap: 14px; padding: 14px 12px 14px 16px;
@@ -171,11 +173,11 @@ export default function PersonCard({ person, onLogPayment }: PersonCardProps) {
           background: var(--bg-elevated); transition: background 0.12s, color 0.12s; white-space: nowrap;
         }
         .pc-collect { color: var(--accent-teal); }
-        .pc-collect:hover { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.3); }
+        .pc-collect:hover { background: rgba(79, 169, 129,0.12); border-color: rgba(79, 169, 129,0.3); }
         .pc-pay { color: var(--accent-coral); }
-        .pc-pay:hover { background: rgba(249,115,22,0.12); border-color: rgba(249,115,22,0.3); }
+        .pc-pay:hover { background: rgba(201, 115, 110,0.12); border-color: rgba(201, 115, 110,0.3); }
         .pc-delete { color: var(--text-muted); padding: 0 8px; }
-        .pc-delete:hover { background: rgba(239,68,68,0.12); color: var(--accent-red); border-color: rgba(239,68,68,0.3); }
+        .pc-delete:hover { background: rgba(194, 91, 85,0.12); color: var(--accent-red); border-color: rgba(194, 91, 85,0.3); }
       `}</style>
     </motion.div>
   )

@@ -11,7 +11,7 @@ export default function QuickAddFAB() {
       <motion.button
         className="fab"
         onClick={() => setOpen(true)}
-        whileHover={{ scale: 1.08, boxShadow: '0 8px 30px rgba(108,99,255,0.55)' }}
+        whileHover={{ scale: 1.08, boxShadow: '0 8px 30px rgba(79, 169, 129,0.55)' }}
         whileTap={{ scale: 0.93 }}
         title="Add transaction"
       >
@@ -31,10 +31,10 @@ export default function QuickAddFAB() {
         .fab {
           position: fixed; bottom: 88px; right: 24px; z-index: 20;
           width: 56px; height: 56px; border-radius: 16px;
-          background: linear-gradient(135deg, #6C63FF, #A855F7);
+          background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E);
           border: none; color: #fff; cursor: pointer;
           display: flex; align-items: center; justify-content: center;
-          box-shadow: 0 6px 20px rgba(108,99,255,0.45);
+          box-shadow: 0 6px 20px rgba(79, 169, 129,0.45);
         }
         @media (min-width: 769px) {
           .fab { bottom: 32px; }

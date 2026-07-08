@@ -37,13 +37,13 @@ export default function DeleteButton({
       className={className}
       style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
+        background: 'rgba(194, 91, 85,0.08)', border: '1px solid rgba(194, 91, 85,0.25)',
         color: 'var(--accent-red)', cursor: 'pointer', padding: '0 10px',
         borderRadius: 7, height: 28, minWidth: 32, gap: 5,
         transition: 'background 0.12s, border-color 0.12s',
       }}
-      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.16)' }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.08)' }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(194, 91, 85,0.16)' }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(194, 91, 85,0.08)' }}
       onClick={handleClick}
     >
       <Trash2 size={iconSize} />

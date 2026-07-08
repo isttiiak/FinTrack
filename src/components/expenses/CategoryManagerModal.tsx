@@ -320,11 +320,11 @@ const STYLES = `
     transition: border-color 0.15s;
   }
   .cmm-input::placeholder { color: var(--text-muted); }
-  .cmm-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(108,99,255,0.12); }
+  .cmm-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(79, 169, 129,0.12); }
   .cmm-save-btn {
     display: flex; align-items: center; gap: 6px;
     padding: 9px 16px; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer;
-    background: linear-gradient(135deg, #6C63FF, #A855F7); border: none; color: #fff;
+    background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E); border: none; color: #fff;
     transition: opacity 0.12s; white-space: nowrap;
   }
   .cmm-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -379,6 +379,6 @@ const STYLES = `
     background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary);
   }
   .cmm-cat-new {
-    background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); color: var(--accent-teal);
+    background: rgba(79, 169, 129,0.1); border-color: rgba(79, 169, 129,0.3); color: var(--accent-teal);
   }
 `

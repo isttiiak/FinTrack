@@ -255,8 +255,8 @@ export default function DashboardPage() {
                 <div key={t.id} className="dash-recent-row">
                   <div className="dash-recent-cat-dot" style={{
                     background: t.type === 'Income'
-                      ? 'linear-gradient(135deg,#10B981,#06B6D4)'
-                      : 'linear-gradient(135deg,#F97316,#EF4444)',
+                      ? 'linear-gradient(135deg,#4FA981,#3E9B72)'
+                      : 'linear-gradient(135deg,#C9736E,#C25B55)',
                   }} />
                   <div className="dash-recent-info">
                     <span className="dash-recent-desc">{t.description || t.category?.name || 'No description'}</span>
@@ -323,17 +323,17 @@ export default function DashboardPage() {
           width: 34px; height: 34px; border-radius: 10px;
           display: flex; align-items: center; justify-content: center; margin-bottom: 12px;
         }
-        .dash-kpi-coral { background: rgba(249,115,22,0.05); border-color: rgba(249,115,22,0.15); }
-        .dash-kpi-coral .dash-kpi-icon { background: rgba(249,115,22,0.15); color: var(--accent-coral); }
+        .dash-kpi-coral { background: rgba(201, 115, 110,0.05); border-color: rgba(201, 115, 110,0.15); }
+        .dash-kpi-coral .dash-kpi-icon { background: rgba(201, 115, 110,0.15); color: var(--accent-coral); }
         .dash-kpi-coral .dash-kpi-value { color: var(--accent-coral); }
-        .dash-kpi-teal { background: rgba(16,185,129,0.05); border-color: rgba(16,185,129,0.12); }
-        .dash-kpi-teal .dash-kpi-icon { background: rgba(16,185,129,0.15); color: var(--accent-teal); }
+        .dash-kpi-teal { background: rgba(79, 169, 129,0.05); border-color: rgba(79, 169, 129,0.12); }
+        .dash-kpi-teal .dash-kpi-icon { background: rgba(79, 169, 129,0.15); color: var(--accent-teal); }
         .dash-kpi-teal .dash-kpi-value { color: var(--accent-teal); }
-        .dash-kpi-purple { background: rgba(108,99,255,0.05); border-color: rgba(108,99,255,0.12); }
-        .dash-kpi-purple .dash-kpi-icon { background: rgba(108,99,255,0.15); color: var(--accent-primary); }
+        .dash-kpi-purple { background: rgba(79, 169, 129,0.05); border-color: rgba(79, 169, 129,0.12); }
+        .dash-kpi-purple .dash-kpi-icon { background: rgba(79, 169, 129,0.15); color: var(--accent-primary); }
         .dash-kpi-purple .dash-kpi-value { color: var(--accent-primary); }
-        .dash-kpi-amber { background: rgba(245,158,11,0.05); border-color: rgba(245,158,11,0.12); }
-        .dash-kpi-amber .dash-kpi-icon { background: rgba(245,158,11,0.15); color: var(--accent-amber); }
+        .dash-kpi-amber { background: rgba(194, 162, 78,0.05); border-color: rgba(194, 162, 78,0.12); }
+        .dash-kpi-amber .dash-kpi-icon { background: rgba(194, 162, 78,0.15); color: var(--accent-amber); }
         .dash-kpi-amber .dash-kpi-value { color: var(--accent-amber); }
         .dash-kpi-label { font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
         .dash-kpi-value { font-size: 24px; font-weight: 700; margin-bottom: 6px; min-height: 30px; }
@@ -344,7 +344,7 @@ export default function DashboardPage() {
           background-size: 200% 100%;
         }
         .dash-kpi-delta { font-size: 11px; display: flex; align-items: center; gap: 3px; }
-        .dash-delta-bad { color: #F97316; }
+        .dash-delta-bad { color: #C9736E; }
         .dash-delta-good { color: var(--accent-teal); }
         .dash-delta-neutral { color: var(--text-muted); }
 
@@ -377,7 +377,7 @@ export default function DashboardPage() {
         }
         .dash-top-cat-bar {
           height: 100%; border-radius: 3px;
-          background: linear-gradient(90deg, #F97316, #EF4444);
+          background: linear-gradient(90deg, #C9736E, #C25B55);
           transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
         }
         .dash-top-cat-pct { font-size: 12px; color: var(--text-muted); margin: 0; }
@@ -391,7 +391,7 @@ export default function DashboardPage() {
         .dash-ledger-row:hover { background: var(--bg-elevated); }
         .dash-ledger-avatar {
           width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
-          background: rgba(108,99,255,0.15); color: var(--accent-primary);
+          background: rgba(79, 169, 129,0.15); color: var(--accent-primary);
           display: flex; align-items: center; justify-content: center;
           font-size: 14px; font-weight: 700;
         }
@@ -427,8 +427,8 @@ export default function DashboardPage() {
         .dash-lv-amount { font-size: 13px; font-weight: 700; }
         .dash-lv-bar-wrap { height: 8px; border-radius: 4px; background: var(--bg-elevated); overflow: hidden; margin-bottom: 4px; }
         .dash-lv-bar { height: 100%; border-radius: 4px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
-        .dash-lv-bar-lent { background: linear-gradient(90deg, #10B981, #06B6D4); }
-        .dash-lv-bar-debt { background: linear-gradient(90deg, #F97316, #EF4444); }
+        .dash-lv-bar-lent { background: linear-gradient(90deg, #4FA981, #3E9B72); }
+        .dash-lv-bar-debt { background: linear-gradient(90deg, #C9736E, #C25B55); }
 
         @keyframes shimmer { to { background-position: -200% 0; } }
       `}</style>

@@ -216,11 +216,11 @@ export default function FloatingCalculatorPanel() {
         .fcp-copy {
           position: absolute; top: 8px; right: 8px;
           width: 26px; height: 26px; border-radius: 7px;
-          background: rgba(108,99,255,0.1); border: 1px solid rgba(108,99,255,0.3);
+          background: rgba(79, 169, 129,0.1); border: 1px solid rgba(79, 169, 129,0.3);
           color: var(--accent-primary); cursor: pointer;
           display: flex; align-items: center; justify-content: center;
         }
-        .fcp-copy:hover { background: rgba(108,99,255,0.2); }
+        .fcp-copy:hover { background: rgba(79, 169, 129,0.2); }
         .fcp-expression {
           font-size: 12px; color: var(--text-muted);
           white-space: nowrap; overflow-x: auto; margin-bottom: 2px;
@@ -241,16 +241,16 @@ export default function FloatingCalculatorPanel() {
         }
         .fcp-key:hover { background: var(--bg-hover); }
         .fcp-key-op {
-          background: rgba(108,99,255,0.1); border-color: rgba(108,99,255,0.3); color: var(--accent-primary);
+          background: rgba(79, 169, 129,0.1); border-color: rgba(79, 169, 129,0.3); color: var(--accent-primary);
         }
-        .fcp-key-op:hover { background: rgba(108,99,255,0.2); }
+        .fcp-key-op:hover { background: rgba(79, 169, 129,0.2); }
         .fcp-key-clear {
-          background: rgba(249,115,22,0.12); border-color: rgba(249,115,22,0.3); color: var(--accent-coral);
+          background: rgba(201, 115, 110,0.12); border-color: rgba(201, 115, 110,0.3); color: var(--accent-coral);
         }
-        .fcp-key-clear:hover { background: rgba(249,115,22,0.2); }
+        .fcp-key-clear:hover { background: rgba(201, 115, 110,0.2); }
         .fcp-key-equals {
           grid-column: span 4;
-          background: linear-gradient(135deg, #6C63FF, #A855F7);
+          background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E);
           border: none; color: #fff;
         }
       `}</style>

@@ -1,25 +1,29 @@
 @import "tailwindcss";
 
-/* ── Design tokens ──────────────────────────────── */
+/* ── Design tokens — Emerald & Gold (muted, dark-first) ──────────── */
 :root {
-  --bg-page:        #0F0F1A;
-  --bg-card:        #161628;
-  --bg-elevated:    #1E1E38;
-  --bg-hover:       #252545;
-  --border:         #2A2A4A;
-  --border-focus:   #6C63FF;
+  --bg-page:        #0C0F0D;
+  --bg-card:        #121712;
+  --bg-elevated:    #18201A;
+  --bg-hover:       #1F291F;
+  --border:         #212A24;
+  --border-focus:   #4FA981;
 
-  --accent-primary:   #6C63FF;
-  --accent-secondary: #A855F7;
-  --accent-teal:      #10B981;
-  --accent-teal-2:    #06B6D4;
-  --accent-coral:     #F97316;
-  --accent-red:       #EF4444;
-  --accent-amber:     #F59E0B;
+  --accent-primary:   #4FA981;
+  --accent-secondary: #3E9B72;
+  --accent-gold:      #C2A24E;
+  --accent-gold-2:    #B4923F;
+  --accent-teal:      #4FA981;
+  --accent-teal-2:    #3E9B72;   /* no independent hue in the new palette — aliased to secondary */
+  --accent-coral:     #C9736E;
+  --accent-red:       #C25B55;
+  --accent-amber:     #C2A24E;   /* folded into gold */
 
-  --text-primary:   #E8E6FF;
-  --text-secondary: #9D9AB8;
-  --text-muted:     #5C5A7A;
+  --text-primary:   #E8EDE9;
+  --text-secondary: #8A968C;
+  --text-muted:     #5F6B62;
+
+  --grad-brand: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E);
 
   --radius-sm:  6px;
   --radius-md:  10px;
@@ -47,20 +51,20 @@ body {
 }
 
 /* ── Gradient utilities ─────────────────────────── */
-.grad-purple { background: linear-gradient(135deg, #6C63FF, #A855F7); }
-.grad-teal   { background: linear-gradient(135deg, #10B981, #06B6D4); }
-.grad-coral  { background: linear-gradient(135deg, #F97316, #EF4444); }
-.grad-amber  { background: linear-gradient(135deg, #F59E0B, #EF9F27); }
+.grad-brand   { background: var(--grad-brand); }
+.grad-emerald { background: linear-gradient(135deg, #3E9B72, #4FA981); }
+.grad-gold    { background: linear-gradient(135deg, #C2A24E, #B4923F); }
+.grad-coral   { background: linear-gradient(135deg, #C9736E, #C25B55); }
 
-.grad-purple-text {
-  background: linear-gradient(135deg, #6C63FF, #A855F7);
+.text-grad {
+  background: linear-gradient(120deg, #4FA981, #C2A24E);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .grad-teal-text {
-  background: linear-gradient(135deg, #10B981, #06B6D4);
+  background: linear-gradient(135deg, #3E9B72, #4FA981);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -69,7 +73,7 @@ body {
 /* ── Date / month input calendar icon ───────────── */
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="month"]::-webkit-calendar-picker-indicator {
-  filter: invert(0.6) sepia(1) saturate(3) hue-rotate(200deg);
+  filter: invert(0.6) sepia(1) saturate(3) hue-rotate(115deg);
   cursor: pointer;
   border-radius: 4px;
   padding: 2px;
@@ -79,7 +83,7 @@ input[type="month"]::-webkit-calendar-picker-indicator {
 input[type="date"]::-webkit-calendar-picker-indicator:hover,
 input[type="month"]::-webkit-calendar-picker-indicator:hover {
   opacity: 1;
-  background-color: rgba(108, 99, 255, 0.15);
+  background-color: rgba(79, 169, 129, 0.15);
 }
 
 /* ── Scrollbar ──────────────────────────────────── */
@@ -96,7 +100,7 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
 
 /* ── Selection ──────────────────────────────────── */
 ::selection {
-  background: rgba(108, 99, 255, 0.3);
+  background: rgba(79, 169, 129, 0.3);
   color: var(--text-primary);
 }
 
@@ -113,13 +117,39 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
   border-radius: var(--radius-lg);
 }
 
-/* ── Purple glow (hover effect) ─────────────────── */
-.glow-purple {
-  box-shadow: 0 0 0 0 rgba(108, 99, 255, 0);
-  transition: box-shadow 0.2s ease;
+/* ── Featured card — full brand-gradient border ──── */
+/* Reserve for ONE emphasized card per view. Requires a .card-inner wrapper. */
+.card-featured {
+  border-radius: 14px;
+  padding: 1px;
+  background: var(--grad-brand);
 }
-.glow-purple:hover {
-  box-shadow: 0 0 20px rgba(108, 99, 255, 0.25);
+.card-featured > .card-inner {
+  background: var(--bg-card);
+  border-radius: 13px;
+}
+
+/* Hover-glow variant — flat border at rest, brightens to the brand
+   gradient on hover. Requires a .card-inner wrapper. */
+.card-glow {
+  border-radius: 14px;
+  padding: 1px;
+  background: var(--border);
+  transition: background 0.4s ease;
+}
+.card-glow:hover { background: var(--grad-brand); }
+.card-glow > .card-inner {
+  background: var(--bg-card);
+  border-radius: 13px;
+}
+
+/* ── Hover glow (emerald) ────────────────────────── */
+.glow-hover {
+  transition: box-shadow 0.25s ease, transform 0.15s ease;
+}
+.glow-hover:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 0 1px rgba(79, 169, 129, 0.25), 0 8px 24px -8px rgba(79, 169, 129, 0.35);
 }
 
 /* ── Skeleton shimmer ───────────────────────────── */
@@ -154,12 +184,12 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
 .input-base:focus {
   outline: none;
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.15);
+  box-shadow: 0 0 0 3px rgba(79, 169, 129, 0.15);
 }
 
 /* ── Button base ─────────────────────────────────── */
 .btn-primary {
-  background: linear-gradient(135deg, #6C63FF, #A855F7);
+  background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E);
   color: #fff;
   border: none;
   border-radius: var(--radius-md);
@@ -172,7 +202,7 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
 .btn-primary:hover:not(:disabled) {
   opacity: 0.92;
   transform: scale(1.01);
-  box-shadow: 0 4px 20px rgba(108, 99, 255, 0.4);
+  box-shadow: 0 4px 20px rgba(79, 169, 129, 0.4);
 }
 .btn-primary:active:not(:disabled) { transform: scale(0.98); }
 .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -252,13 +282,13 @@ p, span, div, h1, h2, h3 {
 /* Applied as a modifier class on any edit action button */
 .edit-btn-purple {
   color: var(--accent-primary) !important;
-  border-color: rgba(108,99,255,0.25) !important;
-  background: rgba(108,99,255,0.06) !important;
+  border-color: rgba(79, 169, 129,0.25) !important;
+  background: rgba(79, 169, 129,0.06) !important;
 }
 .edit-btn-purple:hover {
-  background: rgba(108,99,255,0.15) !important;
+  background: rgba(79, 169, 129,0.15) !important;
   border-color: var(--accent-primary) !important;
-  box-shadow: 0 0 0 3px rgba(108,99,255,0.12) !important;
+  box-shadow: 0 0 0 3px rgba(79, 169, 129,0.12) !important;
 }
 
 /* ── Field helper text ───────────────────────────── */
@@ -331,4 +361,13 @@ p, span, div, h1, h2, h3 {
   /* PaymentMethodPicker: wrap chips */
   [class*="pmp-grid"] { grid-template-columns: 1fr 1fr !important; }
   .pmp-kpi-grid { grid-template-columns: 1fr 1fr !important; }
+}
+
+/* ── Respect reduced-motion preference ───────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }

@@ -366,15 +366,15 @@ export default function ExpensesPage() {
           cursor: pointer; transition: all 0.15s; white-space: nowrap; flex-shrink: 0;
         }
         .filter-chip:hover { background: var(--bg-hover); color: var(--text-primary); }
-        .filter-chip-active { background: rgba(108,99,255,0.15); color: var(--accent-primary); border-color: rgba(108,99,255,0.35); }
+        .filter-chip-active { background: rgba(79, 169, 129,0.15); color: var(--accent-primary); border-color: rgba(79, 169, 129,0.35); }
 
         .filter-clear-btn {
           display: flex; align-items: center; gap: 5px; align-self: flex-start;
           padding: 4px 10px; border-radius: 8px; font-size: 12px;
-          background: none; border: 1px solid rgba(239,68,68,0.3); color: var(--accent-red);
+          background: none; border: 1px solid rgba(194, 91, 85,0.3); color: var(--accent-red);
           cursor: pointer;
         }
-        .filter-clear-btn:hover { background: rgba(239,68,68,0.1); }
+        .filter-clear-btn:hover { background: rgba(194, 91, 85,0.1); }
 
         .expenses-list-area { margin-top: 8px; }
       `}</style>

@@ -10,9 +10,9 @@ function lastActivity(ledgers: PersonLedger[]): string | null {
 }
 
 const STATUS_STYLE = {
-  Settled: { bg: 'rgba(16,185,129,0.12)', color: '#10B981', label: '✅ Settled' },
-  Partial:  { bg: 'rgba(245,158,11,0.12)', color: '#F59E0B', label: '🔄 Partial' },
-  Pending:  { bg: 'rgba(249,115,22,0.12)', color: '#F97316', label: '⏳ Pending' },
+  Settled: { bg: 'rgba(79, 169, 129,0.12)', color: '#4FA981', label: '✅ Settled' },
+  Partial:  { bg: 'rgba(194, 162, 78,0.12)', color: '#C2A24E', label: '🔄 Partial' },
+  Pending:  { bg: 'rgba(201, 115, 110,0.12)', color: '#C9736E', label: '⏳ Pending' },
 }
 
 type SortField = 'name' | 'total' | 'remaining'
@@ -221,7 +221,7 @@ export default function LedgerSummaryTab({ persons }: { persons: PersonWithLedge
           transition: background 0.12s;
         }
         .lst-sort-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
-        .lst-sort-active { background: rgba(108,99,255,0.1); border-color: rgba(108,99,255,0.3); color: var(--accent-primary); }
+        .lst-sort-active { background: rgba(79, 169, 129,0.1); border-color: rgba(79, 169, 129,0.3); color: var(--accent-primary); }
 
         .lst-table {
           background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
@@ -238,7 +238,7 @@ export default function LedgerSummaryTab({ persons }: { persons: PersonWithLedge
           font-size: 10px; font-weight: 600; color: var(--text-muted);
           text-transform: uppercase; letter-spacing: 0.06em;
         }
-        .lst-row { border-bottom: 1px solid rgba(42,42,74,0.5); }
+        .lst-row { border-bottom: 1px solid rgba(33, 42, 36,0.5); }
         .lst-row:last-child { border-bottom: none; }
         .lst-cell { padding: 0 8px 0 0; }
         .lst-cell-muted { font-size: 12px; color: var(--text-muted); }
@@ -246,7 +246,7 @@ export default function LedgerSummaryTab({ persons }: { persons: PersonWithLedge
         .lst-person-cell { display: flex; align-items: center; gap: 8px; }
         .lst-avatar {
           width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
-          background: rgba(108,99,255,0.15); color: var(--accent-primary);
+          background: rgba(79, 169, 129,0.15); color: var(--accent-primary);
           display: flex; align-items: center; justify-content: center;
           font-size: 12px; font-weight: 700;
         }
@@ -255,8 +255,8 @@ export default function LedgerSummaryTab({ persons }: { persons: PersonWithLedge
         .lst-rel-badge { font-size: 10px; color: var(--text-muted); background: var(--bg-elevated); padding: 1px 6px; border-radius: 20px; width: fit-content; }
 
         .lst-type-chip { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
-        .lst-chip-lent { background: rgba(16,185,129,0.12); color: var(--accent-teal); }
-        .lst-chip-debt { background: rgba(249,115,22,0.12); color: var(--accent-coral); }
+        .lst-chip-lent { background: rgba(79, 169, 129,0.12); color: var(--accent-teal); }
+        .lst-chip-debt { background: rgba(201, 115, 110,0.12); color: var(--accent-coral); }
 
         .lst-amt-total { font-size: 13px; font-weight: 600; color: var(--text-primary); }
         .lst-amt-paid { font-size: 13px; font-weight: 600; color: var(--accent-teal); }

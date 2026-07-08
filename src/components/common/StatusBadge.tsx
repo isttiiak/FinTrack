@@ -6,9 +6,9 @@ interface StatusBadgeProps {
 }
 
 const STATUS_CONFIG: Record<LedgerStatus, { label: string; bg: string; color: string }> = {
-  Pending:  { label: '⏳ Pending',  bg: 'rgba(249,115,22,0.12)',  color: '#FB923C' },
-  Partial:  { label: '🔄 Partial',  bg: 'rgba(108,99,255,0.12)', color: '#818CF8' },
-  Settled:  { label: '✅ Settled',  bg: 'rgba(16,185,129,0.12)', color: '#34D399' },
+  Pending:  { label: '⏳ Pending',  bg: 'rgba(201, 115, 110,0.12)',  color: '#FB923C' },
+  Partial:  { label: '🔄 Partial',  bg: 'rgba(79, 169, 129,0.12)', color: '#818CF8' },
+  Settled:  { label: '✅ Settled',  bg: 'rgba(79, 169, 129,0.12)', color: '#34D399' },
 }
 
 export default function StatusBadge({ status, size = 'md' }: StatusBadgeProps) {

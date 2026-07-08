@@ -217,10 +217,10 @@ export default function PaymentMethodPicker({
         .pmp-add-trigger {
           display: inline-flex; align-items: center; gap: 4px;
           padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 500; cursor: pointer;
-          background: rgba(108,99,255,0.08); border: 1px solid rgba(108,99,255,0.2); color: var(--accent-primary);
+          background: rgba(79, 169, 129,0.08); border: 1px solid rgba(79, 169, 129,0.2); color: var(--accent-primary);
           transition: background 0.12s;
         }
-        .pmp-add-trigger:hover { background: rgba(108,99,255,0.15); }
+        .pmp-add-trigger:hover { background: rgba(79, 169, 129,0.15); }
         .pmp-custom-account-btn { border-radius: 8px; padding: 0 12px; height: 40px; }
 
         .pmp-group-row { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -230,8 +230,8 @@ export default function PaymentMethodPicker({
           background: var(--bg-elevated); border: 2px solid var(--border); color: var(--text-secondary);
           transition: all 0.12s;
         }
-        .pmp-group-chip:hover { border-color: rgba(108,99,255,0.3); color: var(--text-primary); }
-        .pmp-group-active { background: rgba(108,99,255,0.12) !important; border-color: rgba(108,99,255,0.5) !important; color: var(--accent-primary) !important; font-weight: 600; }
+        .pmp-group-chip:hover { border-color: rgba(79, 169, 129,0.3); color: var(--text-primary); }
+        .pmp-group-active { background: rgba(79, 169, 129,0.12) !important; border-color: rgba(79, 169, 129,0.5) !important; color: var(--accent-primary) !important; font-weight: 600; }
         .pmp-group-none { font-size: 12px; color: var(--text-muted); }
         .pmp-group-none-active { font-size: 12px; color: var(--text-muted); border-color: var(--border) !important; }
 
@@ -239,8 +239,8 @@ export default function PaymentMethodPicker({
           padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer;
           background: var(--bg-elevated); border: 2px solid var(--border); color: var(--text-secondary); transition: all 0.12s;
         }
-        .pmp-sub-chip:hover { border-color: rgba(16,185,129,0.35); color: var(--text-primary); }
-        .pmp-sub-active { background: rgba(16,185,129,0.12) !important; border-color: rgba(16,185,129,0.5) !important; color: var(--accent-teal) !important; font-weight: 600; }
+        .pmp-sub-chip:hover { border-color: rgba(79, 169, 129,0.35); color: var(--text-primary); }
+        .pmp-sub-active { background: rgba(79, 169, 129,0.12) !important; border-color: rgba(79, 169, 129,0.5) !important; color: var(--accent-teal) !important; font-weight: 600; }
 
         .pmp-add-form { }
         .pmp-add-input {
@@ -251,11 +251,11 @@ export default function PaymentMethodPicker({
         .pmp-add-save {
           display: flex; align-items: center; gap: 4px; padding: 7px 12px; border-radius: 8px;
           font-size: 13px; font-weight: 600; cursor: pointer;
-          background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: var(--accent-teal);
+          background: rgba(79, 169, 129,0.15); border: 1px solid rgba(79, 169, 129,0.3); color: var(--accent-teal);
           transition: background 0.1s; white-space: nowrap;
         }
         .pmp-add-save:disabled { opacity: 0.5; cursor: not-allowed; }
-        .pmp-add-save:not(:disabled):hover { background: rgba(16,185,129,0.25); }
+        .pmp-add-save:not(:disabled):hover { background: rgba(79, 169, 129,0.25); }
         .pmp-add-cancel {
           display: flex; align-items: center; justify-content: center;
           width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
@@ -278,7 +278,7 @@ export default function PaymentMethodPicker({
           font-size: 14px; background: var(--bg-elevated); border: 1px solid var(--border);
           color: var(--text-primary); font-weight: 500;
         }
-        .pmp-auto-badge { font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 20px; background: rgba(108,99,255,0.1); color: var(--accent-primary); text-transform: uppercase; letter-spacing: 0.05em; }
+        .pmp-auto-badge { font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 20px; background: rgba(79, 169, 129,0.1); color: var(--accent-primary); text-transform: uppercase; letter-spacing: 0.05em; }
       `}</style>
     </div>
   )

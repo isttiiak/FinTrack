@@ -22,8 +22,8 @@ export default function ErrorBanner({
         gap: 10,
         padding: '10px 14px',
         borderRadius: 12,
-        background: 'rgba(239,68,68,0.08)',
-        border: '1px solid rgba(239,68,68,0.25)',
+        background: 'rgba(194, 91, 85,0.08)',
+        border: '1px solid rgba(194, 91, 85,0.25)',
         marginBottom: 16,
       }}
     >
@@ -34,7 +34,7 @@ export default function ErrorBanner({
         style={{
           display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,
           padding: '6px 12px', borderRadius: 8,
-          background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)',
+          background: 'rgba(194, 91, 85,0.12)', border: '1px solid rgba(194, 91, 85,0.3)',
           color: 'var(--accent-red)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
         }}
       >

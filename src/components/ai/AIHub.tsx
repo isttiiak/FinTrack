@@ -36,7 +36,7 @@ interface FeatureCardProps {
   children?: React.ReactNode  // optional extra inputs shown before result
   accent?: string
 }
-function FeatureCard({ icon, title, desc, onRun, children, accent = '#6C63FF' }: FeatureCardProps) {
+function FeatureCard({ icon, title, desc, onRun, children, accent = '#8A968C' }: FeatureCardProps) {
   const [result, setResult] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError]   = useState<string | null>(null)
@@ -313,7 +313,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
       {/* Header */}
       <div className="aih-header">
         <div className="aih-header-left">
-          <Sparkles size={16} style={{ color: '#A855F7' }} />
+          <Sparkles size={16} style={{ color: '#3E9B72' }} />
           <span className="aih-header-title">AI Insights</span>
           <span className="aih-provider-badge">Groq · llama-3.1-8b-instant</span>
         </div>
@@ -326,27 +326,27 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
       <div className="aih-section">
         <div className="aih-section-title">Spending Analysis</div>
         <div className="aih-row-list">
-          <FeatureCard icon="🚨" title="Anomaly Detection" accent="#EF4444"
+          <FeatureCard icon="🚨" title="Anomaly Detection" accent="#C25B55"
             desc="Flags categories with unusual spending spikes vs your 3-month average."
             onRun={runAnomalyDetection} />
 
-          <FeatureCard icon="📋" title="Weekly Digest" accent="#10B981"
+          <FeatureCard icon="📋" title="Weekly Digest" accent="#4FA981"
             desc="A friendly summary of your last 7 days — highlights, concerns, and a tip."
             onRun={runWeeklyDigest} />
 
-          <FeatureCard icon="⚖️" title="Budget vs Actual Analysis" accent="#F59E0B"
+          <FeatureCard icon="⚖️" title="Budget vs Actual Analysis" accent="#C2A24E"
             desc="Explains WHY you're over or under budget and what to do about it."
             onRun={runBudgetAnalysis} />
 
-          <FeatureCard icon="🔄" title="Spending Patterns" accent="#06B6D4"
+          <FeatureCard icon="🔄" title="Spending Patterns" accent="#3E9B72"
             desc="Identifies recurring habits and expensive patterns in your 6-month history."
             onRun={runSpendingPatterns} />
 
-          <FeatureCard icon="📊" title="Benchmarking" accent="#A855F7"
+          <FeatureCard icon="📊" title="Benchmarking" accent="#B4923F"
             desc="Compares your spending to typical Bangladesh household benchmarks."
             onRun={runBenchmarking} />
 
-          <FeatureCard icon="🏦" title="Debt Payoff Strategy" accent="#F97316"
+          <FeatureCard icon="🏦" title="Debt Payoff Strategy" accent="#C9736E"
             desc="Analyzes your lent/debt entries and recommends Snowball vs Avalanche strategy."
             onRun={runDebtStrategy} />
         </div>
@@ -356,7 +356,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
       <div className="aih-section">
         <div className="aih-section-title">Planning</div>
         <div className="aih-row-list">
-          <FeatureCard icon="💡" title="Budget Recommendations" accent="#6C63FF"
+          <FeatureCard icon="💡" title="Budget Recommendations" accent="#8A968C"
             desc="Suggests realistic budget targets based on your actual spending averages."
             onRun={runBudgetRecommendations} />
         </div>
@@ -365,7 +365,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
       {/* Goal Planner — needs user input */}
       <div className="aih-card">
         <div className="aih-card-header">
-          <div className="aih-card-icon" style={{ background: '#10B98118', color: '#10B981' }}>🎯</div>
+          <div className="aih-card-icon" style={{ background: '#4FA98118', color: '#4FA981' }}>🎯</div>
           <div style={{ flex: 1 }}>
             <div className="aih-card-title">Goal-Based Spending Plan</div>
             <div className="aih-card-desc">Enter a savings goal and get a personalized month-by-month spending plan.</div>
@@ -382,7 +382,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
             <input className="aih-input" type="number" placeholder="e.g. 6"
               value={goalMonths} onChange={(e) => setGoalMonths(e.target.value)} min="1" max="60" />
           </div>
-          <button className="aih-run-btn" style={{ alignSelf: 'flex-end', borderColor: '#10B98144', color: '#10B981' }}
+          <button className="aih-run-btn" style={{ alignSelf: 'flex-end', borderColor: '#4FA98144', color: '#4FA981' }}
             onClick={handleRunGoal} disabled={goalLoading || !goalAmount}>
             {goalLoading ? <span className="aih-spinner" /> : <><RefreshCw size={12} /> Plan</>}
           </button>
@@ -396,7 +396,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
       {/* Natural Language Chat */}
       <div className="aih-chat-card">
         <div className="aih-chat-header">
-          <span className="aih-card-icon" style={{ background: '#6C63FF18', color: '#6C63FF' }}>💬</span>
+          <span className="aih-card-icon" style={{ background: '#4FA98118', color: '#4FA981' }}>💬</span>
           <div>
             <div className="aih-card-title">Ask Anything</div>
             <div className="aih-card-desc">Ask questions about your spending in plain language.</div>
@@ -412,7 +412,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
             ))}
             {chatLoading && (
               <div className="aih-msg aih-msg-ai" style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                <span className="aih-spinner" style={{ borderTopColor: '#6C63FF', borderColor: 'rgba(108,99,255,0.2)' }} />
+                <span className="aih-spinner" style={{ borderTopColor: '#4FA981', borderColor: 'rgba(79, 169, 129,0.2)' }} />
                 <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Thinking…</span>
               </div>
             )}
@@ -464,13 +464,13 @@ const STYLES = `
   .aih-setup-icon { font-size: 40px; }
   .aih-setup-title { font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0; }
   .aih-setup-desc { font-size: 13px; color: var(--text-secondary); margin: 0; line-height: 1.6; }
-  .aih-setup-link { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; background: linear-gradient(135deg,#6C63FF,#A855F7); color: #fff; text-decoration: none; margin-top: 4px; }
+  .aih-setup-link { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E); color: #fff; text-decoration: none; margin-top: 4px; }
 
   /* Header */
   .aih-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
   .aih-header-left { display: flex; align-items: center; gap: 8px; }
   .aih-header-title { font-size: 16px; font-weight: 700; color: var(--text-primary); }
-  .aih-provider-badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 20px; background: rgba(16,185,129,0.12); color: var(--accent-teal); }
+  .aih-provider-badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 20px; background: rgba(79, 169, 129,0.12); color: var(--accent-teal); }
   .aih-header-sub { font-size: 12px; color: var(--text-muted); }
 
   /* Sections */
@@ -484,7 +484,7 @@ const STYLES = `
     padding: 16px; display: flex; flex-direction: column; gap: 10px;
     transition: border-color 0.15s;
   }
-  .aih-card:hover { border-color: rgba(108,99,255,0.2); }
+  .aih-card:hover { border-color: rgba(79, 169, 129,0.2); }
   .aih-card-header { display: flex; align-items: flex-start; gap: 10px; }
   .aih-card-icon { width: 36px; height: 36px; border-radius: 10px; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .aih-card-title { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
@@ -495,7 +495,7 @@ const STYLES = `
     background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
     padding: 10px 12px; transition: border-color 0.15s;
   }
-  .aih-row:hover { border-color: rgba(108,99,255,0.2); }
+  .aih-row:hover { border-color: rgba(79, 169, 129,0.2); }
   .aih-row-expanded { padding-bottom: 12px; }
   .aih-row-header { display: flex; align-items: center; gap: 10px; cursor: default; }
   .aih-row-icon { width: 30px; height: 30px; border-radius: 9px; font-size: 15px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -506,10 +506,10 @@ const STYLES = `
     padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer;
     background: none; border: 1px solid; transition: background 0.12s; white-space: nowrap;
   }
-  .aih-run-btn:hover { background: rgba(108,99,255,0.06); }
+  .aih-run-btn:hover { background: rgba(79, 169, 129,0.06); }
   .aih-run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  .aih-error { display: flex; align-items: flex-start; gap: 7px; padding: 10px 12px; margin-top: 10px; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); border-radius: 8px; font-size: 12px; color: var(--accent-red); }
+  .aih-error { display: flex; align-items: flex-start; gap: 7px; padding: 10px 12px; margin-top: 10px; background: rgba(194, 91, 85,0.08); border: 1px solid rgba(194, 91, 85,0.2); border-radius: 8px; font-size: 12px; color: var(--accent-red); }
   .aih-result { padding: 10px 0 0; margin-top: 4px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 2px; }
 
   /* Goal planner */
@@ -529,12 +529,12 @@ const STYLES = `
   .aih-chat-header { display: flex; align-items: flex-start; gap: 10px; }
   .aih-messages { display: flex; flex-direction: column; gap: 8px; max-height: 360px; overflow-y: auto; padding: 4px 0; }
   .aih-msg { padding: 10px 12px; border-radius: 10px; font-size: 13px; line-height: 1.5; }
-  .aih-msg-user { background: rgba(108,99,255,0.1); color: var(--text-primary); font-weight: 500; align-self: flex-end; max-width: 85%; border-radius: 10px 10px 2px 10px; }
+  .aih-msg-user { background: rgba(79, 169, 129,0.1); color: var(--text-primary); font-weight: 500; align-self: flex-end; max-width: 85%; border-radius: 10px 10px 2px 10px; }
   .aih-msg-ai { background: var(--bg-elevated); color: var(--text-secondary); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 2px; }
 
   .aih-chat-hints { display: flex; flex-wrap: wrap; gap: 6px; }
   .aih-hint-chip { padding: 5px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-secondary); transition: all 0.12s; text-align: left; }
-  .aih-hint-chip:hover { background: rgba(108,99,255,0.08); border-color: rgba(108,99,255,0.3); color: var(--accent-primary); }
+  .aih-hint-chip:hover { background: rgba(79, 169, 129,0.08); border-color: rgba(79, 169, 129,0.3); color: var(--accent-primary); }
 
   .aih-chat-input-row { display: flex; gap: 8px; }
   .aih-chat-input {
@@ -547,7 +547,7 @@ const STYLES = `
   .aih-chat-input:disabled { opacity: 0.6; }
   .aih-chat-send {
     width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
-    background: linear-gradient(135deg,#6C63FF,#A855F7); border: none; color: #fff; cursor: pointer;
+    background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E); border: none; color: #fff; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     transition: opacity 0.15s;
   }
@@ -555,6 +555,6 @@ const STYLES = `
   .aih-chat-send:not(:disabled):hover { opacity: 0.85; }
 
   /* Spinner */
-  .aih-spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(108,99,255,0.2); border-top-color: var(--accent-primary); border-radius: 50%; animation: aih-spin 0.7s linear infinite; }
+  .aih-spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(79, 169, 129,0.2); border-top-color: var(--accent-primary); border-radius: 50%; animation: aih-spin 0.7s linear infinite; }
   @keyframes aih-spin { to { transform: rotate(360deg); } }
 `

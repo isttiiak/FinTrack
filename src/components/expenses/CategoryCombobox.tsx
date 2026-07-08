@@ -178,7 +178,7 @@ export default function CategoryCombobox({ value, onChange, categories, txnType,
         }
         .catcb-trigger:focus, .catcb-trigger-open {
           outline: none; border-color: var(--border-focus);
-          box-shadow: 0 0 0 3px rgba(108,99,255,0.15);
+          box-shadow: 0 0 0 3px rgba(79, 169, 129,0.15);
         }
         .catcb-trigger-error { border-color: var(--accent-red) !important; }
         .catcb-selected-label { font-size: 14px; color: var(--text-primary); }
@@ -233,7 +233,7 @@ export default function CategoryCombobox({ value, onChange, categories, txnType,
           background: none; border: none; font-size: 12px; font-weight: 500;
           color: var(--text-secondary); cursor: pointer; transition: background 0.1s, color 0.1s;
         }
-        .catcb-manage-btn:hover { background: rgba(108,99,255,0.08); color: var(--accent-primary); }
+        .catcb-manage-btn:hover { background: rgba(79, 169, 129,0.08); color: var(--accent-primary); }
       `}</style>
     </div>
   )

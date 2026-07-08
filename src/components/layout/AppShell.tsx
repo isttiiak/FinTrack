@@ -5,6 +5,7 @@ import Sidebar from './Sidebar'
 import MobileNav from './MobileNav'
 import ConfirmDialog from '@/components/common/ConfirmDialog'
 import FloatingCalculatorFAB from '@/components/common/FloatingCalculatorFAB'
+import { Logo } from '@/components/common/Logo'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
 
@@ -38,7 +39,7 @@ export default function AppShell() {
             <Menu size={20} />
           </button>
           <div className="topbar-brand">
-            <span className="topbar-logo">৳</span>
+            <Logo size={24} />
             <span>FinTrack</span>
           </div>
           <div style={{ width: 36 }} />
@@ -74,8 +75,8 @@ export default function AppShell() {
         }
 
         .demo-banner {
-          background: linear-gradient(135deg, rgba(108,99,255,0.15), rgba(168,85,247,0.1));
-          border-bottom: 1px solid rgba(108,99,255,0.2);
+          background: linear-gradient(135deg, rgba(79, 169, 129,0.15), rgba(62, 155, 114,0.1));
+          border-bottom: 1px solid rgba(79, 169, 129,0.2);
           overflow: hidden;
         }
         .demo-banner > * {
@@ -109,12 +110,6 @@ export default function AppShell() {
         .topbar-brand {
           display: flex; align-items: center; gap: 8px;
           font-size: 15px; font-weight: 700; color: var(--text-primary);
-        }
-        .topbar-logo {
-          width: 28px; height: 28px; border-radius: 8px;
-          background: linear-gradient(135deg, #6C63FF, #A855F7);
-          display: flex; align-items: center; justify-content: center;
-          font-size: 14px; font-weight: 700; color: #fff;
         }
 
         .app-content {

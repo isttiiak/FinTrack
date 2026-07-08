@@ -12,7 +12,7 @@ export default function FloatingCalculatorFAB() {
       <motion.button
         className="calc-fab"
         onClick={() => setCalculatorOpen(!calculatorOpen)}
-        whileHover={{ scale: 1.08, boxShadow: '0 8px 30px rgba(16,185,129,0.55)' }}
+        whileHover={{ scale: 1.08, boxShadow: '0 8px 30px rgba(79, 169, 129,0.55)' }}
         whileTap={{ scale: 0.93 }}
         title="Calculator"
       >
@@ -27,10 +27,10 @@ export default function FloatingCalculatorFAB() {
         .calc-fab {
           position: fixed; bottom: 88px; left: 24px; z-index: 20;
           width: 56px; height: 56px; border-radius: 16px;
-          background: linear-gradient(135deg, #10B981, #06B6D4);
+          background: linear-gradient(135deg, #4FA981, #3E9B72);
           border: none; color: #fff; cursor: pointer;
           display: flex; align-items: center; justify-content: center;
-          box-shadow: 0 6px 20px rgba(16,185,129,0.45);
+          box-shadow: 0 6px 20px rgba(79, 169, 129,0.45);
         }
         @media (min-width: 769px) {
           /* Desktop sidebar is fixed, 240px wide, z-index:40 — left:24px would

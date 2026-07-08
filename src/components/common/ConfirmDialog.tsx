@@ -96,7 +96,7 @@ export default function ConfirmDialog() {
           box-shadow: 0 32px 80px rgba(0,0,0,0.6);
           display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px;
         }
-        .cd-card-danger { border-color: rgba(239,68,68,0.3); }
+        .cd-card-danger { border-color: rgba(194, 91, 85,0.3); }
 
         .cd-icon {
           width: 64px; height: 64px; border-radius: 18px;
@@ -104,17 +104,17 @@ export default function ConfirmDialog() {
           margin-bottom: 4px;
         }
         .cd-icon-warn {
-          background: rgba(249,115,22,0.12); color: var(--accent-coral);
-          border: 1px solid rgba(249,115,22,0.25);
+          background: rgba(201, 115, 110,0.12); color: var(--accent-coral);
+          border: 1px solid rgba(201, 115, 110,0.25);
         }
         .cd-icon-danger {
-          background: rgba(239,68,68,0.12); color: var(--accent-red);
-          border: 1px solid rgba(239,68,68,0.3);
+          background: rgba(194, 91, 85,0.12); color: var(--accent-red);
+          border: 1px solid rgba(194, 91, 85,0.3);
           animation: cd-pulse 1.4s ease-in-out infinite;
         }
         @keyframes cd-pulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.3); }
-          50% { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+          0%, 100% { box-shadow: 0 0 0 0 rgba(194, 91, 85,0.3); }
+          50% { box-shadow: 0 0 0 8px rgba(194, 91, 85,0); }
         }
 
         .cd-title { font-size: 20px; font-weight: 700; color: var(--text-primary); margin: 0; }
@@ -139,15 +139,15 @@ export default function ConfirmDialog() {
 
         .cd-btn-delete {
           flex: 1; padding: 11px 16px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer;
-          background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.35); color: var(--accent-coral);
+          background: rgba(201, 115, 110,0.12); border: 1px solid rgba(201, 115, 110,0.35); color: var(--accent-coral);
           transition: background 0.15s;
         }
-        .cd-btn-delete:hover { background: rgba(249,115,22,0.22); }
+        .cd-btn-delete:hover { background: rgba(201, 115, 110,0.22); }
 
         .cd-btn-final {
           flex: 1.6; padding: 11px 16px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer;
-          background: linear-gradient(135deg, #EF4444, #DC2626); border: none; color: #fff;
-          transition: opacity 0.15s; box-shadow: 0 4px 14px rgba(239,68,68,0.35);
+          background: linear-gradient(135deg, #C25B55, #DC2626); border: none; color: #fff;
+          transition: opacity 0.15s; box-shadow: 0 4px 14px rgba(194, 91, 85,0.35);
         }
         .cd-btn-final:hover { opacity: 0.88; }
       `}</style>
