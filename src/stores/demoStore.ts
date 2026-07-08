@@ -16,6 +16,7 @@ interface DemoState {
   investmentPayments: InvestmentPayment[]
   enterDemo: () => void
   exitDemo: () => void
+  addTransaction: (txn: Transaction) => void
 }
 
 // Demo seed data — realistic BDT transactions over ~3 months
@@ -132,4 +133,11 @@ export const useDemoStore = create<DemoState>((set) => ({
     investmentReturns: [],
     investmentPayments: [],
   }),
+
+  // Demo mode is otherwise entirely read-only (every other mutation is
+  // blocked by useDemoGuard with a "not saved" toast) — expense creation is
+  // the one exception, so the app's most-tried interaction actually works
+  // in the demo rather than silently faking success. In-memory only, lost
+  // on exitDemo()/reload, same as the rest of the seed data.
+  addTransaction: (txn) => set((s) => ({ transactions: [txn, ...s.transactions] })),
 }))

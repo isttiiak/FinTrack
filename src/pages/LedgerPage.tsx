@@ -12,13 +12,15 @@ import PaymentForm from '@/components/ledger/PaymentForm'
 import QuickLedgerEntry from '@/components/ledger/QuickLedgerEntry'
 import LedgerPaymentLogs from '@/components/ledger/LedgerPaymentLogs'
 import LedgerSummaryTab from '@/components/ledger/LedgerSummaryTab'
+import ErrorBanner from '@/components/common/ErrorBanner'
 import type { LedgerType } from '@/lib/constants'
 
 type Tab = 'lent' | 'debt' | 'all' | 'logs' | 'summary'
 
 export default function LedgerPage() {
   const navigate = useNavigate()
-  const { data: persons = [], isLoading } = usePersons()
+  const personsQ = usePersons()
+  const { data: persons = [], isLoading } = personsQ
   const isDemo = useDemoStore((s) => s.isDemo)
   const addToast = useUIStore((s) => s.addToast)
 
@@ -87,6 +89,8 @@ export default function LedgerPage() {
           </motion.button>
         </div>
       </div>
+
+      {personsQ.isError && <ErrorBanner onRetry={() => personsQ.refetch()} />}
 
       {/* Summary cards */}
       {persons.length > 0 && (
@@ -247,12 +251,12 @@ export default function LedgerPage() {
         .ledger-sum-label { font-size: 11px; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
         .ledger-sum-value { font-size: 22px; font-weight: 700; }
 
-        .ledger-sum-lent { background: rgba(16,185,129,0.06); border-color: rgba(16,185,129,0.15); }
-        .ledger-sum-lent .ledger-sum-icon { background: rgba(16,185,129,0.15); color: var(--accent-teal); }
+        .ledger-sum-lent { background: rgba(79, 169, 129,0.06); border-color: rgba(79, 169, 129,0.15); }
+        .ledger-sum-lent .ledger-sum-icon { background: rgba(79, 169, 129,0.15); color: var(--accent-teal); }
         .ledger-sum-lent .ledger-sum-value { color: var(--accent-teal); }
 
-        .ledger-sum-debt { background: rgba(249,115,22,0.06); border-color: rgba(249,115,22,0.15); }
-        .ledger-sum-debt .ledger-sum-icon { background: rgba(249,115,22,0.15); color: var(--accent-coral); }
+        .ledger-sum-debt { background: rgba(201, 115, 110,0.06); border-color: rgba(201, 115, 110,0.15); }
+        .ledger-sum-debt .ledger-sum-icon { background: rgba(201, 115, 110,0.15); color: var(--accent-coral); }
         .ledger-sum-debt .ledger-sum-value { color: var(--accent-coral); }
 
         .ledger-sum-net-inline { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; margin-top: 2px; }
@@ -260,12 +264,12 @@ export default function LedgerPage() {
         .ledger-net-negative { color: var(--accent-red); }
 
         .ledger-sum-people {
-          background: rgba(108,99,255,0.04); border-color: rgba(108,99,255,0.12);
+          background: rgba(79, 169, 129,0.04); border-color: rgba(79, 169, 129,0.12);
           justify-content: center; gap: 0;
         }
         .ledger-sum-people-row { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
-        .ledger-sum-icon-sm { width: 26px; height: 26px; margin-bottom: 0; flex-shrink: 0; background: rgba(16,185,129,0.15); color: var(--accent-teal); }
-        .ledger-sum-icon-coral { background: rgba(249,115,22,0.15); color: var(--accent-coral); }
+        .ledger-sum-icon-sm { width: 26px; height: 26px; margin-bottom: 0; flex-shrink: 0; background: rgba(79, 169, 129,0.15); color: var(--accent-teal); }
+        .ledger-sum-icon-coral { background: rgba(201, 115, 110,0.15); color: var(--accent-coral); }
         .ledger-sum-people-value { font-size: 18px; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
         .ledger-sum-people-label { font-size: 11px; color: var(--text-muted); }
         .ledger-sum-people-divider { height: 1px; background: var(--border); margin: 6px 0; }
@@ -278,7 +282,7 @@ export default function LedgerPage() {
           transition: all 0.15s; white-space: nowrap;
         }
         .ledger-sort-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
-        .ledger-sort-active { color: var(--accent-primary) !important; border-color: rgba(108,99,255,0.35) !important; background: rgba(108,99,255,0.08) !important; }
+        .ledger-sort-active { color: var(--accent-primary) !important; border-color: rgba(79, 169, 129,0.35) !important; background: rgba(79, 169, 129,0.08) !important; }
         @media (max-width: 400px) { .ledger-tab { font-size: 12px; padding: 6px 10px; } }
         .ledger-tab {
           padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer;
@@ -287,7 +291,7 @@ export default function LedgerPage() {
         }
         .ledger-tab:hover { background: var(--bg-hover); color: var(--text-primary); }
         .ledger-tab-active {
-          background: linear-gradient(135deg, #6C63FF, #A855F7);
+          background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E);
           border-color: transparent; color: #fff;
         }
 

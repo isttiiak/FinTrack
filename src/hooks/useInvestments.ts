@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
+import { useDemoGuard, DemoBlockedError } from '@/hooks/useDemoGuard'
 import type { Investment, InvestmentReturn, InvestmentPayment } from '@/types/investment.types'
 
 function enrich(inv: Investment & { investment_returns?: InvestmentReturn[]; investment_payments?: InvestmentPayment[] }): Investment {
@@ -51,9 +52,11 @@ export function useCreateInvestment() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (data: Omit<Investment, 'id' | 'user_id' | 'created_at' | 'returns' | 'total_returned' | 'roi_percent' | 'profit_loss'>) => {
+      guardDemo()
       const { data: row, error } = await supabase
         .from('investments')
         .insert({ ...data, user_id: userId! })
@@ -66,7 +69,10 @@ export function useCreateInvestment() {
       qc.invalidateQueries({ queryKey: ['investments'] })
       addToast({ type: 'success', message: 'Investment added' })
     },
-    onError: (err: Error) => addToast({ type: 'error', message: err.message }),
+    onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
+      addToast({ type: 'error', message: err.message })
+    },
   })
 }
 
@@ -74,9 +80,11 @@ export function useUpdateInvestment() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<Investment> & { id: string }) => {
+      guardDemo()
       const { data: row, error } = await supabase
         .from('investments')
         .update(data)
@@ -91,7 +99,10 @@ export function useUpdateInvestment() {
       qc.invalidateQueries({ queryKey: ['investments'] })
       addToast({ type: 'success', message: 'Investment updated' })
     },
-    onError: (err: Error) => addToast({ type: 'error', message: err.message }),
+    onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
+      addToast({ type: 'error', message: err.message })
+    },
   })
 }
 
@@ -99,9 +110,11 @@ export function useDeleteInvestment() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (id: string) => {
+      guardDemo()
       const { error } = await supabase
         .from('investments')
         .delete()
@@ -113,7 +126,10 @@ export function useDeleteInvestment() {
       qc.invalidateQueries({ queryKey: ['investments'] })
       addToast({ type: 'success', message: 'Investment deleted' })
     },
-    onError: (err: Error) => addToast({ type: 'error', message: err.message }),
+    onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
+      addToast({ type: 'error', message: err.message })
+    },
   })
 }
 
@@ -121,9 +137,11 @@ export function useCreateReturn() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (data: Omit<InvestmentReturn, 'id' | 'user_id' | 'created_at'>) => {
+      guardDemo()
       const { data: row, error } = await supabase
         .from('investment_returns')
         .insert({ ...data, user_id: userId! })
@@ -136,7 +154,10 @@ export function useCreateReturn() {
       qc.invalidateQueries({ queryKey: ['investments'] })
       addToast({ type: 'success', message: 'Return logged' })
     },
-    onError: (err: Error) => addToast({ type: 'error', message: err.message }),
+    onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
+      addToast({ type: 'error', message: err.message })
+    },
   })
 }
 
@@ -144,9 +165,11 @@ export function useCreateInvestmentPayment() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (data: { investment_id: string; amount: number; payment_date: string; payment_method?: string | null; account?: string | null; notes: string | null }) => {
+      guardDemo()
       const { data: row, error } = await supabase
         .from('investment_payments')
         .insert({ ...data, user_id: userId! })
@@ -159,7 +182,10 @@ export function useCreateInvestmentPayment() {
       qc.invalidateQueries({ queryKey: ['investments'] })
       addToast({ type: 'success', message: 'Payment logged' })
     },
-    onError: (err: Error) => addToast({ type: 'error', message: err.message }),
+    onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
+      addToast({ type: 'error', message: err.message })
+    },
   })
 }
 
@@ -167,9 +193,11 @@ export function useUpdateInvestmentPayment() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async ({ id, ...data }: { id: string; amount?: number; payment_date?: string; notes?: string | null }) => {
+      guardDemo()
       const { data: row, error } = await supabase
         .from('investment_payments')
         .update(data)
@@ -184,7 +212,10 @@ export function useUpdateInvestmentPayment() {
       qc.invalidateQueries({ queryKey: ['investments'] })
       addToast({ type: 'success', message: 'Payment updated' })
     },
-    onError: (err: Error) => addToast({ type: 'error', message: err.message }),
+    onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
+      addToast({ type: 'error', message: err.message })
+    },
   })
 }
 
@@ -192,9 +223,11 @@ export function useUpdateReturn() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<InvestmentReturn> & { id: string }) => {
+      guardDemo()
       const { data: row, error } = await supabase
         .from('investment_returns')
         .update(data)
@@ -209,7 +242,10 @@ export function useUpdateReturn() {
       qc.invalidateQueries({ queryKey: ['investments'] })
       addToast({ type: 'success', message: 'Return updated' })
     },
-    onError: (err: Error) => addToast({ type: 'error', message: err.message }),
+    onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
+      addToast({ type: 'error', message: err.message })
+    },
   })
 }
 
@@ -217,9 +253,11 @@ export function useDeleteInvestmentPayment() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (id: string) => {
+      guardDemo()
       const { error } = await supabase
         .from('investment_payments')
         .delete()
@@ -231,7 +269,10 @@ export function useDeleteInvestmentPayment() {
       qc.invalidateQueries({ queryKey: ['investments'] })
       addToast({ type: 'success', message: 'Payment deleted' })
     },
-    onError: (err: Error) => addToast({ type: 'error', message: err.message }),
+    onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
+      addToast({ type: 'error', message: err.message })
+    },
   })
 }
 
@@ -239,9 +280,11 @@ export function useDeleteReturn() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (id: string) => {
+      guardDemo()
       const { error } = await supabase
         .from('investment_returns')
         .delete()
@@ -253,6 +296,9 @@ export function useDeleteReturn() {
       qc.invalidateQueries({ queryKey: ['investments'] })
       addToast({ type: 'success', message: 'Return deleted' })
     },
-    onError: (err: Error) => addToast({ type: 'error', message: err.message }),
+    onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
+      addToast({ type: 'error', message: err.message })
+    },
   })
 }

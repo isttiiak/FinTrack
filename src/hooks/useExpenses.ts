@@ -5,6 +5,7 @@ import { useDemoStore } from '@/stores/demoStore'
 import type { Transaction, TransactionFilters } from '@/types/expense.types'
 import { getCurrentMonthRange } from '@/lib/utils'
 import { useUIStore } from '@/stores/uiStore'
+import { useDemoGuard, DemoBlockedError } from '@/hooks/useDemoGuard'
 
 export function useExpenses(filters?: TransactionFilters) {
   const userId = useAuthStore((s) => s.user?.id)
@@ -51,12 +52,24 @@ export function useCreateExpense() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const isDemo = useDemoStore((s) => s.isDemo)
+  const demoCategories = useDemoStore((s) => s.categories)
+  const addDemoTransaction = useDemoStore((s) => s.addTransaction)
   const addToast = useUIStore((s) => s.addToast)
 
   return useMutation({
     mutationFn: async (txn: Omit<Transaction, 'id' | 'user_id' | 'created_at' | 'category'>) => {
       if (isDemo) {
-        return { ...txn, id: `demo-${Date.now()}`, user_id: 'demo', created_at: new Date().toISOString() }
+        // The one demo-mode mutation that actually persists (in-memory) —
+        // see the comment on demoStore's addTransaction for why.
+        const created: Transaction = {
+          ...txn,
+          id: `demo-${Date.now()}`,
+          user_id: 'demo',
+          created_at: new Date().toISOString(),
+          category: demoCategories.find((c) => c.id === txn.category_id) ?? null,
+        }
+        addDemoTransaction(created)
+        return created
       }
       const { data, error } = await supabase
         .from('transactions')
@@ -80,9 +93,11 @@ export function useUpdateExpense() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async ({ id, ...txn }: Partial<Transaction> & { id: string }) => {
+      guardDemo()
       const { data, error } = await supabase
         .from('transactions')
         .update(txn)
@@ -98,6 +113,7 @@ export function useUpdateExpense() {
       addToast({ type: 'success', message: 'Transaction updated' })
     },
     onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })
@@ -107,9 +123,11 @@ export function useDeleteExpense() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (id: string) => {
+      guardDemo()
       const { error } = await supabase
         .from('transactions')
         .delete()
@@ -121,6 +139,7 @@ export function useDeleteExpense() {
       qc.invalidateQueries({ queryKey: ['expenses'] })
     },
     onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })

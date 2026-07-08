@@ -9,6 +9,7 @@ import { LEDGER_TYPES } from '@/lib/constants'
 import type { PaymentMethod, Account } from '@/lib/constants'
 import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
 import { useCreateLedgerEntry, useUpdateLedgerEntry } from '@/hooks/useLedger'
+import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import type { PersonLedger } from '@/types/ledger.types'
 
 const schema = z.object({
@@ -73,12 +74,16 @@ export default function LedgerEntryForm({ personId, editing, defaultType = 'Lent
       notes:          values.notes || null,
       settled_date:   editing?.settled_date ?? null,
     }
-    if (editing) {
-      await update({ id: editing.id, ...payload })
-    } else {
-      await create(payload)
+    try {
+      if (editing) {
+        await update({ id: editing.id, ...payload })
+      } else {
+        await create(payload)
+      }
+      onClose()
+    } catch (err) {
+      if (err instanceof DemoBlockedError) onClose()
     }
-    onClose()
   }
 
   return (
@@ -223,8 +228,8 @@ export default function LedgerEntryForm({ personId, editing, defaultType = 'Lent
         }
         .lef-type-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
         .lef-type-btn-active { color: #fff !important; border-color: transparent !important; }
-        .lef-type-lent { background: linear-gradient(135deg, #10B981, #06B6D4) !important; }
-        .lef-type-debt { background: linear-gradient(135deg, #F97316, #EF4444) !important; }
+        .lef-type-lent { background: linear-gradient(135deg, #4FA981, #3E9B72) !important; }
+        .lef-type-debt { background: linear-gradient(135deg, #C9736E, #C25B55) !important; }
         .lef-type-hint { font-size: 12px; color: var(--text-muted); margin: -8px 0 0; }
         .lef-field { display: flex; flex-direction: column; gap: 5px; }
         .lef-label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
@@ -235,7 +240,7 @@ export default function LedgerEntryForm({ personId, editing, defaultType = 'Lent
           transition: border-color 0.15s, box-shadow 0.15s;
         }
         .lef-input::placeholder { color: var(--text-muted); }
-        .lef-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(108,99,255,0.15); }
+        .lef-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(79, 169, 129,0.15); }
         .lef-input-error { border-color: var(--accent-red) !important; }
         .lef-amount-input { font-size: 22px; font-weight: 700; padding: 12px 14px; }
         .lef-error { font-size: 12px; color: #FCA5A5; margin: 0; }

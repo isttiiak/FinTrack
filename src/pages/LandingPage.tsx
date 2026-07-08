@@ -5,37 +5,39 @@ import {
   Receipt, TrendingUp, Brain, MessageSquare, Target, ChevronRight,
 } from 'lucide-react'
 import { useDemoStore } from '@/stores/demoStore'
+import { useAuthStore } from '@/stores/authStore'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
+import { Logo } from '@/components/common/Logo'
 
 // ── Feature data ──────────────────────────────────────────────────────────────
 const CORE_FEATURES = [
   {
-    icon: Receipt, color: '#6C63FF',
+    icon: Receipt, color: '#4FA981',
     label: 'Expense Tracking',
     desc: 'Log income and expenses by category. Smart payment method picker — Cash, MFS (bKash/Nagad), Card, Bank Transfer — auto-fills the account.',
   },
   {
-    icon: Users, color: '#10B981',
+    icon: Users, color: '#4FA981',
     label: 'Lent & Debt Ledger',
     desc: 'Full timeline per person. Track payments, partial settlements, net position, and status — all in one place.',
   },
   {
-    icon: TrendingUp, color: '#F59E0B',
+    icon: TrendingUp, color: '#C2A24E',
     label: 'Investment Tracker',
     desc: 'Track committed capital, installment payments, and returns. ROI %, P&L, and portfolio summary computed live.',
   },
   {
-    icon: BarChart3, color: '#06B6D4',
+    icon: BarChart3, color: '#3E9B72',
     label: 'Analytics',
     desc: 'Monthly trend, category donut, daily bars, budget vs actual, no-spend calendar, and 6 live KPI cards.',
   },
   {
-    icon: Download, color: '#A855F7',
+    icon: Download, color: '#3E9B72',
     label: 'Data Export & Import',
     desc: 'Export to Excel (multi-sheet) or CSV. Import expenses from any CSV with a live preview. Your data, always yours.',
   },
   {
-    icon: Shield, color: '#EF4444',
+    icon: Shield, color: '#C25B55',
     label: 'Privacy by Design',
     desc: 'Supabase Row-Level Security on every table. Self-host in 10 minutes with your own Supabase project.',
   },
@@ -63,7 +65,14 @@ const STEPS = [
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function LandingPage() {
   const enterDemo = useDemoStore((s) => s.enterDemo)
+  const isDemo = useDemoStore((s) => s.isDemo)
+  const { session, profile } = useAuthStore()
   const navigate  = useNavigate()
+
+  // A real signed-in session OR an active demo session both mean "this
+  // visitor already has an app to go back to" — the signup/sign-in CTAs
+  // stop making sense and should point at the dashboard instead.
+  const isLoggedIn = !!session || isDemo
 
   function handleDemo() {
     enterDemo()
@@ -71,12 +80,11 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="lp">
+    <motion.div className="lp" variants={fadeUp} initial="initial" animate="animate">
       {/* ── Nav ── */}
       <nav className="lp-nav">
         <div className="lp-nav-brand">
-          <div className="lp-logo">৳</div>
-          <span className="lp-brand-name">FinTrack</span>
+          <Logo size={32} withWordmark />
         </div>
         <div className="lp-nav-right">
           <a
@@ -87,8 +95,23 @@ export default function LandingPage() {
           >
             ⭐ GitHub
           </a>
-          <Link to="/login"  className="lp-nav-link">Sign in</Link>
-          <Link to="/signup" className="lp-cta-sm">Get started free</Link>
+          {isLoggedIn ? (
+            <Link to="/dashboard" className="lp-nav-account">
+              <span className="lp-nav-avatar">
+                {profile?.avatar_url ? (
+                  <img src={profile.avatar_url} alt={profile.full_name ?? 'Account'} />
+                ) : (
+                  <span>{(isDemo ? 'D' : profile?.full_name?.[0] ?? '?').toUpperCase()}</span>
+                )}
+              </span>
+              Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link to="/login"  className="lp-nav-link">Sign in</Link>
+              <Link to="/signup" className="lp-cta-sm">Get started free</Link>
+            </>
+          )}
         </div>
       </nav>
 
@@ -115,16 +138,24 @@ export default function LandingPage() {
           </motion.p>
 
           <motion.div className="lp-cta-row" variants={staggerItem}>
-            <Link to="/signup" className="lp-cta-primary">
-              Create free account <ArrowRight size={16} />
-            </Link>
-            <button className="lp-cta-secondary" onClick={handleDemo}>
-              <Sparkles size={15} /> Try demo
-            </button>
+            {isLoggedIn ? (
+              <Link to="/dashboard" className="lp-cta-primary">
+                Go to Dashboard <ArrowRight size={16} />
+              </Link>
+            ) : (
+              <>
+                <Link to="/signup" className="lp-cta-primary">
+                  Create free account <ArrowRight size={16} />
+                </Link>
+                <button className="lp-cta-secondary" onClick={handleDemo}>
+                  <Sparkles size={15} /> Try demo
+                </button>
+              </>
+            )}
           </motion.div>
 
           <motion.p className="lp-cta-note" variants={staggerItem}>
-            No credit card. No setup for the hosted version.
+            {isLoggedIn ? "You're already signed in — pick up where you left off." : 'No credit card. No setup for the hosted version.'}
           </motion.p>
 
           {/* Stats strip */}
@@ -229,26 +260,39 @@ export default function LandingPage() {
 
       {/* ── Final CTA ── */}
       <section className="lp-section lp-final-section">
-        <motion.div className="lp-final-card" variants={fadeUp} initial="initial" whileInView="animate" viewport={{ once: true }}>
-          <div className="lp-final-orb" />
-          <Target size={28} style={{ color: 'var(--accent-primary)', marginBottom: 16 }} />
-          <h2 className="lp-final-title">Ready to take control of your finances?</h2>
-          <p className="lp-final-sub">
-            Free to use. Free to self-host. Free AI with your own Groq key.
-            Your data stays in your own database.
-          </p>
-          <div className="lp-cta-row">
-            <Link to="/signup" className="lp-cta-primary">
-              Create free account <ArrowRight size={16} />
-            </Link>
-            <button className="lp-cta-secondary" onClick={handleDemo}>
-              <Sparkles size={15} /> Try demo first
-            </button>
-          </div>
-          <div className="lp-final-links">
-            <a href="https://github.com/isttiiak/FinTrack" target="_blank" rel="noopener noreferrer" className="lp-final-link">
-              ⭐ View on GitHub <ChevronRight size={12} />
-            </a>
+        <motion.div className="lp-final-card-outer" variants={fadeUp} initial="initial" whileInView="animate" viewport={{ once: true }}>
+          <div className="lp-final-card">
+            <div className="lp-final-orb" />
+            <Target size={28} style={{ color: 'var(--accent-primary)', marginBottom: 16 }} />
+            <h2 className="lp-final-title">
+              {isLoggedIn ? 'Welcome back!' : 'Ready to take control of your finances?'}
+            </h2>
+            <p className="lp-final-sub">
+              {isLoggedIn
+                ? "You're all set — jump back into your dashboard."
+                : 'Free to use. Free to self-host. Free AI with your own Groq key. Your data stays in your own database.'}
+            </p>
+            <div className="lp-cta-row">
+              {isLoggedIn ? (
+                <Link to="/dashboard" className="lp-cta-primary">
+                  Go to Dashboard <ArrowRight size={16} />
+                </Link>
+              ) : (
+                <>
+                  <Link to="/signup" className="lp-cta-primary">
+                    Create free account <ArrowRight size={16} />
+                  </Link>
+                  <button className="lp-cta-secondary" onClick={handleDemo}>
+                    <Sparkles size={15} /> Try demo first
+                  </button>
+                </>
+              )}
+            </div>
+            <div className="lp-final-links">
+              <a href="https://github.com/isttiiak/FinTrack" target="_blank" rel="noopener noreferrer" className="lp-final-link">
+                ⭐ View on GitHub <ChevronRight size={12} />
+              </a>
+            </div>
           </div>
         </motion.div>
       </section>
@@ -257,22 +301,28 @@ export default function LandingPage() {
       <footer className="lp-footer">
         <div className="lp-footer-inner">
           <div className="lp-footer-brand">
-            <div className="lp-logo" style={{ width: 26, height: 26, fontSize: 13, borderRadius: 7 }}>৳</div>
+            <Logo size={22} />
             <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>FinTrack</span>
           </div>
           <div className="lp-footer-links">
             <a href="https://github.com/isttiiak/FinTrack" target="_blank" rel="noopener noreferrer" className="lp-footer-link">
               ⭐ GitHub
             </a>
-            <Link to="/login"  className="lp-footer-link">Sign in</Link>
-            <Link to="/signup" className="lp-footer-link">Sign up</Link>
+            {isLoggedIn ? (
+              <Link to="/dashboard" className="lp-footer-link">Dashboard</Link>
+            ) : (
+              <>
+                <Link to="/login"  className="lp-footer-link">Sign in</Link>
+                <Link to="/signup" className="lp-footer-link">Sign up</Link>
+              </>
+            )}
           </div>
           <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>MIT License · Built with ❤ in Bangladesh</span>
         </div>
       </footer>
 
       <style>{STYLES}</style>
-    </div>
+    </motion.div>
   )
 }
 
@@ -284,19 +334,14 @@ const STYLES = `
     position: sticky; top: 0; z-index: 100;
     display: flex; align-items: center; justify-content: space-between;
     padding: 13px 40px;
-    background: rgba(15,15,26,0.88); backdrop-filter: blur(14px);
-    border-bottom: 1px solid rgba(42,42,74,0.6);
+    background: rgba(12, 15, 13,0.88); backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(33, 42, 36,0.6);
   }
   @media (max-width: 600px) { .lp-nav { padding: 12px 16px; } }
+  /* Icon-only brand on narrow phones — the full wordmark next to GitHub/Sign
+     in/Get started free doesn't fit below ~420px and would wrap onto 2 lines. */
+  @media (max-width: 420px) { .lp-nav-brand .logo-wordmark { display: none; } }
   .lp-nav-brand { display: flex; align-items: center; gap: 10px; }
-  .lp-brand-name { font-size: 17px; font-weight: 700; color: var(--text-primary); }
-  .lp-logo {
-    width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
-    background: linear-gradient(135deg, #6C63FF, #A855F7);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 17px; font-weight: 700; color: #fff;
-    box-shadow: 0 4px 12px rgba(108,99,255,0.35);
-  }
   .lp-nav-right { display: flex; align-items: center; gap: 14px; }
   .lp-nav-link {
     font-size: 13px; color: var(--text-secondary); text-decoration: none;
@@ -308,9 +353,24 @@ const STYLES = `
   .lp-gh-link:hover { background: var(--bg-elevated); }
   .lp-cta-sm {
     padding: 7px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
-    background: linear-gradient(135deg, #6C63FF, #A855F7); color: #fff;
+    background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E); color: #fff;
     text-decoration: none; border: none; cursor: pointer;
   }
+  .lp-nav-account {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 14px 5px 5px; border-radius: 20px;
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    font-size: 13px; font-weight: 600; color: var(--text-primary);
+    text-decoration: none; transition: border-color 0.12s;
+  }
+  .lp-nav-account:hover { border-color: var(--accent-primary); }
+  .lp-nav-avatar {
+    width: 24px; height: 24px; border-radius: 50%; overflow: hidden; flex-shrink: 0;
+    background: var(--grad-brand);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #fff;
+  }
+  .lp-nav-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
   /* ── Hero ── */
   .lp-hero {
@@ -320,16 +380,16 @@ const STYLES = `
   }
   @media (max-width: 640px) { .lp-hero { padding: 64px 16px 56px; } }
   .lp-orb { position: absolute; border-radius: 50%; filter: blur(90px); pointer-events: none; }
-  .lp-orb-1 { width: 600px; height: 600px; background: rgba(108,99,255,0.09); top: -160px; left: -160px; }
-  .lp-orb-2 { width: 400px; height: 400px; background: rgba(168,85,247,0.07); bottom: -100px; right: -100px; }
-  .lp-orb-3 { width: 300px; height: 300px; background: rgba(16,185,129,0.05); top: 50%; left: 50%; transform: translate(-50%,-50%); }
+  .lp-orb-1 { width: 600px; height: 600px; background: rgba(79, 169, 129,0.09); top: -160px; left: -160px; }
+  .lp-orb-2 { width: 400px; height: 400px; background: rgba(62, 155, 114,0.07); bottom: -100px; right: -100px; }
+  .lp-orb-3 { width: 300px; height: 300px; background: rgba(79, 169, 129,0.05); top: 50%; left: 50%; transform: translate(-50%,-50%); }
 
   .lp-hero-inner { position: relative; z-index: 1; max-width: 700px; width: 100%; text-align: center; display: flex; flex-direction: column; align-items: center; }
 
   .lp-badge {
     display: inline-flex; align-items: center; gap: 7px;
     padding: 5px 14px; margin-bottom: 24px;
-    background: rgba(108,99,255,0.1); border: 1px solid rgba(108,99,255,0.25);
+    background: rgba(79, 169, 129,0.1); border: 1px solid rgba(79, 169, 129,0.25);
     border-radius: 20px; font-size: 12px; font-weight: 500; color: var(--accent-primary);
   }
 
@@ -338,7 +398,7 @@ const STYLES = `
     color: var(--text-primary); margin: 0 0 20px; letter-spacing: -0.025em;
   }
   .lp-headline-accent {
-    background: linear-gradient(135deg, #6C63FF, #A855F7);
+    background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   }
   .lp-sub {
@@ -350,18 +410,18 @@ const STYLES = `
   .lp-cta-primary {
     display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
     padding: 13px 26px; font-size: 15px; font-weight: 600; border-radius: 11px;
-    background: linear-gradient(135deg, #6C63FF, #A855F7); color: #fff; border: none; cursor: pointer;
-    box-shadow: 0 8px 24px rgba(108,99,255,0.35); transition: opacity 0.15s, transform 0.15s;
+    background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E); color: #fff; border: none; cursor: pointer;
+    box-shadow: 0 8px 24px rgba(79, 169, 129,0.35); transition: opacity 0.15s, transform 0.15s;
   }
   .lp-cta-primary:hover { opacity: 0.9; transform: translateY(-1px); }
   .lp-cta-secondary {
     display: inline-flex; align-items: center; gap: 8px;
-    padding: 12px 22px; background: rgba(108,99,255,0.08);
-    border: 1px solid rgba(108,99,255,0.3); border-radius: 11px;
+    padding: 12px 22px; background: rgba(79, 169, 129,0.08);
+    border: 1px solid rgba(79, 169, 129,0.3); border-radius: 11px;
     color: var(--accent-primary); font-size: 14px; font-weight: 500;
     cursor: pointer; transition: background 0.15s, border-color 0.15s;
   }
-  .lp-cta-secondary:hover { background: rgba(108,99,255,0.16); border-color: rgba(108,99,255,0.55); }
+  .lp-cta-secondary:hover { background: rgba(79, 169, 129,0.16); border-color: rgba(79, 169, 129,0.55); }
   .lp-cta-note { font-size: 12px; color: var(--text-muted); margin: 14px 0 0; }
 
   /* Stats */
@@ -392,7 +452,7 @@ const STYLES = `
     background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 22px;
     transition: border-color 0.2s, box-shadow 0.2s;
   }
-  .lp-feature-card:hover { border-color: rgba(108,99,255,0.3); box-shadow: 0 6px 24px rgba(0,0,0,0.2); }
+  .lp-feature-card:hover { border-color: rgba(79, 169, 129,0.3); box-shadow: 0 6px 24px rgba(0,0,0,0.2); }
   .lp-feature-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
   .lp-feature-title { font-size: 15px; font-weight: 600; color: var(--text-primary); margin: 0 0 7px; }
   .lp-feature-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.55; margin: 0; }
@@ -401,16 +461,16 @@ const STYLES = `
   .lp-ai-section {
     position: relative; overflow: hidden;
     padding: 80px 32px;
-    background: linear-gradient(180deg, transparent, rgba(108,99,255,0.04), transparent);
+    background: linear-gradient(180deg, transparent, rgba(79, 169, 129,0.04), transparent);
     border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
   }
   @media (max-width: 640px) { .lp-ai-section { padding: 56px 16px; } }
-  .lp-ai-orb { position: absolute; width: 500px; height: 500px; border-radius: 50%; filter: blur(120px); background: rgba(168,85,247,0.07); top: 50%; left: 50%; transform: translate(-50%,-50%); pointer-events: none; }
+  .lp-ai-orb { position: absolute; width: 500px; height: 500px; border-radius: 50%; filter: blur(120px); background: rgba(62, 155, 114,0.07); top: 50%; left: 50%; transform: translate(-50%,-50%); pointer-events: none; }
   .lp-ai-header { text-align: center; margin-bottom: 40px; position: relative; z-index: 1; }
   .lp-ai-badge {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 4px 12px; border-radius: 20px; margin-bottom: 16px;
-    background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25);
+    background: rgba(79, 169, 129,0.1); border: 1px solid rgba(79, 169, 129,0.25);
     font-size: 12px; font-weight: 500; color: var(--accent-teal);
   }
 
@@ -424,7 +484,7 @@ const STYLES = `
     background: var(--bg-card); border: 1px solid var(--border);
     transition: border-color 0.15s, background 0.15s;
   }
-  .lp-ai-card:hover { border-color: rgba(168,85,247,0.3); background: rgba(168,85,247,0.03); }
+  .lp-ai-card:hover { border-color: rgba(62, 155, 114,0.3); background: rgba(62, 155, 114,0.03); }
   .lp-ai-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
   .lp-ai-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
   .lp-ai-desc { font-size: 12px; color: var(--text-muted); line-height: 1.45; }
@@ -443,7 +503,7 @@ const STYLES = `
   .lp-step:last-child { border-bottom: none; }
   .lp-step-num {
     font-size: 28px; font-weight: 800; color: transparent;
-    background: linear-gradient(135deg,#6C63FF,#A855F7); -webkit-background-clip: text;
+    background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E); -webkit-background-clip: text;
     background-clip: text; -webkit-text-fill-color: transparent;
     flex-shrink: 0; width: 48px; line-height: 1;
   }
@@ -452,16 +512,27 @@ const STYLES = `
 
   /* ── Final CTA ── */
   .lp-final-section { background: none; }
+  /* Featured card — the one spot on this page that gets the full
+     brand-gradient border. Wrapper-div technique (outer = 1px of solid
+     gradient "border", inner = opaque card) instead of a layered
+     padding-box/border-box background — that trick rendered inconsistently
+     across browsers (the "border" layer bled across the whole card,
+     washing out the text/button on top of it). */
+  .lp-final-card-outer {
+    max-width: 600px; margin: 0 auto;
+    border-radius: 24px; padding: 1px;
+    background: var(--grad-brand);
+  }
   .lp-final-card {
     position: relative; overflow: hidden;
-    max-width: 600px; margin: 0 auto; text-align: center;
+    text-align: center;
     padding: 52px 40px;
-    background: linear-gradient(135deg, rgba(108,99,255,0.08), rgba(168,85,247,0.05));
-    border: 1px solid rgba(108,99,255,0.2); border-radius: 24px;
+    border-radius: 23px;
+    background: linear-gradient(135deg, rgba(79, 169, 129, 0.10), rgba(62, 155, 114, 0.06)), var(--bg-card);
     display: flex; flex-direction: column; align-items: center; gap: 0;
   }
   @media (max-width: 480px) { .lp-final-card { padding: 36px 20px; } }
-  .lp-final-orb { position: absolute; width: 300px; height: 300px; border-radius: 50%; filter: blur(80px); background: rgba(108,99,255,0.1); top: 50%; left: 50%; transform: translate(-50%,-50%); pointer-events: none; }
+  .lp-final-orb { position: absolute; width: 300px; height: 300px; border-radius: 50%; filter: blur(80px); background: rgba(79, 169, 129,0.1); top: 50%; left: 50%; transform: translate(-50%,-50%); pointer-events: none; }
   .lp-final-title { font-size: clamp(20px, 4vw, 28px); font-weight: 700; color: var(--text-primary); margin: 0 0 10px; position: relative; z-index: 1; }
   .lp-final-sub { font-size: 14px; color: var(--text-secondary); margin: 0 0 28px; line-height: 1.6; position: relative; z-index: 1; }
   .lp-final-links { margin-top: 20px; position: relative; z-index: 1; }
@@ -481,8 +552,8 @@ const STYLES = `
   .lp-footer-link:hover { color: var(--text-primary); }
 
   /* Gradient text helper */
-  .grad-purple-text {
-    background: linear-gradient(135deg, #6C63FF, #A855F7);
+  .lp-grad-text {
+    background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   }
 `

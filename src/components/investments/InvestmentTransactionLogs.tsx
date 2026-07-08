@@ -4,6 +4,7 @@ import { X, Filter, ArrowUpRight, ArrowDownRight, Edit2, Check } from 'lucide-re
 import DeleteButton from '@/components/common/DeleteButton'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { useDeleteInvestmentPayment, useDeleteReturn, useUpdateInvestmentPayment, useUpdateReturn } from '@/hooks/useInvestments'
+import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import { fadeUp } from '@/lib/animations'
 import type { Investment } from '@/types/investment.types'
 
@@ -34,12 +35,16 @@ export default function InvestmentTransactionLogs({ investments }: { investments
     if (!editState) return
     const amount = Number(editState.amount)
     if (isNaN(amount) || amount <= 0) return
-    if (editState.type === 'Payment Out') {
-      await updatePayment({ id: editState.id, amount, notes: editState.notes || null })
-    } else {
-      await updateReturn({ id: editState.id, amount, notes: editState.notes || null })
+    try {
+      if (editState.type === 'Payment Out') {
+        await updatePayment({ id: editState.id, amount, notes: editState.notes || null })
+      } else {
+        await updateReturn({ id: editState.id, amount, notes: editState.notes || null })
+      }
+      setEditState(null)
+    } catch (err) {
+      if (err instanceof DemoBlockedError) setEditState(null)
     }
-    setEditState(null)
   }
 
   const allRows = useMemo((): TxRow[] => {
@@ -277,14 +282,14 @@ export default function InvestmentTransactionLogs({ investments }: { investments
           transition: background 0.12s; display: flex; align-items: center; gap: 5px;
         }
         .itl-pill:hover { background: var(--bg-hover); color: var(--text-primary); }
-        .itl-pill-active { background: linear-gradient(135deg,#F59E0B,#F97316); border-color: transparent; color: #fff; }
+        .itl-pill-active { background: linear-gradient(135deg,#C2A24E,#C9736E); border-color: transparent; color: #fff; }
         .itl-pill-count { background: var(--bg-elevated); border-radius: 20px; padding: 0 6px; font-size: 10px; }
         .itl-pill-active .itl-pill-count { background: rgba(255,255,255,0.2); }
 
         .itl-filter-banner {
           overflow: hidden; display: flex; align-items: center; justify-content: space-between;
           padding: 8px 14px; border-radius: 10px;
-          background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2);
+          background: rgba(194, 162, 78,0.08); border: 1px solid rgba(194, 162, 78,0.2);
           font-size: 13px; color: var(--text-secondary);
         }
         .itl-filter-banner strong { color: var(--text-primary); }
@@ -309,9 +314,9 @@ export default function InvestmentTransactionLogs({ investments }: { investments
         }
         .itl-edit-btn, .itl-save-btn { width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; background: none; border: none; cursor: pointer; }
         .itl-edit-btn { color: var(--text-muted); }
-        .itl-edit-btn:hover { background: rgba(108,99,255,0.1); color: var(--accent-primary); }
+        .itl-edit-btn:hover { background: rgba(79, 169, 129,0.1); color: var(--accent-primary); }
         .itl-save-btn { color: var(--accent-teal); }
-        .itl-save-btn:hover { background: rgba(16,185,129,0.1); }
+        .itl-save-btn:hover { background: rgba(79, 169, 129,0.1); }
         .itl-header-row, .itl-row {
           display: grid;
           grid-template-columns: 140px 110px 100px 90px 110px 100px 1fr 58px;
@@ -322,7 +327,7 @@ export default function InvestmentTransactionLogs({ investments }: { investments
           font-size: 10px; font-weight: 600; color: var(--text-muted);
           text-transform: uppercase; letter-spacing: 0.06em;
         }
-        .itl-row { border-bottom: 1px solid rgba(42,42,74,0.5); transition: background 0.1s; }
+        .itl-row { border-bottom: 1px solid rgba(33, 42, 36,0.5); transition: background 0.1s; }
         .itl-row:last-child { border-bottom: none; }
         .itl-row:hover { background: var(--bg-elevated); }
 
@@ -331,14 +336,14 @@ export default function InvestmentTransactionLogs({ investments }: { investments
 
         .itl-inv-btn { background: none; border: none; cursor: pointer; padding: 0; text-align: left; }
         .itl-inv-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-        .itl-inv-btn:hover .itl-inv-name { color: #F59E0B; }
+        .itl-inv-btn:hover .itl-inv-name { color: #C2A24E; }
 
-        .itl-type-out { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; color: var(--accent-coral); background: rgba(249,115,22,0.1); padding: 2px 8px; border-radius: 20px; width: fit-content; }
-        .itl-type-in { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; color: var(--accent-teal); background: rgba(16,185,129,0.1); padding: 2px 8px; border-radius: 20px; width: fit-content; }
+        .itl-type-out { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; color: var(--accent-coral); background: rgba(201, 115, 110,0.1); padding: 2px 8px; border-radius: 20px; width: fit-content; }
+        .itl-type-in { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; color: var(--accent-teal); background: rgba(79, 169, 129,0.1); padding: 2px 8px; border-radius: 20px; width: fit-content; }
 
         .itl-amount-out { font-size: 13px; font-weight: 700; color: var(--accent-coral); }
         .itl-amount-in  { font-size: 13px; font-weight: 700; color: var(--accent-teal); }
-        .itl-remaining { font-size: 13px; font-weight: 600; color: #F59E0B; }
+        .itl-remaining { font-size: 13px; font-weight: 600; color: #C2A24E; }
         .itl-remaining-zero { font-size: 11px; color: var(--accent-teal); }
         .itl-pl-pos { font-size: 13px; font-weight: 700; color: var(--accent-teal); }
         .itl-pl-neg { font-size: 13px; font-weight: 700; color: var(--accent-coral); }
@@ -348,7 +353,7 @@ export default function InvestmentTransactionLogs({ investments }: { investments
           display: flex; align-items: center; justify-content: center;
           background: none; border: none; color: var(--text-muted); cursor: pointer;
         }
-        .itl-del-btn:hover { background: rgba(239,68,68,0.1); color: var(--accent-red); }
+        .itl-del-btn:hover { background: rgba(194, 91, 85,0.1); color: var(--accent-red); }
       `}</style>
     </motion.div>
   )

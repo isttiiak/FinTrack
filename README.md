@@ -1,9 +1,11 @@
-# FinTrack
+<p align="center">
+  <img src="public/brand/readme-header.svg" alt="FinTrack" width="340" />
+</p>
 
 > **Personal finance management — track expenses, lent & debt, and investments with AI-powered insights.**
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-fin--track--eight--blue.vercel.app-6C63FF?style=flat-square)](https://fin-track-eight-blue.vercel.app/)
-[![Version](https://img.shields.io/badge/version-1.0.0-6C63FF?style=flat-square)](https://github.com/isttiiak/FinTrack/releases)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-fin--track--eight--blue.vercel.app-4FA981?style=flat-square)](https://fin-track-eight-blue.vercel.app/)
+[![Version](https://img.shields.io/badge/version-1.1.0-4FA981?style=flat-square)](https://github.com/isttiiak/FinTrack/releases)
 [![Built with React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript)](https://typescriptlang.org)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=flat-square&logo=supabase)](https://supabase.com)
@@ -13,7 +15,7 @@
 
 ## What is FinTrack?
 
-FinTrack is an open-source personal finance app built for the Bangladeshi context but usable by anyone. It combines expense tracking, a lent & debt ledger, an investment portfolio tracker, and a full AI assistant — all in a premium dark UI with smooth animations.
+FinTrack is an open-source personal finance app built for the Bangladeshi context but usable by anyone. It combines expense tracking, a lent & debt ledger, an investment portfolio tracker, and a full AI assistant — all in a premium dark UI (muted Emerald & Gold) with smooth animations.
 
 **Everything is yours.** Your data lives in your own Supabase project. You can export it anytime, delete it anytime, and self-host the app in under 10 minutes.
 
@@ -163,7 +165,7 @@ Your key is stored only in your browser's localStorage — never sent to any ser
 src/
 ├── components/
 │   ├── ai/           ← AIHub (all 10 AI features)
-│   ├── common/       ← DeleteButton, ConfirmDialog, PaymentMethodPicker
+│   ├── common/       ← DeleteButton, ConfirmDialog, PaymentMethodPicker, Logo, ToastContainer
 │   ├── expenses/     ← ExpenseForm, ExpenseCard, CategoryCombobox, CategoryManagerModal
 │   ├── investments/  ← InvestmentForm, ReturnForm, InvestmentPaymentForm
 │   ├── layout/       ← AppShell, Sidebar, MobileNav
@@ -174,7 +176,8 @@ src/
 │   ├── useInvestments.ts
 │   ├── useLedger.ts
 │   ├── useCategories.ts
-│   └── useNoSpendStreak.ts
+│   ├── useNoSpendStreak.ts
+│   └── useDemoGuard.ts          ← Blocks writes in demo mode with a friendly toast
 ├── lib/
 │   ├── groq.ts        ← Groq API client
 │   ├── aiContext.ts   ← AI prompt data builders

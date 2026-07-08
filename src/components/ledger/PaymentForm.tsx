@@ -8,6 +8,7 @@ import { cn, toISODateString, formatCurrency } from '@/lib/utils'
 import type { PaymentMethod, Account } from '@/lib/constants'
 import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
 import { useCreatePayment } from '@/hooks/useLedger'
+import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import type { LedgerType } from '@/lib/constants'
 
 const schema = z.object({
@@ -48,16 +49,20 @@ export default function PaymentForm({ personId, personName, ledgerType, remainin
       setError('amount', { message: `Cannot exceed remaining balance of ${formatCurrency(remaining)}` })
       return
     }
-    await createPayment({
-      person_id:      personId,
-      ledger_type:    ledgerType,
-      amount:         values.amount,
-      payment_date:   values.payment_date,
-      payment_method: (values.payment_method || null) as PaymentMethod | null,
-      account:        (values.account || null) as Account | null,
-      notes:          values.notes || null,
-    })
-    onClose()
+    try {
+      await createPayment({
+        person_id:      personId,
+        ledger_type:    ledgerType,
+        amount:         values.amount,
+        payment_date:   values.payment_date,
+        payment_method: (values.payment_method || null) as PaymentMethod | null,
+        account:        (values.account || null) as Account | null,
+        notes:          values.notes || null,
+      })
+      onClose()
+    } catch (err) {
+      if (err instanceof DemoBlockedError) onClose()
+    }
   }
 
   return (
@@ -170,7 +175,7 @@ export default function PaymentForm({ personId, personName, ledgerType, remainin
           transition: border-color 0.15s, box-shadow 0.15s;
         }
         .payf-input::placeholder { color: var(--text-muted); }
-        .payf-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(108,99,255,0.15); }
+        .payf-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(79, 169, 129,0.15); }
         .payf-input-error { border-color: var(--accent-red) !important; }
         .payf-amount-input { font-size: 22px; font-weight: 700; padding: 12px 14px; }
         .payf-error { font-size: 12px; color: #FCA5A5; margin: 0; }

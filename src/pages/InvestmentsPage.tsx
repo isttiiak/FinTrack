@@ -10,6 +10,7 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 import { useInvestments } from '@/hooks/useInvestments'
 import InvestmentForm from '@/components/investments/InvestmentForm'
 import InvestmentTransactionLogs from '@/components/investments/InvestmentTransactionLogs'
+import ErrorBanner from '@/components/common/ErrorBanner'
 
 type InvTab = 'portfolio' | 'logs'
 
@@ -23,7 +24,8 @@ const CATEGORY_ICONS: Record<string, string> = {
 
 
 export default function InvestmentsPage() {
-  const { data: investments = [], isLoading } = useInvestments()
+  const investmentsQ = useInvestments()
+  const { data: investments = [], isLoading } = investmentsQ
 
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<InvTab>('portfolio')
@@ -59,6 +61,8 @@ export default function InvestmentsPage() {
           <Plus size={16} /> Add investment
         </motion.button>
       </div>
+
+      {investmentsQ.isError && <ErrorBanner onRetry={() => investmentsQ.refetch()} />}
 
       {/* Portfolio summary */}
       {investments.length > 0 && (
@@ -188,8 +192,8 @@ export default function InvestmentsPage() {
                             style={{
                               width: `${progressPct}%`,
                               background: pl >= 0
-                                ? 'linear-gradient(90deg,#10B981,#06B6D4)'
-                                : 'linear-gradient(90deg,#F97316,#EF4444)',
+                                ? 'linear-gradient(90deg,#4FA981,#3E9B72)'
+                                : 'linear-gradient(90deg,#C9736E,#C25B55)',
                             }}
                           />
                         </div>
@@ -267,16 +271,16 @@ export default function InvestmentsPage() {
         .inv-sum-value { font-size: 20px; font-weight: 700; }
         .inv-sum-sub { font-size: 11px; color: var(--text-muted); }
 
-        .inv-sum-amber { background: rgba(245,158,11,0.06); border-color: rgba(245,158,11,0.15); }
-        .inv-sum-amber .inv-sum-icon { background: rgba(245,158,11,0.15); color: #F59E0B; }
-        .inv-sum-amber .inv-sum-value { color: #F59E0B; }
-        .inv-sum-teal { background: rgba(16,185,129,0.06); border-color: rgba(16,185,129,0.12); }
-        .inv-sum-teal .inv-sum-icon { background: rgba(16,185,129,0.15); color: var(--accent-teal); }
+        .inv-sum-amber { background: rgba(194, 162, 78,0.06); border-color: rgba(194, 162, 78,0.15); }
+        .inv-sum-amber .inv-sum-icon { background: rgba(194, 162, 78,0.15); color: #C2A24E; }
+        .inv-sum-amber .inv-sum-value { color: #C2A24E; }
+        .inv-sum-teal { background: rgba(79, 169, 129,0.06); border-color: rgba(79, 169, 129,0.12); }
+        .inv-sum-teal .inv-sum-icon { background: rgba(79, 169, 129,0.15); color: var(--accent-teal); }
         .inv-sum-teal .inv-sum-value { color: var(--accent-teal); }
-        .inv-sum-coral { background: rgba(249,115,22,0.06); border-color: rgba(249,115,22,0.12); }
-        .inv-sum-coral .inv-sum-icon { background: rgba(249,115,22,0.15); color: var(--accent-coral); }
-        .inv-sum-purple { background: rgba(108,99,255,0.06); border-color: rgba(108,99,255,0.12); }
-        .inv-sum-purple .inv-sum-icon { background: rgba(108,99,255,0.15); color: var(--accent-primary); }
+        .inv-sum-coral { background: rgba(201, 115, 110,0.06); border-color: rgba(201, 115, 110,0.12); }
+        .inv-sum-coral .inv-sum-icon { background: rgba(201, 115, 110,0.15); color: var(--accent-coral); }
+        .inv-sum-purple { background: rgba(79, 169, 129,0.06); border-color: rgba(79, 169, 129,0.12); }
+        .inv-sum-purple .inv-sum-icon { background: rgba(79, 169, 129,0.15); color: var(--accent-primary); }
         .inv-sum-purple .inv-sum-value { color: var(--accent-primary); }
 
         /* Card list */
@@ -288,7 +292,7 @@ export default function InvestmentsPage() {
           transition: background 0.15s, color 0.15s;
         }
         .inv-tab:hover { background: var(--bg-hover); color: var(--text-primary); }
-        .inv-tab-active { background: linear-gradient(135deg,#F59E0B,#F97316); border-color: transparent; color: #fff; }
+        .inv-tab-active { background: linear-gradient(135deg,#C2A24E,#C9736E); border-color: transparent; color: #fff; }
 
         .inv-list { display: flex; flex-direction: column; gap: 10px; }
         .inv-empty { display: flex; flex-direction: column; align-items: center; padding: 64px 20px; text-align: center; }
@@ -304,12 +308,12 @@ export default function InvestmentsPage() {
           background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
           transition: border-color 0.15s, box-shadow 0.15s;
         }
-        .inv-card:hover { border-color: rgba(245,158,11,0.25); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+        .inv-card:hover { border-color: rgba(194, 162, 78,0.25); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
         .inv-card-header { display: flex; align-items: flex-start; gap: 10px; padding: 14px; flex-wrap: wrap; }
         @media (max-width: 400px) { .inv-card-header { padding: 12px; gap: 8px; } }
         .inv-card-icon {
           width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
-          background: rgba(245,158,11,0.12); display: flex; align-items: center; justify-content: center;
+          background: rgba(194, 162, 78,0.12); display: flex; align-items: center; justify-content: center;
           font-size: 22px;
         }
         .inv-card-info { flex: 1; min-width: 0; }
@@ -317,7 +321,7 @@ export default function InvestmentsPage() {
         .inv-card-name { font-size: 15px; font-weight: 700; color: var(--text-primary); }
         .inv-card-cat {
           font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 20px;
-          background: rgba(245,158,11,0.12); color: #F59E0B;
+          background: rgba(194, 162, 78,0.12); color: #C2A24E;
         }
         .inv-card-company { font-size: 12px; color: var(--text-muted); }
         .inv-card-meta { font-size: 12px; color: var(--text-muted); display: flex; gap: 6px; margin-bottom: 8px; }
@@ -329,7 +333,7 @@ export default function InvestmentsPage() {
         .inv-card-amounts { display: flex; gap: 12px; flex-wrap: wrap; }
         .inv-card-committed { font-size: 12px; color: var(--text-muted); }
         .inv-card-paid { font-size: 12px; color: var(--accent-coral); font-weight: 500; }
-        .inv-card-remaining-pay { font-size: 12px; color: #F59E0B; font-weight: 500; }
+        .inv-card-remaining-pay { font-size: 12px; color: #C2A24E; font-weight: 500; }
         .inv-card-returned { font-size: 12px; color: var(--accent-teal); font-weight: 500; }
 
         .inv-card-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; }
@@ -348,15 +352,15 @@ export default function InvestmentsPage() {
           text-decoration: none; white-space: nowrap;
         }
         .inv-action-pay { color: var(--accent-coral); }
-        .inv-action-pay:hover { background: rgba(249,115,22,0.12); border-color: rgba(249,115,22,0.3); }
+        .inv-action-pay:hover { background: rgba(201, 115, 110,0.12); border-color: rgba(201, 115, 110,0.3); }
         .inv-action-return { color: var(--accent-teal); }
-        .inv-action-return:hover { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.3); }
+        .inv-action-return:hover { background: rgba(79, 169, 129,0.12); border-color: rgba(79, 169, 129,0.3); }
         .inv-action-edit { color: var(--text-secondary); }
-        .inv-action-edit:hover { background: rgba(108,99,255,0.12); color: var(--accent-primary); border-color: rgba(108,99,255,0.3); }
+        .inv-action-edit:hover { background: rgba(79, 169, 129,0.12); color: var(--accent-primary); border-color: rgba(79, 169, 129,0.3); }
         .inv-action-del { color: var(--text-muted); }
-        .inv-action-del:hover { background: rgba(239,68,68,0.1); color: var(--accent-red); border-color: rgba(239,68,68,0.3); }
+        .inv-action-del:hover { background: rgba(194, 91, 85,0.1); color: var(--accent-red); border-color: rgba(194, 91, 85,0.3); }
         .inv-action-doc { color: var(--accent-primary); }
-        .inv-action-doc:hover { background: rgba(108,99,255,0.12); }
+        .inv-action-doc:hover { background: rgba(79, 169, 129,0.12); }
       `}</style>
     </motion.div>
   )

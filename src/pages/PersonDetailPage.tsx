@@ -9,6 +9,7 @@ import DeleteButton from '@/components/common/DeleteButton'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { usePerson, useDeleteLedgerEntry, useDeletePerson } from '@/hooks/useLedger'
+import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import { useConfirmStore } from '@/stores/confirmStore'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
@@ -20,9 +21,9 @@ import type { PersonLedger, PersonWithLedgers } from '@/types/ledger.types'
 import type { LedgerType } from '@/lib/constants'
 
 const STATUS_STYLE = {
-  Pending: { bg: 'rgba(249,115,22,0.12)', color: '#F97316', label: '⏳ Pending' },
-  Partial:  { bg: 'rgba(245,158,11,0.12)', color: '#F59E0B', label: '🔄 Partial' },
-  Settled:  { bg: 'rgba(16,185,129,0.12)', color: '#10B981', label: '✅ Settled' },
+  Pending: { bg: 'rgba(201, 115, 110,0.12)', color: '#C9736E', label: '⏳ Pending' },
+  Partial:  { bg: 'rgba(194, 162, 78,0.12)', color: '#C2A24E', label: '🔄 Partial' },
+  Settled:  { bg: 'rgba(79, 169, 129,0.12)', color: '#4FA981', label: '✅ Settled' },
 }
 
 export default function PersonDetailPage() {
@@ -97,8 +98,14 @@ export default function PersonDetailPage() {
       itemName: p.name,
     })
     if (!ok) return
-    await deletePerson(personId)
-    navigate({ to: '/ledger' })
+    try {
+      await deletePerson(personId)
+      navigate({ to: '/ledger' })
+    } catch (err) {
+      // Demo-blocked: the toast already explained it — stay put rather
+      // than navigating away from a person that's still here.
+      if (!(err instanceof DemoBlockedError)) throw err
+    }
   }
 
   return (
@@ -243,8 +250,8 @@ export default function PersonDetailPage() {
                 <div className="pd-entry-header">
                   <div className="pd-entry-type-dot" style={{
                     background: isLent
-                      ? 'linear-gradient(135deg, #10B981, #06B6D4)'
-                      : 'linear-gradient(135deg, #F97316, #EF4444)',
+                      ? 'linear-gradient(135deg, #4FA981, #3E9B72)'
+                      : 'linear-gradient(135deg, #C9736E, #C25B55)',
                   }} />
 
                   <div className="pd-entry-info">
@@ -328,14 +335,14 @@ export default function PersonDetailPage() {
         .pd-hero-left { display: flex; align-items: center; gap: 16px; }
         .pd-hero-avatar {
           width: 60px; height: 60px; border-radius: 16px; flex-shrink: 0;
-          background: linear-gradient(135deg, rgba(108,99,255,0.25), rgba(168,85,247,0.25));
+          background: linear-gradient(135deg, rgba(79, 169, 129,0.25), rgba(62, 155, 114,0.25));
           color: var(--accent-primary); font-size: 26px; font-weight: 700;
           display: flex; align-items: center; justify-content: center;
         }
         .pd-hero-name { font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 0 0 4px; }
         .pd-hero-rel {
           display: inline-block; font-size: 12px; font-weight: 500; padding: 2px 10px; border-radius: 20px;
-          background: rgba(108,99,255,0.12); color: var(--accent-primary);
+          background: rgba(79, 169, 129,0.12); color: var(--accent-primary);
         }
         .pd-hero-phone { font-size: 12px; color: var(--text-muted); margin: 4px 0 0; }
         .pd-hero-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
@@ -349,8 +356,8 @@ export default function PersonDetailPage() {
           flex: 1; min-width: 180px; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border);
           display: flex; flex-direction: column; gap: 2px;
         }
-        .pd-stat-lent { background: rgba(16,185,129,0.05); border-color: rgba(16,185,129,0.15); }
-        .pd-stat-debt { background: rgba(249,115,22,0.05); border-color: rgba(249,115,22,0.15); }
+        .pd-stat-lent { background: rgba(79, 169, 129,0.05); border-color: rgba(79, 169, 129,0.15); }
+        .pd-stat-debt { background: rgba(201, 115, 110,0.05); border-color: rgba(201, 115, 110,0.15); }
         .pd-stat-label { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
         .pd-stat-amount { font-size: 20px; font-weight: 700; color: var(--text-primary); }
         .pd-stat-sub { font-size: 12px; color: var(--text-secondary); }
@@ -367,14 +374,14 @@ export default function PersonDetailPage() {
           transition: all 0.15s;
         }
         .pd-tab:hover { background: var(--bg-hover); color: var(--text-primary); }
-        .pd-tab-active { background: linear-gradient(135deg, #6C63FF, #A855F7); border-color: transparent; color: #fff; }
+        .pd-tab-active { background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E); border-color: transparent; color: #fff; }
 
         .pd-sub-chip {
           padding: 5px 12px; border-radius: 20px; font-size: 13px; font-weight: 500;
           border: 1px solid;
         }
-        .pd-sub-lent { background: rgba(16,185,129,0.1); color: var(--accent-teal); border-color: rgba(16,185,129,0.2); }
-        .pd-sub-debt { background: rgba(249,115,22,0.1); color: var(--accent-coral); border-color: rgba(249,115,22,0.2); }
+        .pd-sub-lent { background: rgba(79, 169, 129,0.1); color: var(--accent-teal); border-color: rgba(79, 169, 129,0.2); }
+        .pd-sub-debt { background: rgba(201, 115, 110,0.1); color: var(--accent-coral); border-color: rgba(201, 115, 110,0.2); }
 
         .pd-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
         .pd-section-title { font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0; }
@@ -419,11 +426,11 @@ export default function PersonDetailPage() {
           transition: background 0.12s, color 0.12s;
         }
         .pd-collect-btn { color: var(--accent-teal); }
-        .pd-collect-btn:hover { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.3); }
+        .pd-collect-btn:hover { background: rgba(79, 169, 129,0.12); border-color: rgba(79, 169, 129,0.3); }
         .pd-pay-btn { color: var(--accent-coral); }
-        .pd-pay-btn:hover { background: rgba(249,115,22,0.12); border-color: rgba(249,115,22,0.3); }
+        .pd-pay-btn:hover { background: rgba(201, 115, 110,0.12); border-color: rgba(201, 115, 110,0.3); }
         .pd-edit-btn { color: var(--text-secondary); }
-        .pd-edit-btn:hover { background: rgba(108,99,255,0.12); color: var(--accent-primary); border-color: rgba(108,99,255,0.3); }
+        .pd-edit-btn:hover { background: rgba(79, 169, 129,0.12); color: var(--accent-primary); border-color: rgba(79, 169, 129,0.3); }
 
         ${skeletonStyles}
       `}</style>

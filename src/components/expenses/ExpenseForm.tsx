@@ -16,6 +16,7 @@ import { scaleIn } from '@/lib/animations'
 import { cn } from '@/lib/utils'
 import type { Transaction } from '@/types/expense.types'
 import CategoryCombobox from '@/components/expenses/CategoryCombobox'
+import { DemoBlockedError } from '@/hooks/useDemoGuard'
 
 const schema = z.object({
   type:           z.enum(['Expense', 'Income']),
@@ -89,12 +90,19 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
       payment_method: (values.payment_method ?? null) as PaymentMethod | null,
       account:        (values.account        ?? null) as Account | null,
     }
-    if (editing) {
-      await update({ id: editing.id, ...payload })
-    } else {
-      await create(payload)
+    try {
+      if (editing) {
+        await update({ id: editing.id, ...payload })
+      } else {
+        await create(payload)
+      }
+      onClose()
+    } catch (err) {
+      // Demo-blocked edits have nothing further to do (the toast already
+      // explained it) — close like a normal save. Real errors leave the
+      // form open with the entered values so the user can retry.
+      if (err instanceof DemoBlockedError) onClose()
     }
-    onClose()
   }
 
   return (
@@ -127,8 +135,8 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
                     onClick={() => field.onChange(t)}
                     style={field.value === t ? {
                       background: t === 'Expense'
-                        ? 'linear-gradient(135deg, #F97316, #EF4444)'
-                        : 'linear-gradient(135deg, #10B981, #06B6D4)',
+                        ? 'linear-gradient(135deg, #C9736E, #C25B55)'
+                        : 'linear-gradient(135deg, #4FA981, #3E9B72)',
                     } : undefined}
                   >
                     {t === 'Expense' ? '📉' : '📈'} {t}
@@ -324,7 +332,7 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
           transition: border-color 0.15s, box-shadow 0.15s; width: 100%;
         }
         .ef-input::placeholder { color: var(--text-muted); }
-        .ef-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(108,99,255,0.15); }
+        .ef-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(79, 169, 129,0.15); }
         .ef-input-error { border-color: var(--accent-red) !important; }
         .ef-amount-input { font-size: 22px; font-weight: 700; padding: 12px 14px; }
         .ef-error { font-size: 12px; color: #FCA5A5; margin: 0; }
@@ -337,8 +345,8 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
           cursor: pointer;
           transition: border-color 0.15s, box-shadow 0.15s;
         }
-        .ef-select:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(108,99,255,0.15); }
-        .ef-select option, .ef-select optgroup { background: #1E1E38; color: var(--text-primary); }
+        .ef-select:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(79, 169, 129,0.15); }
+        .ef-select option, .ef-select optgroup { background: #18201A; color: var(--text-primary); }
         .ef-select-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
 
         .ef-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -355,10 +363,10 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
         .ef-ai-loading { font-size: 11px; color: var(--text-muted); }
         .ef-ai-chip {
           font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 20px; cursor: pointer;
-          background: rgba(108,99,255,0.1); border: 1px solid rgba(108,99,255,0.3); color: var(--accent-primary);
+          background: rgba(79, 169, 129,0.1); border: 1px solid rgba(79, 169, 129,0.3); color: var(--accent-primary);
           transition: background 0.12s;
         }
-        .ef-ai-chip:hover { background: rgba(108,99,255,0.2); }
+        .ef-ai-chip:hover { background: rgba(79, 169, 129,0.2); }
         .ef-ai-dismiss { background: none; border: none; font-size: 11px; color: var(--text-muted); cursor: pointer; padding: 0 2px; }
         .ef-ai-dismiss:hover { color: var(--text-primary); }
       `}</style>

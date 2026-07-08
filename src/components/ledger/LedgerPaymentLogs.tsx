@@ -4,6 +4,7 @@ import { X, Filter, Check, HandCoins, CreditCard, ArrowDownCircle, ArrowUpCircle
 import DeleteButton from '@/components/common/DeleteButton'
 import { formatCurrency, formatDate, round2 } from '@/lib/utils'
 import { useDeletePayment, useUpdatePayment } from '@/hooks/useLedger'
+import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
 import type { PersonWithLedgers } from '@/types/ledger.types'
@@ -118,8 +119,12 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
     if (!editing) return
     const amount = Number(editing.amount)
     if (isNaN(amount) || amount <= 0) { addToast({ type: 'error', message: 'Enter a valid amount' }); return }
-    await updatePayment({ id: editing.id, amount })
-    setEditing(null)
+    try {
+      await updatePayment({ id: editing.id, amount })
+      setEditing(null)
+    } catch (err) {
+      if (err instanceof DemoBlockedError) setEditing(null)
+    }
   }
 
   // Per-person summary for filter pills
@@ -325,7 +330,7 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
           transition: background 0.12s, color 0.12s; display: flex; align-items: center; gap: 5px;
         }
         .lpl-pill:hover { background: var(--bg-hover); color: var(--text-primary); }
-        .lpl-pill-active { background: linear-gradient(135deg,#6C63FF,#A855F7); border-color: transparent; color: #fff; }
+        .lpl-pill-active { background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E); border-color: transparent; color: #fff; }
 
         /* Person dropdown */
         .lpl-person-select-wrap { position: relative; flex: 1; min-width: 160px; max-width: 260px; }
@@ -336,9 +341,9 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
           padding: 5px 30px 5px 14px;
           transition: border-color 0.12s;
         }
-        .lpl-person-select:hover { border-color: rgba(108,99,255,0.35); }
+        .lpl-person-select:hover { border-color: rgba(79, 169, 129,0.35); }
         .lpl-person-select:focus { outline: none; border-color: var(--border-focus); }
-        .lpl-person-select option { background: #1E1E38; color: var(--text-primary); }
+        .lpl-person-select option { background: #18201A; color: var(--text-primary); }
         .lpl-select-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
 
         /* Filter banner + summary strip — deliberately styled apart from the
@@ -347,8 +352,8 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
         .lpl-filter-banner {
           overflow: hidden; display: flex; align-items: center; justify-content: space-between;
           padding: 10px 14px; border-radius: 10px;
-          background: linear-gradient(135deg, rgba(108,99,255,0.16), rgba(168,85,247,0.12));
-          border: 1px solid rgba(108,99,255,0.35);
+          background: linear-gradient(135deg, rgba(79, 169, 129,0.16), rgba(62, 155, 114,0.12));
+          border: 1px solid rgba(79, 169, 129,0.35);
           font-size: 13px; color: var(--text-secondary);
         }
         .lpl-filter-banner strong { color: var(--text-primary); }
@@ -362,8 +367,8 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
         .lpl-summary-strip {
           display: flex; gap: 20px; flex-wrap: wrap;
           padding: 10px 14px; border-radius: 10px;
-          background: linear-gradient(135deg, rgba(108,99,255,0.10), rgba(168,85,247,0.07));
-          border: 1px solid rgba(108,99,255,0.25);
+          background: linear-gradient(135deg, rgba(79, 169, 129,0.10), rgba(62, 155, 114,0.07));
+          border: 1px solid rgba(79, 169, 129,0.25);
         }
         .lpl-summary-item { display: flex; flex-direction: column; gap: 2px; }
         .lpl-summary-label { font-size: 10px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
@@ -394,8 +399,8 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
         .lpl-row-meta { font-size: 11px; color: var(--text-muted); display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 
         .lpl-type-chip { font-size: 10px; font-weight: 500; padding: 1px 7px; border-radius: 20px; white-space: nowrap; }
-        .lpl-type-lent { background: rgba(16,185,129,0.12); color: var(--accent-teal); }
-        .lpl-type-debt { background: rgba(249,115,22,0.12); color: var(--accent-coral); }
+        .lpl-type-lent { background: rgba(79, 169, 129,0.12); color: var(--accent-teal); }
+        .lpl-type-debt { background: rgba(201, 115, 110,0.12); color: var(--accent-coral); }
 
         .lpl-row-balance { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; }
         .lpl-balance-label { font-size: 9px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
@@ -421,7 +426,7 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
           transition: background 0.1s; flex-shrink: 0;
         }
         .lpl-save-btn { color: var(--accent-teal); }
-        .lpl-save-btn:hover { background: rgba(16,185,129,0.1); }
+        .lpl-save-btn:hover { background: rgba(79, 169, 129,0.1); }
         .lpl-cancel-btn { color: var(--text-muted); }
         .lpl-cancel-btn:hover { background: var(--bg-hover); }
       `}</style>

@@ -7,6 +7,7 @@ import { scaleIn } from '@/lib/animations'
 import { cn, toISODateString, formatCurrency } from '@/lib/utils'
 import { RETURN_TYPES } from '@/types/investment.types'
 import { useCreateReturn } from '@/hooks/useInvestments'
+import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
 import type { Investment } from '@/types/investment.types'
 
@@ -45,16 +46,20 @@ export default function ReturnForm({ investment, onClose }: ReturnFormProps) {
     if (values.payment_method) localStorage.setItem(LS_METHOD_KEY, values.payment_method)
     if (values.account) localStorage.setItem(LS_ACCOUNT_KEY, values.account)
 
-    await createReturn({
-      investment_id:  investment.id,
-      amount:         values.amount,
-      return_date:    values.return_date,
-      return_type:    values.return_type ?? null,
-      payment_method: values.payment_method || null,
-      account:        values.account || null,
-      notes:          values.notes || null,
-    })
-    onClose()
+    try {
+      await createReturn({
+        investment_id:  investment.id,
+        amount:         values.amount,
+        return_date:    values.return_date,
+        return_type:    values.return_type ?? null,
+        payment_method: values.payment_method || null,
+        account:        values.account || null,
+        notes:          values.notes || null,
+      })
+      onClose()
+    } catch (err) {
+      if (err instanceof DemoBlockedError) onClose()
+    }
   }
 
   const committed = investment.committed_amount ?? 0
@@ -178,7 +183,7 @@ export default function ReturnForm({ investment, onClose }: ReturnFormProps) {
           transition: border-color 0.15s, box-shadow 0.15s;
         }
         .retf-input::placeholder { color: var(--text-muted); }
-        .retf-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(108,99,255,0.15); }
+        .retf-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(79, 169, 129,0.15); }
         .retf-input-error { border-color: var(--accent-red) !important; }
         .retf-amount { font-size: 22px; font-weight: 700; padding: 12px 14px; }
         .retf-error { font-size: 12px; color: #FCA5A5; margin: 0; }
@@ -188,7 +193,7 @@ export default function ReturnForm({ investment, onClose }: ReturnFormProps) {
           width: 100%; appearance: none; cursor: pointer;
         }
         .retf-select:focus { outline: none; border-color: var(--border-focus); }
-        .retf-select option { background: #1E1E38; }
+        .retf-select option { background: #18201A; }
         .retf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .retf-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
         .retf-submit { min-width: 120px; min-height: 40px; display: flex; align-items: center; justify-content: center; }

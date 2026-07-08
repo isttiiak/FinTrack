@@ -46,7 +46,10 @@ export default function ExpenseCard({ txn, onEdit }: ExpenseCardProps) {
       },
     })
     setTimeout(() => {
-      deleteExpense(id)
+      // If the mutation is blocked (e.g. demo mode) or fails, the card must
+      // reappear — otherwise it stays hidden forever even though nothing
+      // was actually deleted, contradicting the "Undo" the toast promised.
+      deleteExpense(id, { onError: () => setDeleting(false) })
     }, 3600)
   }
 
@@ -117,7 +120,7 @@ export const expenseCardStyles = `
   transition: background 0.15s, border-color 0.15s;
   position: relative;
 }
-.expense-card:hover { background: var(--bg-hover); border-color: rgba(108,99,255,0.2); }
+.expense-card:hover { background: var(--bg-hover); border-color: rgba(79, 169, 129,0.2); }
 
 .expense-card-icon {
   font-size: 22px; width: 36px; height: 36px; flex-shrink: 0;

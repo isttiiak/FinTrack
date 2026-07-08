@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
+import { useUIStore } from '@/stores/uiStore'
+import { useDemoGuard, DemoBlockedError } from '@/hooks/useDemoGuard'
 import type { Category } from '@/types/expense.types'
 import type { TxnType } from '@/lib/constants'
 
@@ -35,9 +37,12 @@ export function useCategories(type?: TxnType) {
 export function useCreateCategory() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
+  const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (cat: Omit<Category, 'id' | 'user_id' | 'created_at'>) => {
+      guardDemo()
       const { data, error } = await supabase
         .from('categories')
         .insert({ ...cat, user_id: userId! })
@@ -47,36 +52,60 @@ export function useCreateCategory() {
       return data
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['categories'] }),
+    onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
+      addToast({ type: 'error', message: err.message })
+    },
   })
 }
 
 export function useUpdateCategory() {
   const qc = useQueryClient()
+  const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
+
   return useMutation({
     mutationFn: async ({ id, ...fields }: Partial<Category> & { id: string }) => {
+      guardDemo()
       const { error } = await supabase.from('categories').update(fields).eq('id', id)
       if (error) throw error
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['categories'] }),
+    onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
+      addToast({ type: 'error', message: err.message })
+    },
   })
 }
 
 export function useDeleteCategory() {
   const qc = useQueryClient()
+  const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
+
   return useMutation({
     mutationFn: async (id: string) => {
+      guardDemo()
       const { error } = await supabase.from('categories').delete().eq('id', id)
       if (error) throw error
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['categories'] }),
+    onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
+      addToast({ type: 'error', message: err.message })
+    },
   })
 }
 
 export function useRenameMainGroup() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
+  const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
+
   return useMutation({
     mutationFn: async ({ oldName, newName }: { oldName: string; newName: string }) => {
+      guardDemo()
       const { error } = await supabase
         .from('categories')
         .update({ main_group: newName })
@@ -85,14 +114,22 @@ export function useRenameMainGroup() {
       if (error) throw error
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['categories'] }),
+    onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
+      addToast({ type: 'error', message: err.message })
+    },
   })
 }
 
 export function useDeleteMainGroup() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
+  const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
+
   return useMutation({
     mutationFn: async (groupName: string) => {
+      guardDemo()
       const { error } = await supabase
         .from('categories')
         .delete()
@@ -101,5 +138,9 @@ export function useDeleteMainGroup() {
       if (error) throw error
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['categories'] }),
+    onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
+      addToast({ type: 'error', message: err.message })
+    },
   })
 }

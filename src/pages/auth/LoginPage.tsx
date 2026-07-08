@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, EyeOff, Mail, Lock, TrendingUp, Wallet, BarChart3, ArrowRight, Sparkles } from 'lucide-react'
 import { useForm } from 'react-hook-form'
@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase'
 import { useDemoStore } from '@/stores/demoStore'
 import { fadeUp, scaleIn, staggerContainer, staggerItem } from '@/lib/animations'
 import { cn } from '@/lib/utils'
+import { Logo } from '@/components/common/Logo'
 
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -30,6 +31,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const enterDemo = useDemoStore((s) => s.enterDemo)
+  const navigate = useNavigate()
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -61,6 +63,7 @@ export default function LoginPage() {
 
   function handleDemo() {
     enterDemo()
+    navigate({ to: '/dashboard' })
   }
 
   return (
@@ -103,8 +106,8 @@ export default function LoginPage() {
       >
         {/* Logo + headline */}
         <motion.div className="auth-header" variants={fadeUp} initial="initial" animate="animate">
-          <div className="auth-logo">
-            <span className="auth-logo-symbol">৳</span>
+          <div className="auth-logo-wrap">
+            <Logo size={40} withWordmark />
           </div>
           <h1 className="auth-title">Welcome back</h1>
           <p className="auth-subtitle">Sign in to FinTrack and pick up where you left off</p>
@@ -304,9 +307,9 @@ const authStyles = `
   pointer-events: none;
   z-index: 0;
 }
-.auth-orb-1 { width: 380px; height: 380px; background: rgba(108,99,255,0.12); top: -80px; left: -80px; }
-.auth-orb-2 { width: 300px; height: 300px; background: rgba(168,85,247,0.09); bottom: -60px; right: -60px; }
-.auth-orb-3 { width: 200px; height: 200px; background: rgba(16,185,129,0.06); top: 50%; left: 50%; transform: translate(-50%,-50%); }
+.auth-orb-1 { width: 380px; height: 380px; background: rgba(79, 169, 129,0.12); top: -80px; left: -80px; }
+.auth-orb-2 { width: 300px; height: 300px; background: rgba(62, 155, 114,0.09); bottom: -60px; right: -60px; }
+.auth-orb-3 { width: 200px; height: 200px; background: rgba(79, 169, 129,0.06); top: 50%; left: 50%; transform: translate(-50%,-50%); }
 
 /* Card */
 .auth-card {
@@ -318,7 +321,7 @@ const authStyles = `
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 36px 32px 28px;
-  box-shadow: 0 24px 80px rgba(0,0,0,0.4), 0 0 0 1px rgba(108,99,255,0.08);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.4), 0 0 0 1px rgba(79, 169, 129,0.08);
 }
 @media (max-width: 480px) {
   .auth-card { padding: 28px 20px 22px; }
@@ -326,15 +329,7 @@ const authStyles = `
 
 /* Header */
 .auth-header { text-align: center; margin-bottom: 24px; }
-.auth-logo {
-  width: 56px; height: 56px;
-  background: linear-gradient(135deg, #6C63FF, #A855F7);
-  border-radius: 16px;
-  display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 16px;
-  box-shadow: 0 8px 24px rgba(108,99,255,0.35);
-}
-.auth-logo-symbol { font-size: 26px; font-weight: 700; color: #fff; line-height: 1; }
+.auth-logo-wrap { display: flex; justify-content: center; margin: 0 auto 16px; }
 .auth-title { font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 0 0 6px; }
 .auth-subtitle { font-size: 13px; color: var(--text-secondary); margin: 0; }
 
@@ -364,8 +359,8 @@ const authStyles = `
 
 /* Error banner */
 .auth-error {
-  background: rgba(239,68,68,0.1);
-  border: 1px solid rgba(239,68,68,0.3);
+  background: rgba(194, 91, 85,0.1);
+  border: 1px solid rgba(194, 91, 85,0.3);
   border-radius: 8px;
   padding: 10px 14px;
   color: #FCA5A5;
@@ -390,7 +385,7 @@ const authStyles = `
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .auth-input::placeholder { color: var(--text-muted); }
-.auth-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(108,99,255,0.15); }
+.auth-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(79, 169, 129,0.15); }
 .auth-input-error { border-color: var(--accent-red) !important; }
 .auth-input-padded-right { padding-right: 40px; }
 .auth-field-error { font-size: 12px; color: #FCA5A5; margin: 0; }
@@ -403,15 +398,15 @@ const authStyles = `
 
 .auth-submit-btn {
   width: 100%; padding: 12px;
-  background: linear-gradient(135deg, #6C63FF, #A855F7);
+  background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E);
   border: none; border-radius: 10px;
   color: #fff; font-size: 14px; font-weight: 600;
   cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
   min-height: 44px;
-  box-shadow: 0 4px 16px rgba(108,99,255,0.3);
+  box-shadow: 0 4px 16px rgba(79, 169, 129,0.3);
   transition: box-shadow 0.15s, opacity 0.15s;
 }
-.auth-submit-btn:hover:not(:disabled) { box-shadow: 0 6px 24px rgba(108,99,255,0.45); }
+.auth-submit-btn:hover:not(:disabled) { box-shadow: 0 6px 24px rgba(79, 169, 129,0.45); }
 .auth-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .auth-success-icon { font-size: 18px; }
 
@@ -425,13 +420,13 @@ const authStyles = `
 .auth-demo-btn {
   width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
   padding: 10px;
-  background: rgba(108,99,255,0.08);
-  border: 1px dashed rgba(108,99,255,0.35);
+  background: rgba(79, 169, 129,0.08);
+  border: 1px dashed rgba(79, 169, 129,0.35);
   border-radius: 10px;
   color: var(--accent-primary); font-size: 13px; font-weight: 500;
   cursor: pointer; transition: background 0.15s, border-color 0.15s;
 }
-.auth-demo-btn:hover { background: rgba(108,99,255,0.14); border-color: rgba(108,99,255,0.6); }
+.auth-demo-btn:hover { background: rgba(79, 169, 129,0.14); border-color: rgba(79, 169, 129,0.6); }
 
 /* Feature pills */
 .auth-features { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }

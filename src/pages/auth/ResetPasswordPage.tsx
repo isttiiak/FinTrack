@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { fadeUp, scaleIn } from '@/lib/animations'
 import { cn } from '@/lib/utils'
+import { Logo } from '@/components/common/Logo'
 
 const schema = z.object({
   password: z.string()
@@ -72,7 +73,7 @@ export default function ResetPasswordPage() {
                 animate={{ scale: 1 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 20, delay: 0.1 }}
               >
-                <CheckCircle2 size={48} color="#10B981" />
+                <CheckCircle2 size={48} color="#4FA981" />
               </motion.div>
               <h2 className="auth-title" style={{ marginTop: 16 }}>Password updated</h2>
               <p className="auth-subtitle" style={{ maxWidth: 300, margin: '8px auto 0' }}>
@@ -88,7 +89,7 @@ export default function ResetPasswordPage() {
             </motion.div>
           ) : invalidLink ? (
             <motion.div key="invalid" className="auth-confirm-screen" variants={fadeUp} initial="initial" animate="animate">
-              <AlertTriangle size={48} color="#F97316" />
+              <AlertTriangle size={48} color="#C9736E" />
               <h2 className="auth-title" style={{ marginTop: 16 }}>Link expired or invalid</h2>
               <p className="auth-subtitle" style={{ maxWidth: 300, margin: '8px auto 0' }}>
                 This password reset link is no longer valid. Request a new one to continue.
@@ -100,8 +101,8 @@ export default function ResetPasswordPage() {
           ) : (
             <motion.div key="form" variants={fadeUp} initial="initial" animate="animate">
               <div className="auth-header">
-                <div className="auth-logo">
-                  <span className="auth-logo-symbol">৳</span>
+                <div className="auth-logo-wrap">
+                  <Logo size={40} withWordmark />
                 </div>
                 <h1 className="auth-title">Set a new password</h1>
                 <p className="auth-subtitle">Choose a new password for your account.</p>
@@ -183,27 +184,20 @@ export default function ResetPasswordPage() {
           background: var(--bg-page); position: relative; overflow: hidden; padding: 24px 16px;
         }
         .auth-orb { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 0; }
-        .auth-orb-1 { width: 380px; height: 380px; background: rgba(108,99,255,0.12); top: -80px; left: -80px; }
-        .auth-orb-2 { width: 300px; height: 300px; background: rgba(168,85,247,0.09); bottom: -60px; right: -60px; }
+        .auth-orb-1 { width: 380px; height: 380px; background: rgba(79, 169, 129,0.12); top: -80px; left: -80px; }
+        .auth-orb-2 { width: 300px; height: 300px; background: rgba(62, 155, 114,0.09); bottom: -60px; right: -60px; }
         .auth-card {
           position: relative; z-index: 1; width: 100%; max-width: 400px;
           background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px;
           padding: 36px 32px 28px;
-          box-shadow: 0 24px 80px rgba(0,0,0,0.4), 0 0 0 1px rgba(108,99,255,0.08);
+          box-shadow: 0 24px 80px rgba(0,0,0,0.4), 0 0 0 1px rgba(79, 169, 129,0.08);
         }
         .auth-header { text-align: center; margin-bottom: 24px; }
-        .auth-logo {
-          width: 56px; height: 56px;
-          background: linear-gradient(135deg, #6C63FF, #A855F7); border-radius: 16px;
-          display: flex; align-items: center; justify-content: center;
-          margin: 0 auto 16px;
-          box-shadow: 0 8px 24px rgba(108,99,255,0.35);
-        }
-        .auth-logo-symbol { font-size: 26px; font-weight: 700; color: #fff; line-height: 1; }
+        .auth-logo-wrap { display: flex; justify-content: center; margin: 0 auto 16px; }
         .auth-title { font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 0 0 6px; }
         .auth-subtitle { font-size: 13px; color: var(--text-secondary); margin: 0; }
         .auth-error {
-          background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px;
+          background: rgba(194, 91, 85,0.1); border: 1px solid rgba(194, 91, 85,0.3); border-radius: 8px;
           padding: 10px 14px; color: #FCA5A5; font-size: 13px; margin-bottom: 14px;
         }
         .auth-form { display: flex; flex-direction: column; gap: 14px; }
@@ -218,7 +212,7 @@ export default function ResetPasswordPage() {
           transition: border-color 0.15s, box-shadow 0.15s;
         }
         .auth-input::placeholder { color: var(--text-muted); }
-        .auth-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(108,99,255,0.15); }
+        .auth-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(79, 169, 129,0.15); }
         .auth-input-error { border-color: var(--accent-red) !important; }
         .auth-input-padded-right { padding-right: 40px; }
         .auth-toggle-password {
@@ -232,15 +226,15 @@ export default function ResetPasswordPage() {
         .auth-field-error { font-size: 12px; color: #FCA5A5; margin: 0; }
         .auth-submit-btn {
           width: 100%; padding: 12px;
-          background: linear-gradient(135deg, #6C63FF, #A855F7);
+          background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E);
           border: none; border-radius: 10px;
           color: #fff; font-size: 14px; font-weight: 600;
           cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
           min-height: 44px;
-          box-shadow: 0 4px 16px rgba(108,99,255,0.3);
+          box-shadow: 0 4px 16px rgba(79, 169, 129,0.3);
           transition: box-shadow 0.15s, opacity 0.15s;
         }
-        .auth-submit-btn:hover:not(:disabled) { box-shadow: 0 6px 24px rgba(108,99,255,0.45); }
+        .auth-submit-btn:hover:not(:disabled) { box-shadow: 0 6px 24px rgba(79, 169, 129,0.45); }
         .auth-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .auth-confirm-screen { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 16px 0 8px; }
         .auth-spinner {

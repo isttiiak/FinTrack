@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
+import { useDemoGuard, DemoBlockedError } from '@/hooks/useDemoGuard'
 import { round2 } from '@/lib/utils'
 import type { Person, PersonLedger, LedgerPayment, PersonWithLedgers } from '@/types/ledger.types'
 import type { LedgerStatus } from '@/lib/constants'
@@ -170,9 +171,11 @@ export function useCreatePerson() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (data: Pick<Person, 'name' | 'relationship' | 'phone' | 'notes'>) => {
+      guardDemo()
       const { data: row, error } = await supabase
         .from('persons')
         .insert({ ...data, user_id: userId! })
@@ -185,7 +188,10 @@ export function useCreatePerson() {
       qc.invalidateQueries({ queryKey: ['persons'] })
       addToast({ type: 'success', message: 'Person added' })
     },
-    onError: (err: Error) => addToast({ type: 'error', message: err.message }),
+    onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
+      addToast({ type: 'error', message: err.message })
+    },
   })
 }
 
@@ -193,9 +199,11 @@ export function useUpdatePerson() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<Person> & { id: string }) => {
+      guardDemo()
       const { data: row, error } = await supabase
         .from('persons')
         .update(data)
@@ -210,7 +218,10 @@ export function useUpdatePerson() {
       qc.invalidateQueries({ queryKey: ['persons'] })
       addToast({ type: 'success', message: 'Person updated' })
     },
-    onError: (err: Error) => addToast({ type: 'error', message: err.message }),
+    onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
+      addToast({ type: 'error', message: err.message })
+    },
   })
 }
 
@@ -218,9 +229,11 @@ export function useDeletePerson() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (id: string) => {
+      guardDemo()
       const { error } = await supabase
         .from('persons')
         .delete()
@@ -232,7 +245,10 @@ export function useDeletePerson() {
       qc.invalidateQueries({ queryKey: ['persons'] })
       addToast({ type: 'success', message: 'Person removed' })
     },
-    onError: (err: Error) => addToast({ type: 'error', message: err.message }),
+    onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
+      addToast({ type: 'error', message: err.message })
+    },
   })
 }
 
@@ -241,9 +257,11 @@ export function useCreateLedgerEntry() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (data: Omit<PersonLedger, 'id' | 'user_id' | 'created_at' | 'person'>) => {
+      guardDemo()
       const { data: row, error } = await supabase
         .from('person_ledger')
         .insert({ ...data, user_id: userId! })
@@ -257,7 +275,10 @@ export function useCreateLedgerEntry() {
       qc.invalidateQueries({ queryKey: ['person'] })
       addToast({ type: 'success', message: 'Entry added' })
     },
-    onError: (err: Error) => addToast({ type: 'error', message: err.message }),
+    onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
+      addToast({ type: 'error', message: err.message })
+    },
   })
 }
 
@@ -265,9 +286,11 @@ export function useUpdateLedgerEntry() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<PersonLedger> & { id: string }) => {
+      guardDemo()
       const { data: row, error } = await supabase
         .from('person_ledger')
         .update(data)
@@ -283,7 +306,10 @@ export function useUpdateLedgerEntry() {
       qc.invalidateQueries({ queryKey: ['person'] })
       addToast({ type: 'success', message: 'Entry updated' })
     },
-    onError: (err: Error) => addToast({ type: 'error', message: err.message }),
+    onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
+      addToast({ type: 'error', message: err.message })
+    },
   })
 }
 
@@ -291,9 +317,11 @@ export function useDeleteLedgerEntry() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (id: string) => {
+      guardDemo()
       const { error } = await supabase
         .from('person_ledger')
         .delete()
@@ -306,7 +334,10 @@ export function useDeleteLedgerEntry() {
       qc.invalidateQueries({ queryKey: ['person'] })
       addToast({ type: 'success', message: 'Entry deleted' })
     },
-    onError: (err: Error) => addToast({ type: 'error', message: err.message }),
+    onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
+      addToast({ type: 'error', message: err.message })
+    },
   })
 }
 
@@ -317,9 +348,11 @@ export function useCreatePayment() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (data: Omit<LedgerPayment, 'id' | 'user_id' | 'created_at'>) => {
+      guardDemo()
       const { data: row, error } = await supabase
         .from('ledger_payments')
         .insert({ ...data, user_id: userId! })
@@ -333,7 +366,10 @@ export function useCreatePayment() {
       qc.invalidateQueries({ queryKey: ['person'] })
       addToast({ type: 'success', message: 'Payment logged' })
     },
-    onError: (err: Error) => addToast({ type: 'error', message: err.message }),
+    onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
+      addToast({ type: 'error', message: err.message })
+    },
   })
 }
 
@@ -341,9 +377,11 @@ export function useUpdatePayment() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async ({ id, ...data }: { id: string; amount?: number; payment_date?: string; notes?: string | null }) => {
+      guardDemo()
       const { data: row, error } = await supabase
         .from('ledger_payments')
         .update(data)
@@ -359,7 +397,10 @@ export function useUpdatePayment() {
       qc.invalidateQueries({ queryKey: ['person'] })
       addToast({ type: 'success', message: 'Payment updated' })
     },
-    onError: (err: Error) => addToast({ type: 'error', message: err.message }),
+    onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
+      addToast({ type: 'error', message: err.message })
+    },
   })
 }
 
@@ -367,9 +408,11 @@ export function useDeletePayment() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (id: string) => {
+      guardDemo()
       const { error } = await supabase
         .from('ledger_payments')
         .delete()
@@ -382,6 +425,9 @@ export function useDeletePayment() {
       qc.invalidateQueries({ queryKey: ['person'] })
       addToast({ type: 'success', message: 'Payment removed' })
     },
-    onError: (err: Error) => addToast({ type: 'error', message: err.message }),
+    onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
+      addToast({ type: 'error', message: err.message })
+    },
   })
 }

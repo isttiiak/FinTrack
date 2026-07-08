@@ -15,6 +15,8 @@ import {
 } from '@/lib/paymentMethodPrefs'
 import { supabase } from '@/lib/supabase'
 import ErrorBanner from '@/components/common/ErrorBanner'
+import { fadeUp } from '@/lib/animations'
+import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import type { Category } from '@/types/expense.types'
 
 type DSTab = 'categories' | 'methods'
@@ -64,19 +66,30 @@ function CategoriesTab({ categories }: { categories: Category[] }) {
   async function saveGroupRename() {
     if (!editingGroupName) return
     const name = editingGroupName.val.trim()
-    if (name && name !== editingGroupName.old) await renameGroup({ oldName: editingGroupName.old, newName: name })
-    setEditingGroupName(null)
+    try {
+      if (name && name !== editingGroupName.old) await renameGroup({ oldName: editingGroupName.old, newName: name })
+      setEditingGroupName(null)
+    } catch (err) {
+      if (err instanceof DemoBlockedError) setEditingGroupName(null)
+    }
   }
 
   async function handleDeleteGroup(group: string, count: number) {
     const ok = await confirm({ title: `Delete "${group}"?`, description: `All ${count} sub-categories will be permanently deleted.`, itemName: group })
-    if (ok) await deleteGroup(group)
+    if (!ok) return
+    try {
+      await deleteGroup(group)
+    } catch { /* DemoBlockedError already toasted; nothing else to undo here */ }
   }
 
   async function saveSubEdit() {
     if (!editingSubcat) return
-    await updateCat({ id: editingSubcat.id, name: editingSubcat.name.trim(), main_group: editingSubcat.group.trim() })
-    setEditingSubcat(null)
+    try {
+      await updateCat({ id: editingSubcat.id, name: editingSubcat.name.trim(), main_group: editingSubcat.group.trim() })
+      setEditingSubcat(null)
+    } catch (err) {
+      if (err instanceof DemoBlockedError) setEditingSubcat(null)
+    }
   }
 
   async function handleDeleteSubcat(cat: Category) {
@@ -91,7 +104,10 @@ function CategoriesTab({ categories }: { categories: Category[] }) {
       ? `${affected} transaction${affected !== 1 ? 's' : ''} using this category will become Uncategorized.`
       : 'No transactions currently use this category.'
     const ok = await confirm({ title: 'Delete sub-category?', description, itemName: `${cat.main_group} › ${cat.name}` })
-    if (ok) await deleteCat(cat.id)
+    if (!ok) return
+    try {
+      await deleteCat(cat.id)
+    } catch { /* DemoBlockedError already toasted; nothing else to undo here */ }
   }
 
   async function saveNewSub(group: string) {
@@ -101,17 +117,25 @@ function CategoriesTab({ categories }: { categories: Category[] }) {
     // be a different type than the group it lives under.
     const groupCats = grouped.find(([g]) => g === group)?.[1] ?? []
     const type = groupCats[0]?.type ?? 'Expense'
-    await createCat({ name, main_group: group, type, color_hex: null, is_default: false })
-    setAddingSubTo(null); setNewSubName('')
+    try {
+      await createCat({ name, main_group: group, type, color_hex: null, is_default: false })
+      setAddingSubTo(null); setNewSubName('')
+    } catch (err) {
+      if (err instanceof DemoBlockedError) { setAddingSubTo(null); setNewSubName('') }
+    }
   }
 
   async function saveNewGroup() {
     const name = newGroupName.trim()
     if (!name) return
-    // Create a placeholder sub-category to establish the group
-    await createCat({ name: `${name} (general)`, main_group: name, type: newGroupType, color_hex: null, is_default: false })
-    setAddingGroup(false); setNewGroupName('')
-    setExpanded((prev) => new Set([...prev, name]))
+    try {
+      // Create a placeholder sub-category to establish the group
+      await createCat({ name: `${name} (general)`, main_group: name, type: newGroupType, color_hex: null, is_default: false })
+      setAddingGroup(false); setNewGroupName('')
+      setExpanded((prev) => new Set([...prev, name]))
+    } catch (err) {
+      if (err instanceof DemoBlockedError) { setAddingGroup(false); setNewGroupName('') }
+    }
   }
 
   return (
@@ -432,7 +456,7 @@ function PaymentMethodsTab() {
       {/* Cash — fixed */}
       <div className="dsc-tag-card">
         <div className="dsc-pm-header">
-          <div className="dsc-pm-icon" style={{ background: '#10B9811c', color: '#10B981' }}>💵</div>
+          <div className="dsc-pm-icon" style={{ background: '#4FA9811c', color: '#4FA981' }}>💵</div>
           <div style={{ flex: 1 }}>
             <div className="dsc-pm-title">Cash</div>
             <div className="dsc-pm-sub">Fixed</div>
@@ -449,7 +473,7 @@ function PaymentMethodsTab() {
       {/* MFS providers */}
       <div className="dsc-tag-card">
         <div className="dsc-pm-header">
-          <div className="dsc-pm-icon" style={{ background: '#6C63FF1c', color: '#6C63FF' }}>📱</div>
+          <div className="dsc-pm-icon" style={{ background: '#4FA9811c', color: '#4FA981' }}>📱</div>
           <div style={{ flex: 1 }}>
             <div className="dsc-pm-title">MFS</div>
             <div className="dsc-pm-sub">Providers — reorder, rename, or remove any of them</div>
@@ -468,7 +492,7 @@ function PaymentMethodsTab() {
       {/* Bank accounts — shared by Card + Bank Transfer */}
       <div className="dsc-tag-card">
         <div className="dsc-pm-header">
-          <div className="dsc-pm-icon" style={{ background: '#F59E0B1c', color: '#F59E0B' }}>🏦</div>
+          <div className="dsc-pm-icon" style={{ background: '#C2A24E1c', color: '#C2A24E' }}>🏦</div>
           <div style={{ flex: 1 }}>
             <div className="dsc-pm-title">Bank Accounts</div>
             <div className="dsc-pm-sub">Shared by both Card and Bank Transfer payments</div>
@@ -498,7 +522,7 @@ export default function DataSettingsPage() {
   ]
 
   return (
-    <motion.div className="dsp-page" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15 }}>
+    <motion.div className="dsp-page" variants={fadeUp} initial="initial" animate="animate">
       <button className="dsp-back-btn" onClick={() => navigate({ to: '/settings' })}>
         <ArrowLeft size={16} /> Back to Settings
       </button>
@@ -550,8 +574,8 @@ const STYLES = `
   .dsc-expand-btn:hover { color: var(--text-primary); }
   .dsc-group-name { font-size: 14px; font-weight: 600; color: var(--text-primary); flex: 1; }
   .dsc-group-type-tag { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.04em; flex-shrink: 0; }
-  .dsc-type-tag-expense { background: rgba(249,115,22,0.14); color: var(--accent-coral); }
-  .dsc-type-tag-income  { background: rgba(16,185,129,0.14); color: var(--accent-teal); }
+  .dsc-type-tag-expense { background: rgba(201, 115, 110,0.14); color: var(--accent-coral); }
+  .dsc-type-tag-income  { background: rgba(79, 169, 129,0.14); color: var(--accent-teal); }
   .dsc-group-count { font-size: 11px; color: var(--text-muted); background: var(--bg-card); padding: 1px 7px; border-radius: 20px; border: 1px solid var(--border); flex-shrink: 0; }
   .dsc-group-input { flex: 1; }
   .dsc-group-actions { display: flex; gap: 4px; flex-shrink: 0; }
@@ -568,22 +592,22 @@ const STYLES = `
 
   /* Sub-category rows */
   .dsc-sub-list { display: flex; flex-direction: column; }
-  .dsc-sub-row { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid rgba(42,42,74,0.4); }
+  .dsc-sub-row { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid rgba(33, 42, 36,0.4); }
   .dsc-sub-row:last-child { border-bottom: none; }
   .dsc-type-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
   .dsc-type-expense { background: var(--accent-coral); }
   .dsc-type-income  { background: var(--accent-teal); }
   .dsc-sub-name { flex: 1; font-size: 13px; color: var(--text-secondary); }
   .dsc-sub-actions { display: flex; gap: 4px; flex-shrink: 0; }
-  .dsc-add-sub-form { display: flex; align-items: center; gap: 6px; padding: 8px 12px; flex-wrap: wrap; background: rgba(108,99,255,0.04); border-top: 1px dashed rgba(108,99,255,0.2); }
+  .dsc-add-sub-form { display: flex; align-items: center; gap: 6px; padding: 8px 12px; flex-wrap: wrap; background: rgba(79, 169, 129,0.04); border-top: 1px dashed rgba(79, 169, 129,0.2); }
   .dsc-type-select { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 11px; padding: 4px 6px; cursor: pointer; }
   .dsc-type-select:focus { outline: none; }
   .dsc-builtin-tag { font-size: 10px; color: var(--text-muted); background: var(--bg-elevated); border: 1px solid var(--border); padding: 1px 7px; border-radius: 20px; flex-shrink: 0; }
 
   /* Add group */
   .dsc-add-group-btn { display: flex; align-items: center; gap: 7px; padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer; background: none; border: 2px dashed var(--border); color: var(--accent-primary); transition: background 0.12s, border-color 0.12s; width: 100%; }
-  .dsc-add-group-btn:hover { background: rgba(108,99,255,0.06); border-color: rgba(108,99,255,0.3); }
-  .dsc-add-group-form { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 10px; background: var(--bg-card); border: 1px solid rgba(108,99,255,0.25); flex-wrap: wrap; }
+  .dsc-add-group-btn:hover { background: rgba(79, 169, 129,0.06); border-color: rgba(79, 169, 129,0.3); }
+  .dsc-add-group-form { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 10px; background: var(--bg-card); border: 1px solid rgba(79, 169, 129,0.25); flex-wrap: wrap; }
 
   /* Shared inline controls */
   .dsc-inline-input { background: var(--bg-elevated); border: 1px solid var(--border-focus); border-radius: 7px; color: var(--text-primary); font-size: 13px; padding: 5px 9px; min-width: 80px; }
@@ -591,11 +615,11 @@ const STYLES = `
   .dsc-icon-btn { width: 26px; height: 26px; border-radius: 6px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: none; border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; transition: background 0.1s, color 0.1s; }
   .dsc-icon-btn:hover { background: var(--bg-elevated); color: var(--text-primary); }
   .dsc-icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .dsc-icon-btn.dsc-ok { color: var(--accent-teal); border-color: rgba(16,185,129,0.3); }
-  .dsc-icon-btn.dsc-ok:hover { background: rgba(16,185,129,0.1); }
-  .dsc-icon-btn.dsc-add-sub { color: var(--accent-primary); border-color: rgba(108,99,255,0.25); }
-  .dsc-icon-btn.dsc-add-sub:hover { background: rgba(108,99,255,0.1); }
-  .dsc-icon-btn.dsc-del:hover { background: rgba(239,68,68,0.1); color: var(--accent-red); border-color: rgba(239,68,68,0.3); }
+  .dsc-icon-btn.dsc-ok { color: var(--accent-teal); border-color: rgba(79, 169, 129,0.3); }
+  .dsc-icon-btn.dsc-ok:hover { background: rgba(79, 169, 129,0.1); }
+  .dsc-icon-btn.dsc-add-sub { color: var(--accent-primary); border-color: rgba(79, 169, 129,0.25); }
+  .dsc-icon-btn.dsc-add-sub:hover { background: rgba(79, 169, 129,0.1); }
+  .dsc-icon-btn.dsc-del:hover { background: rgba(194, 91, 85,0.1); color: var(--accent-red); border-color: rgba(194, 91, 85,0.3); }
 
   /* Payment method group cards */
   .dsc-tag-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
@@ -605,12 +629,12 @@ const STYLES = `
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     transition: transform 0.15s, box-shadow 0.15s;
   }
-  .dsc-tag-card:hover .dsc-pm-icon { transform: scale(1.08); box-shadow: 0 0 0 4px rgba(108,99,255,0.08); }
+  .dsc-tag-card:hover .dsc-pm-icon { transform: scale(1.08); box-shadow: 0 0 0 4px rgba(79, 169, 129,0.08); }
   .dsc-pm-title { font-size: 14px; font-weight: 700; color: var(--text-primary); }
   .dsc-pm-sub { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
   .dsc-pm-list { display: flex; flex-direction: column; }
   .dsc-tag-add { display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; background: none; border: 1px dashed var(--border); color: var(--accent-primary); transition: background 0.12s; flex-shrink: 0; }
-  .dsc-tag-add:hover { background: rgba(108,99,255,0.06); }
+  .dsc-tag-add:hover { background: rgba(79, 169, 129,0.06); }
   .dsc-pm-footer { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-top: 1px solid var(--border); }
   .dsc-reset-link { background: none; border: none; color: var(--text-muted); font-size: 11px; cursor: pointer; padding: 0; text-decoration: underline; text-underline-offset: 2px; }
   .dsc-reset-link:hover { color: var(--text-secondary); }

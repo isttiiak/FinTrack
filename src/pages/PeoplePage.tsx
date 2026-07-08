@@ -5,19 +5,22 @@ import { ArrowLeft, Plus, Edit2, Check, X, Users, Trash2, ChevronDown } from 'lu
 import { fadeUp } from '@/lib/animations'
 import ErrorBanner from '@/components/common/ErrorBanner'
 import { usePersons, useCreatePerson, useUpdatePerson, useDeletePerson } from '@/hooks/useLedger'
+import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import { useConfirmStore } from '@/stores/confirmStore'
 import { formatCurrency } from '@/lib/utils'
 import { RELATIONSHIPS } from '@/lib/constants'
 import type { PersonWithLedgers } from '@/types/ledger.types'
 import type { Relationship } from '@/lib/constants'
 
+// Literal hex (not CSS vars) — these get a hex-alpha suffix appended below
+// (e.g. `${relColor}33`), which only works with plain hex strings.
 const RELATIONSHIP_COLORS: Record<string, string> = {
-  Friend:             '#6C63FF',
-  Family:             '#10B981',
-  'Business Partner': '#F59E0B',
-  Colleague:          '#06B6D4',
-  Self:               '#A855F7',
-  Other:              '#9D9AB8',
+  Friend:             '#4FA981',
+  Family:             '#3E9B72',
+  'Business Partner': '#C2A24E',
+  Colleague:          '#B4923F',
+  Self:               '#8A968C',
+  Other:              '#5F6B62',
 }
 
 type PeopleTab = 'all' | 'lent' | 'debt'
@@ -33,7 +36,7 @@ interface PersonRowProps {
 }
 
 function PersonRow({ person, isExpanded, onToggleEdit, onSave, onDelete, isSaving }: PersonRowProps) {
-  const relColor = RELATIONSHIP_COLORS[person.relationship ?? ''] ?? '#9D9AB8'
+  const relColor = RELATIONSHIP_COLORS[person.relationship ?? ''] ?? '#8A968C'
   const [editRel, setEditRel] = useState<Relationship | ''>(person.relationship ?? '')
   const [editPhone, setEditPhone] = useState(person.phone ?? '')
 
@@ -293,13 +296,21 @@ export default function PeoplePage() {
   }, [persons, tab, relFilter])
 
   async function handleCreatePerson(data: { name: string; relationship: Relationship | null; phone: string }) {
-    await createPerson({ name: data.name, relationship: data.relationship, phone: data.phone || null, notes: null })
-    setShowAddForm(false)
+    try {
+      await createPerson({ name: data.name, relationship: data.relationship, phone: data.phone || null, notes: null })
+      setShowAddForm(false)
+    } catch (err) {
+      if (err instanceof DemoBlockedError) setShowAddForm(false)
+    }
   }
 
   async function handleUpdatePerson(id: string, data: { relationship: Relationship | null; phone: string }) {
-    await updatePerson({ id, relationship: data.relationship, phone: data.phone || null })
-    setExpandedEditId(null)
+    try {
+      await updatePerson({ id, relationship: data.relationship, phone: data.phone || null })
+      setExpandedEditId(null)
+    } catch (err) {
+      if (err instanceof DemoBlockedError) setExpandedEditId(null)
+    }
   }
 
   function toggleEdit(id: string) {
@@ -453,7 +464,7 @@ const STYLES = `
     transition: background 0.15s, color 0.15s, border-color 0.15s;
   }
   .pmp-tab:hover { background: var(--bg-hover); color: var(--text-primary); }
-  .pmp-tab-active { background: linear-gradient(135deg, #6C63FF, #A855F7); border-color: transparent; color: #fff; }
+  .pmp-tab-active { background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E); border-color: transparent; color: #fff; }
 
   .pmp-rel-filter-wrap { position: relative; }
   .pmp-rel-filter {
@@ -478,7 +489,7 @@ const STYLES = `
     background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
     overflow: hidden; transition: border-color 0.15s, box-shadow 0.15s;
   }
-  .pmp-person-row-wrap:hover { border-color: rgba(108,99,255,0.25); box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
+  .pmp-person-row-wrap:hover { border-color: rgba(79, 169, 129,0.25); box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
   .pmp-person-row {
     display: flex; align-items: center; gap: 12px; padding: 14px 14px 14px 16px;
   }
@@ -505,21 +516,21 @@ const STYLES = `
     color: var(--text-muted); cursor: pointer; transition: background 0.12s, color 0.12s, border-color 0.12s;
     white-space: nowrap;
   }
-  .pmp-edit-btn:hover { background: rgba(108,99,255,0.12); color: var(--accent-primary); border-color: rgba(108,99,255,0.3); }
-  .pmp-edit-btn-active { background: rgba(108,99,255,0.12); color: var(--accent-primary); border-color: rgba(108,99,255,0.3); }
+  .pmp-edit-btn:hover { background: rgba(79, 169, 129,0.12); color: var(--accent-primary); border-color: rgba(79, 169, 129,0.3); }
+  .pmp-edit-btn-active { background: rgba(79, 169, 129,0.12); color: var(--accent-primary); border-color: rgba(79, 169, 129,0.3); }
   .pmp-delete-btn {
     height: 30px; padding: 0 10px; border-radius: 8px; flex-shrink: 0; gap: 5px;
     display: flex; align-items: center; font-size: 12px; font-weight: 600;
-    background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25);
+    background: rgba(194, 91, 85,0.08); border: 1px solid rgba(194, 91, 85,0.25);
     color: var(--accent-red); cursor: pointer; transition: background 0.12s;
   }
-  .pmp-delete-btn:hover { background: rgba(239,68,68,0.16); }
+  .pmp-delete-btn:hover { background: rgba(194, 91, 85,0.16); }
 
   /* Inline edit form */
   .pmp-edit-form { border-top: 1px solid var(--border); }
   .pmp-edit-form-inner {
     display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px;
-    padding: 12px 16px 14px; background: rgba(108,99,255,0.04);
+    padding: 12px 16px 14px; background: rgba(79, 169, 129,0.04);
   }
   .pmp-field-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 130px; }
   .pmp-field-row { display: flex; gap: 10px; flex-wrap: wrap; width: 100%; }
@@ -543,7 +554,7 @@ const STYLES = `
     display: inline-flex; align-items: center; gap: 6px;
     padding: 7px 14px; border-radius: 8px; border: none; cursor: pointer;
     font-size: 13px; font-weight: 600;
-    background: linear-gradient(135deg, #6C63FF, #A855F7); color: #fff;
+    background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E); color: #fff;
     transition: opacity 0.12s; white-space: nowrap;
   }
   .pmp-save-btn:hover:not(:disabled) { opacity: 0.88; }
@@ -563,7 +574,7 @@ const STYLES = `
 
   /* Add person form */
   .pmp-add-form {
-    background: var(--bg-card); border: 1px solid rgba(108,99,255,0.3);
+    background: var(--bg-card); border: 1px solid rgba(79, 169, 129,0.3);
     border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px;
   }
   .pmp-add-form-title {

@@ -12,6 +12,8 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
+import { Logo } from '@/components/common/Logo'
+import ToastContainer from '@/components/common/ToastContainer'
 import type { UserProfile } from '@/types/database.types'
 
 // Pages
@@ -123,24 +125,12 @@ function Root() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.2 }}
         >
-          <div style={{
-            width: 52,
-            height: 52,
-            borderRadius: 14,
-            background: 'linear-gradient(135deg, #6C63FF, #A855F7)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 24,
-            fontWeight: 700,
-            color: '#fff',
-            boxShadow: '0 8px 24px rgba(108,99,255,0.35)',
-          }}>৳</div>
+          <Logo size={52} />
           <div style={{
             width: 24,
             height: 24,
-            border: '2px solid rgba(108,99,255,0.3)',
-            borderTopColor: '#6C63FF',
+            border: '2px solid rgba(79, 169, 129,0.3)',
+            borderTopColor: '#4FA981',
             borderRadius: '50%',
             animation: 'spin 0.7s linear infinite',
           }} />
@@ -151,9 +141,12 @@ function Root() {
   }
 
   return (
-    <AnimatePresence mode="wait">
-      <Outlet />
-    </AnimatePresence>
+    <>
+      <AnimatePresence mode="wait">
+        <Outlet />
+      </AnimatePresence>
+      <ToastContainer />
+    </>
   )
 }
 

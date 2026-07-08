@@ -7,6 +7,7 @@ import { scaleIn } from '@/lib/animations'
 import { cn, toISODateString } from '@/lib/utils'
 import { INVESTMENT_CATEGORIES } from '@/types/investment.types'
 import { useCreateInvestment, useUpdateInvestment } from '@/hooks/useInvestments'
+import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import type { Investment } from '@/types/investment.types'
 
 const schema = z.object({
@@ -67,12 +68,16 @@ export default function InvestmentForm({ editing, onClose }: InvestmentFormProps
       doc_link:         values.doc_link || null,
       notes:            values.notes || null,
     }
-    if (editing) {
-      await update({ id: editing.id, ...payload })
-    } else {
-      await create(payload)
+    try {
+      if (editing) {
+        await update({ id: editing.id, ...payload })
+      } else {
+        await create(payload)
+      }
+      onClose()
+    } catch (err) {
+      if (err instanceof DemoBlockedError) onClose()
     }
-    onClose()
   }
 
   return (
@@ -227,7 +232,7 @@ export default function InvestmentForm({ editing, onClose }: InvestmentFormProps
           transition: border-color 0.15s, box-shadow 0.15s;
         }
         .invf-input::placeholder { color: var(--text-muted); }
-        .invf-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(108,99,255,0.15); }
+        .invf-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(79, 169, 129,0.15); }
         .invf-input-error { border-color: var(--accent-red) !important; }
         .invf-amount-input { font-size: 18px; font-weight: 600; }
         .invf-textarea { resize: none; font-family: inherit; }
@@ -237,7 +242,7 @@ export default function InvestmentForm({ editing, onClose }: InvestmentFormProps
           width: 100%; cursor: pointer; appearance: none;
         }
         .invf-select:focus { outline: none; border-color: var(--border-focus); }
-        .invf-select option { background: #1E1E38; }
+        .invf-select option { background: #18201A; }
         .invf-error { font-size: 12px; color: #FCA5A5; margin: 0; }
         .invf-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
         .invf-submit { min-width: 140px; min-height: 40px; display: flex; align-items: center; justify-content: center; }

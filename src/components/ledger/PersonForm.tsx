@@ -8,6 +8,7 @@ import { scaleIn } from '@/lib/animations'
 import { cn } from '@/lib/utils'
 import { RELATIONSHIPS } from '@/lib/constants'
 import { useCreatePerson, useUpdatePerson } from '@/hooks/useLedger'
+import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import type { Person } from '@/types/ledger.types'
 
 const schema = z.object({
@@ -48,12 +49,16 @@ export default function PersonForm({ editing, onClose }: PersonFormProps) {
       phone:        values.phone || null,
       notes:        values.notes || null,
     }
-    if (editing) {
-      await update({ id: editing.id, ...payload })
-    } else {
-      await create(payload)
+    try {
+      if (editing) {
+        await update({ id: editing.id, ...payload })
+      } else {
+        await create(payload)
+      }
+      onClose()
+    } catch (err) {
+      if (err instanceof DemoBlockedError) onClose()
     }
-    onClose()
   }
 
   return (
@@ -185,7 +190,7 @@ export default function PersonForm({ editing, onClose }: PersonFormProps) {
           transition: border-color 0.15s, box-shadow 0.15s;
         }
         .pf-input::placeholder { color: var(--text-muted); }
-        .pf-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(108,99,255,0.15); }
+        .pf-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(79, 169, 129,0.15); }
         .pf-input-error { border-color: var(--accent-red) !important; }
         .pf-textarea { resize: none; font-family: inherit; }
         .pf-select {
@@ -194,7 +199,7 @@ export default function PersonForm({ editing, onClose }: PersonFormProps) {
           color: var(--text-primary); font-size: 14px; padding: 10px 14px; cursor: pointer;
         }
         .pf-select:focus { outline: none; border-color: var(--border-focus); }
-        .pf-select option { background: #1E1E38; }
+        .pf-select option { background: #18201A; }
         .pf-error { font-size: 12px; color: #FCA5A5; margin: 0; }
         .pf-custom-back {
           padding: 0 12px; border-radius: 8px; height: 40px;

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import DeleteButton from '@/components/common/DeleteButton'
 import EmptyState from '@/components/common/EmptyState'
+import ErrorBanner from '@/components/common/ErrorBanner'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { useInvestments, useDeleteReturn, useDeleteInvestmentPayment, useDeleteInvestment, useUpdateInvestmentPayment, useUpdateReturn } from '@/hooks/useInvestments'
@@ -18,7 +19,7 @@ import type { Investment, InvestmentReturn, InvestmentPayment } from '@/types/in
 
 const RETURN_TYPE_COLORS: Record<string, string> = {
   Profit: 'var(--accent-teal)', 'Capital Return': 'var(--accent-primary)',
-  Dividend: '#F59E0B', Rent: '#06B6D4', Other: 'var(--text-muted)',
+  Dividend: '#C2A24E', Rent: '#3E9B72', Other: 'var(--text-muted)',
 }
 
 type DetailTab = 'payments' | 'returns'
@@ -26,7 +27,7 @@ type DetailTab = 'payments' | 'returns'
 export default function InvestmentDetailPage() {
   const { investmentId } = useParams({ strict: false }) as { investmentId: string }
   const navigate = useNavigate()
-  const { data: investments = [], isLoading } = useInvestments()
+  const { data: investments = [], isLoading, isError, refetch } = useInvestments()
   const { mutate: deleteReturn } = useDeleteReturn()
   const { mutate: deletePayment } = useDeleteInvestmentPayment()
   const { mutate: deleteInvestment } = useDeleteInvestment()
@@ -51,6 +52,18 @@ export default function InvestmentDetailPage() {
           <ArrowLeft size={15} /> Back
         </button>
         <div className="idp-skeleton-hero" />
+        <style>{skeletonCSS}</style>
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="idp-page">
+        <button className="idp-back" onClick={() => navigate({ to: '/investments' })}>
+          <ArrowLeft size={15} /> Back to Investments
+        </button>
+        <ErrorBanner message="Couldn't load this investment — your connection or session may have hiccuped." onRetry={refetch} />
         <style>{skeletonCSS}</style>
       </div>
     )
@@ -147,7 +160,7 @@ export default function InvestmentDetailPage() {
           <div className="idp-kpi-label">Paid in</div>
           <div className="idp-kpi-value">{formatCurrency(totalPaid)}</div>
           {remainingToPay > 0 && (
-            <div className="idp-kpi-sub" style={{ color: '#F59E0B' }}>{formatCurrency(remainingToPay)} still due</div>
+            <div className="idp-kpi-sub" style={{ color: '#C2A24E' }}>{formatCurrency(remainingToPay)} still due</div>
           )}
           {remainingToPay === 0 && committed > 0 && (
             <div className="idp-kpi-sub" style={{ color: 'var(--accent-teal)' }}>Fully paid ✓</div>
@@ -402,12 +415,12 @@ export default function InvestmentDetailPage() {
         .idp-hero-left { display: flex; align-items: flex-start; gap: 14px; }
         .idp-hero-icon {
           width: 52px; height: 52px; border-radius: 14px; flex-shrink: 0;
-          background: rgba(245,158,11,0.12); display: flex; align-items: center; justify-content: center;
+          background: rgba(194, 162, 78,0.12); display: flex; align-items: center; justify-content: center;
           font-size: 26px;
         }
         .idp-hero-name { font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 0 0 8px; }
         .idp-hero-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .idp-hero-cat { font-size: 12px; font-weight: 500; padding: 2px 10px; border-radius: 20px; background: rgba(245,158,11,0.12); color: #F59E0B; }
+        .idp-hero-cat { font-size: 12px; font-weight: 500; padding: 2px 10px; border-radius: 20px; background: rgba(194, 162, 78,0.12); color: #C2A24E; }
         .idp-hero-company { font-size: 12px; color: var(--text-muted); }
         .idp-hero-date { font-size: 12px; color: var(--text-muted); }
         .idp-doc-link { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--accent-primary); text-decoration: none; }
@@ -421,11 +434,11 @@ export default function InvestmentDetailPage() {
           transition: background 0.12s; white-space: nowrap;
         }
         .idp-action-pay { color: var(--accent-coral); }
-        .idp-action-pay:hover { background: rgba(249,115,22,0.12); border-color: rgba(249,115,22,0.3); }
+        .idp-action-pay:hover { background: rgba(201, 115, 110,0.12); border-color: rgba(201, 115, 110,0.3); }
         .idp-action-return { color: var(--accent-teal); }
-        .idp-action-return:hover { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.3); }
+        .idp-action-return:hover { background: rgba(79, 169, 129,0.12); border-color: rgba(79, 169, 129,0.3); }
         .idp-action-edit { color: var(--text-secondary); }
-        .idp-action-edit:hover { background: rgba(108,99,255,0.12); color: var(--accent-primary); border-color: rgba(108,99,255,0.3); }
+        .idp-action-edit:hover { background: rgba(79, 169, 129,0.12); color: var(--accent-primary); border-color: rgba(79, 169, 129,0.3); }
 
         /* KPIs */
         .idp-kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 16px; }
@@ -436,21 +449,21 @@ export default function InvestmentDetailPage() {
         .idp-kpi-label { font-size: 10px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
         .idp-kpi-value { font-size: 18px; font-weight: 700; margin-bottom: 3px; }
         .idp-kpi-sub { font-size: 11px; color: var(--text-muted); }
-        .idp-kpi-amber { background: rgba(245,158,11,0.05); border-color: rgba(245,158,11,0.15); }
-        .idp-kpi-amber .idp-kpi-icon { background: rgba(245,158,11,0.15); color: #F59E0B; }
-        .idp-kpi-amber .idp-kpi-value { color: #F59E0B; }
-        .idp-kpi-coral { background: rgba(249,115,22,0.05); border-color: rgba(249,115,22,0.12); }
-        .idp-kpi-coral .idp-kpi-icon { background: rgba(249,115,22,0.15); color: var(--accent-coral); }
+        .idp-kpi-amber { background: rgba(194, 162, 78,0.05); border-color: rgba(194, 162, 78,0.15); }
+        .idp-kpi-amber .idp-kpi-icon { background: rgba(194, 162, 78,0.15); color: #C2A24E; }
+        .idp-kpi-amber .idp-kpi-value { color: #C2A24E; }
+        .idp-kpi-coral { background: rgba(201, 115, 110,0.05); border-color: rgba(201, 115, 110,0.12); }
+        .idp-kpi-coral .idp-kpi-icon { background: rgba(201, 115, 110,0.15); color: var(--accent-coral); }
         .idp-kpi-coral .idp-kpi-value { color: var(--accent-coral); }
-        .idp-kpi-teal { background: rgba(16,185,129,0.05); border-color: rgba(16,185,129,0.12); }
-        .idp-kpi-teal .idp-kpi-icon { background: rgba(16,185,129,0.15); color: var(--accent-teal); }
+        .idp-kpi-teal { background: rgba(79, 169, 129,0.05); border-color: rgba(79, 169, 129,0.12); }
+        .idp-kpi-teal .idp-kpi-icon { background: rgba(79, 169, 129,0.15); color: var(--accent-teal); }
         .idp-kpi-teal .idp-kpi-value { color: var(--accent-teal); }
-        .idp-kpi-purple { background: rgba(108,99,255,0.05); border-color: rgba(108,99,255,0.12); }
-        .idp-kpi-purple .idp-kpi-icon { background: rgba(108,99,255,0.15); color: var(--accent-primary); }
+        .idp-kpi-purple { background: rgba(79, 169, 129,0.05); border-color: rgba(79, 169, 129,0.12); }
+        .idp-kpi-purple .idp-kpi-icon { background: rgba(79, 169, 129,0.15); color: var(--accent-primary); }
         .idp-kpi-purple .idp-kpi-value { color: var(--accent-primary); }
 
         .idp-progress-wrap { height: 4px; border-radius: 2px; background: var(--bg-elevated); overflow: hidden; margin-top: 6px; }
-        .idp-progress-bar { height: 100%; border-radius: 2px; background: linear-gradient(90deg,#F97316,#EF4444); transition: width 0.5s ease; }
+        .idp-progress-bar { height: 100%; border-radius: 2px; background: linear-gradient(90deg,#C9736E,#C25B55); transition: width 0.5s ease; }
 
         /* Notes */
         .idp-notes-card {
@@ -469,7 +482,7 @@ export default function InvestmentDetailPage() {
           transition: background 0.15s;
         }
         .idp-tab:hover { background: var(--bg-hover); color: var(--text-primary); }
-        .idp-tab-active { background: linear-gradient(135deg,#F59E0B,#F97316); border-color: transparent; color: #fff; }
+        .idp-tab-active { background: linear-gradient(135deg,#C2A24E,#C9736E); border-color: transparent; color: #fff; }
 
         /* Rows */
         .idp-list { display: flex; flex-direction: column; gap: 8px; }
@@ -479,7 +492,7 @@ export default function InvestmentDetailPage() {
           background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
           transition: border-color 0.12s;
         }
-        .idp-row:hover { border-color: rgba(245,158,11,0.25); }
+        .idp-row:hover { border-color: rgba(194, 162, 78,0.25); }
         .idp-row-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
         .idp-row-info { flex: 1; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .idp-row-amount { font-size: 15px; font-weight: 700; }
@@ -487,18 +500,18 @@ export default function InvestmentDetailPage() {
         .idp-amount-in { color: var(--accent-teal); }
         .idp-row-date { font-size: 12px; color: var(--text-muted); }
         .idp-row-chip { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 20px; }
-        .idp-chip-out { background: rgba(249,115,22,0.1); color: var(--accent-coral); }
+        .idp-chip-out { background: rgba(201, 115, 110,0.1); color: var(--accent-coral); }
         .idp-row-notes { font-size: 11px; color: var(--text-muted); font-style: italic; }
         .idp-row-remaining { display: flex; flex-direction: column; align-items: flex-end; min-width: 90px; flex-shrink: 0; }
         .idp-remaining-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-        .idp-remaining-val { font-size: 13px; font-weight: 700; color: #F59E0B; }
+        .idp-remaining-val { font-size: 13px; font-weight: 700; color: #C2A24E; }
         .idp-fully-paid { font-size: 11px; color: var(--accent-teal); }
         .idp-del-btn {
           width: 26px; height: 26px; border-radius: 7px; flex-shrink: 0;
           display: flex; align-items: center; justify-content: center;
           background: none; border: none; color: var(--text-muted); cursor: pointer;
         }
-        .idp-del-btn:hover { background: rgba(239,68,68,0.1); color: var(--accent-red); }
+        .idp-del-btn:hover { background: rgba(194, 91, 85,0.1); color: var(--accent-red); }
         ${skeletonCSS}
       `}</style>
     </motion.div>

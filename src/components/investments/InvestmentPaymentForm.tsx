@@ -6,6 +6,7 @@ import { X, ArrowUpRight } from 'lucide-react'
 import { scaleIn } from '@/lib/animations'
 import { cn, toISODateString, formatCurrency } from '@/lib/utils'
 import { useCreateInvestmentPayment } from '@/hooks/useInvestments'
+import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
 import type { Investment } from '@/types/investment.types'
 
@@ -52,15 +53,19 @@ export default function InvestmentPaymentForm({ investment, onClose }: Investmen
     if (values.payment_method) localStorage.setItem(LS_METHOD_KEY, values.payment_method)
     if (values.account) localStorage.setItem(LS_ACCOUNT_KEY, values.account)
 
-    await createPayment({
-      investment_id:  investment.id,
-      amount:         values.amount,
-      payment_date:   values.payment_date,
-      payment_method: values.payment_method || null,
-      account:        values.account || null,
-      notes:          values.notes || null,
-    })
-    onClose()
+    try {
+      await createPayment({
+        investment_id:  investment.id,
+        amount:         values.amount,
+        payment_date:   values.payment_date,
+        payment_method: values.payment_method || null,
+        account:        values.account || null,
+        notes:          values.notes || null,
+      })
+      onClose()
+    } catch (err) {
+      if (err instanceof DemoBlockedError) onClose()
+    }
   }
 
   return (
@@ -179,12 +184,12 @@ export default function InvestmentPaymentForm({ investment, onClose }: Investmen
         .ipf-close:hover { background: var(--bg-card); color: var(--text-primary); }
         .ipf-progress-wrap {
           padding: 12px 14px; border-radius: 10px; margin-bottom: 16px;
-          background: rgba(249,115,22,0.06); border: 1px solid rgba(249,115,22,0.15);
+          background: rgba(201, 115, 110,0.06); border: 1px solid rgba(201, 115, 110,0.15);
         }
         .ipf-progress-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
         .ipf-progress-label { font-size: 12px; color: var(--text-secondary); }
         .ipf-progress-bar { height: 6px; border-radius: 3px; background: var(--bg-elevated); overflow: hidden; margin-bottom: 5px; }
-        .ipf-progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg,#F97316,#EF4444); transition: width 0.4s ease; }
+        .ipf-progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg,#C9736E,#C25B55); transition: width 0.4s ease; }
         .ipf-remaining { font-size: 11px; color: var(--accent-coral); margin: 0; }
         .ipf-form { display: flex; flex-direction: column; gap: 14px; }
         .ipf-field { display: flex; flex-direction: column; gap: 5px; }
@@ -196,7 +201,7 @@ export default function InvestmentPaymentForm({ investment, onClose }: Investmen
           transition: border-color 0.15s, box-shadow 0.15s;
         }
         .ipf-input::placeholder { color: var(--text-muted); }
-        .ipf-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(108,99,255,0.15); }
+        .ipf-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(79, 169, 129,0.15); }
         .ipf-input-error { border-color: var(--accent-red) !important; }
         .ipf-amount { font-size: 22px; font-weight: 700; padding: 12px 14px; }
         .ipf-error { font-size: 12px; color: #FCA5A5; margin: 0; }
