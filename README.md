@@ -5,7 +5,7 @@
 > **Personal finance management — track expenses, lent & debt, and investments with AI-powered insights.**
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-fin--track--eight--blue.vercel.app-4FA981?style=flat-square)](https://fin-track-eight-blue.vercel.app/)
-[![Version](https://img.shields.io/badge/version-1.1.0-4FA981?style=flat-square)](https://github.com/isttiiak/FinTrack/releases)
+[![Version](https://img.shields.io/badge/version-1.2.0-4FA981?style=flat-square)](https://github.com/isttiiak/FinTrack/releases)
 [![Built with React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript)](https://typescriptlang.org)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=flat-square&logo=supabase)](https://supabase.com)
@@ -18,6 +18,8 @@
 FinTrack is an open-source personal finance app built for the Bangladeshi context but usable by anyone. It combines expense tracking, a lent & debt ledger, an investment portfolio tracker, and a full AI assistant — all in a premium dark UI (muted Emerald & Gold) with smooth animations.
 
 **Everything is yours.** Your data lives in your own Supabase project. You can export it anytime, delete it anytime, and self-host the app in under 10 minutes.
+
+**Installable as an app.** FinTrack is a PWA — on mobile, open the site and choose "Add to Home Screen" (Android Chrome / iOS Safari) to install it like a native app, complete with its own icon and no browser address bar.
 
 ---
 
@@ -101,6 +103,7 @@ All features use your own free Groq API key (14,400 requests/day, no credit card
 | Backend | Supabase (PostgreSQL 16 + Auth + RLS) |
 | AI | Groq API (llama-3.1-8b-instant, browser-direct BYOK) |
 | Export | SheetJS (Excel) + Papa Parse (CSV) |
+| PWA | vite-plugin-pwa (installable, offline app-shell caching) |
 | Hosting | Vercel |
 | Package manager | pnpm |
 
