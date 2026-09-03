@@ -350,7 +350,7 @@ function ImportSection() {
           setPreview([])
           setFileName(null)
           if (fileRef.current) fileRef.current.value = ''
-        } catch (e) {
+        } catch {
           setError('Import failed. Check your data and try again.')
         } finally {
           setImporting(false)

@@ -25,8 +25,8 @@ function ModelFooter({ model }: { model: string }) {
 
 function formatResult(text: string) {
   return text.split('\n').filter(Boolean).map((line, i) => {
-    const clean = line.replace(/^[•\-\*]\s*/, '')
-    const isBullet = /^[•\-\*]/.test(line) || /^\d+\./.test(line)
+    const clean = line.replace(/^[•\-*]\s*/, '')
+    const isBullet = /^[•\-*]/.test(line) || /^\d+\./.test(line)
     const isHeader = /^#{1,3}\s/.test(line) || (line.endsWith(':') && line.length < 60 && !line.startsWith(' '))
     if (isHeader) return <p key={i} style={{ fontWeight: 700, color: 'var(--text-primary)', margin: '10px 0 4px', fontSize: 13 }}>{clean.replace(/^#+\s*/, '')}</p>
     if (isBullet) return (

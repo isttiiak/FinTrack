@@ -58,7 +58,8 @@ function CategoriesTab({ categories }: { categories: Category[] }) {
   function toggleExpand(group: string) {
     setExpanded((prev) => {
       const n = new Set(prev)
-      n.has(group) ? n.delete(group) : n.add(group)
+      if (n.has(group)) n.delete(group)
+      else n.add(group)
       return n
     })
   }

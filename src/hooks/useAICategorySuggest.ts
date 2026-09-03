@@ -37,7 +37,9 @@ export function useAICategorySuggest(
     }, 900)
 
     return () => { if (abortRef.current) clearTimeout(abortRef.current) }
-  }, [description, currentCategoryId, categories.length])
+    // `categories` (not `.length`) so renaming a category without changing
+    // the count doesn't leave this effect reading a stale list. See TODO.md §3.8.
+  }, [description, currentCategoryId, categories])
 
   function dismiss() { setSuggestedId(null) }
 

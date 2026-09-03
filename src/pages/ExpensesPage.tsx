@@ -89,7 +89,7 @@ export default function ExpensesPage() {
     }
 
     return { totalExpense, totalIncome, categorySpend }
-  }, [displayedTransactions])
+  }, [transactions])
 
   const budgetsWithSpend = budgets.map((b) => ({
     ...b,
