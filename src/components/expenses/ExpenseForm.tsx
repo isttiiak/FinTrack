@@ -1,14 +1,15 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X } from 'lucide-react'
+import { X, Repeat } from 'lucide-react'
 import { useCategories } from '@/hooks/useCategories'
 import { useCreateExpense, useUpdateExpense } from '@/hooks/useExpenses'
+import { useCreateRecurringRule } from '@/hooks/useRecurring'
 import { useAICategorySuggest } from '@/hooks/useAICategorySuggest'
-import { TXN_TYPES } from '@/lib/constants'
-import type { PaymentMethod, Account } from '@/lib/constants'
+import { TXN_TYPES, RECURRING_CADENCES } from '@/lib/constants'
+import type { PaymentMethod, Account, RecurringCadence } from '@/lib/constants'
 import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
 import SmartAmountInput from '@/components/common/SmartAmountInput'
 import { toISODateString } from '@/lib/utils'
@@ -42,7 +43,13 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
   const { data: categories = [] } = useCategories()
   const { mutateAsync: create, isPending: creating } = useCreateExpense()
   const { mutateAsync: update, isPending: updating } = useUpdateExpense()
+  const { mutateAsync: createRule } = useCreateRecurringRule()
   const isPending = creating || updating
+
+  // Only offered when adding a new transaction — editing an existing one
+  // doesn't retroactively make sense as "the start of a recurring rule".
+  const [makeRecurring, setMakeRecurring] = useState(false)
+  const [recurringCadence, setRecurringCadence] = useState<RecurringCadence>('Monthly')
 
   const lastMethod = (localStorage.getItem(LS_METHOD_KEY) ?? 'Cash') as FormValues['payment_method']
   const lastAccount = (localStorage.getItem(LS_ACCOUNT_KEY) ?? 'Cash') as FormValues['account']
@@ -95,6 +102,23 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
         await update({ id: editing.id, ...payload })
       } else {
         await create(payload)
+        if (makeRecurring) {
+          // start_date = this transaction's own date — it's the first
+          // occurrence and already exists, so last_materialized_date is set
+          // to match rather than left null, or the next "materialize on app
+          // open" would immediately create a duplicate for today.
+          await createRule({
+            type: payload.type,
+            amount: payload.amount,
+            category_id: payload.category_id,
+            description: payload.description ?? undefined,
+            cadence: recurringCadence,
+            start_date: payload.txn_date,
+            payment_method: payload.payment_method ?? undefined,
+            account: payload.account ?? undefined,
+            last_materialized_date: payload.txn_date,
+          })
+        }
       }
       onClose()
     } catch (err) {
@@ -253,6 +277,41 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
             )}
           />
 
+          {/* Make recurring — only offered when adding, not editing */}
+          {!editing && (
+            <div className="ef-field">
+              <button
+                type="button"
+                className={cn('ef-recur-toggle', makeRecurring && 'ef-recur-toggle-active')}
+                onClick={() => setMakeRecurring((v) => !v)}
+              >
+                <Repeat size={14} /> Make this recurring
+              </button>
+              <AnimatePresence>
+                {makeRecurring && (
+                  <motion.div
+                    className="ef-recur-cadence-row"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    {RECURRING_CADENCES.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        className={cn('ef-recur-cadence-btn', recurringCadence === c && 'ef-recur-cadence-btn-active')}
+                        onClick={() => setRecurringCadence(c)}
+                      >
+                        {c}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
           {/* Actions */}
           <div className="ef-actions">
             <button type="button" className="btn-ghost" onClick={onClose}>Cancel</button>
@@ -369,6 +428,24 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
         .ef-ai-chip:hover { background: rgba(79, 169, 129,0.2); }
         .ef-ai-dismiss { background: none; border: none; font-size: 11px; color: var(--text-muted); cursor: pointer; padding: 0 2px; }
         .ef-ai-dismiss:hover { color: var(--text-primary); }
+
+        /* Make recurring */
+        .ef-recur-toggle {
+          display: flex; align-items: center; gap: 7px; align-self: flex-start;
+          background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+          color: var(--text-secondary); font-size: 13px; font-weight: 500; padding: 8px 14px; cursor: pointer;
+          transition: background 0.12s, color 0.12s, border-color 0.12s;
+        }
+        .ef-recur-toggle:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .ef-recur-toggle-active { background: rgba(79, 169, 129,0.14); border-color: var(--accent-primary); color: var(--accent-primary); }
+        .ef-recur-cadence-row { display: flex; gap: 8px; margin-top: 8px; overflow: hidden; }
+        .ef-recur-cadence-btn {
+          flex: 1; padding: 7px 10px; border-radius: 9px; font-size: 12px; font-weight: 600; cursor: pointer;
+          background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary);
+          transition: background 0.15s, color 0.15s, border-color 0.15s;
+        }
+        .ef-recur-cadence-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .ef-recur-cadence-btn-active { background: rgba(79, 169, 129,0.14); border-color: var(--accent-primary); color: var(--accent-primary); }
       `}</style>
     </div>
   )
