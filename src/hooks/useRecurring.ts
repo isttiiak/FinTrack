@@ -1,3 +1,4 @@
+import { useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
@@ -146,7 +147,11 @@ export function useMaterializeRecurring() {
   const userId = useAuthStore((s) => s.user?.id)
   const isDemo = useDemoStore((s) => s.isDemo)
 
-  async function materialize(): Promise<MaterializeResult | null> {
+  // Memoized so callers (DashboardPage's app-open effect) can safely list it
+  // as a dependency without the effect re-running on every render — this
+  // function is otherwise recreated fresh each render like any other
+  // closure, since it isn't a useMutation.
+  const materialize = useCallback(async (): Promise<MaterializeResult | null> => {
     // Demo mode's recurring rules are static seed data with no real table to
     // write to — every other mutation in demo mode is already read-only via
     // useDemoGuard, materialization is the same story, just triggered
@@ -214,7 +219,7 @@ export function useMaterializeRecurring() {
         qc.invalidateQueries({ queryKey: ['recurring_rules'] })
       },
     }
-  }
+  }, [qc, userId, isDemo])
 
   return { materialize }
 }

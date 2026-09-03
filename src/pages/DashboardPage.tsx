@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
 import {
-  Wallet, TrendingUp, Zap,
+  Wallet, TrendingUp, Zap, Repeat,
   ArrowUpRight, ArrowDownRight, Users, ArrowRightLeft, ChevronRight,
 } from 'lucide-react'
 import { staggerContainer, staggerItem } from '@/lib/animations'
@@ -10,7 +10,10 @@ import { formatCurrency, toISODateString } from '@/lib/utils'
 import { useExpenses } from '@/hooks/useExpenses'
 import { usePersons } from '@/hooks/useLedger'
 import { useNoSpendStreak } from '@/hooks/useNoSpendStreak'
+import { useRecurringRules, useMaterializeRecurring } from '@/hooks/useRecurring'
+import { generateOccurrences } from '@/lib/recurring'
 import { useAuthStore } from '@/stores/authStore'
+import { useUIStore } from '@/stores/uiStore'
 import MonthPicker from '@/components/common/MonthPicker'
 import ErrorBanner from '@/components/common/ErrorBanner'
 
@@ -24,7 +27,10 @@ export default function DashboardPage() {
   const profile = useAuthStore((s) => s.profile)
   const firstName = profile?.full_name?.split(' ')[0] ?? null
 
-  const now = new Date()
+  // Stable per mount (not recreated every render) so the upcoming-bills
+  // memo below doesn't get a new Date identity — and an unnecessary
+  // recompute — on every unrelated re-render.
+  const now = useMemo(() => new Date(), [])
   const [selectedMonth, setSelectedMonth] = useState(
     () => `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`,
   )
@@ -43,19 +49,44 @@ export default function DashboardPage() {
   const lastTxnsQ = useExpenses(lastMonth)
   const yearTxnsQ = useExpenses({ from: yearFrom, to: yearTo })
   const personsQ = usePersons()
+  const recurringRulesQ = useRecurringRules()
 
   const { data: allTxns = [] } = allTxnsQ
   const { data: thisTxns = [], isLoading: loadingThis } = thisTxnsQ
   const { data: lastTxns = [] } = lastTxnsQ
   const { data: yearTxns = [] } = yearTxnsQ
   const { data: persons = [] } = personsQ
+  const { data: recurringRules = [] } = recurringRulesQ
 
   // A failed fetch renders pixel-identical to "genuinely zero transactions"
   // otherwise — this dashboard alone fires 5 concurrent queries, so it's the
   // page most exposed to a single transient failure looking like missing data.
-  const queries = [allTxnsQ, thisTxnsQ, lastTxnsQ, yearTxnsQ, personsQ]
+  const queries = [allTxnsQ, thisTxnsQ, lastTxnsQ, yearTxnsQ, personsQ, recurringRulesQ]
   const hasError = queries.some((q) => q.isError)
   const retryAll = () => queries.forEach((q) => q.refetch())
+
+  // Materialize any due recurring transactions once per app open. Guarded
+  // with a ref (not just an empty dep array) because StrictMode's dev-only
+  // double-invoke would otherwise race two materialize() calls against the
+  // same last_materialized_date and double-insert. materialize() itself
+  // no-ops in demo mode and when nothing is due, so this is cheap even when
+  // there's nothing to do.
+  const { materialize } = useMaterializeRecurring()
+  const addToast = useUIStore((s) => s.addToast)
+  const materializedRef = useRef(false)
+  useEffect(() => {
+    if (materializedRef.current) return
+    materializedRef.current = true
+    materialize().then((result) => {
+      if (!result) return
+      addToast({
+        type: 'success',
+        message: `${result.count} recurring transaction${result.count !== 1 ? 's' : ''} added`,
+        duration: 6000,
+        action: { label: 'Undo', onClick: () => { result.undo() } },
+      })
+    })
+  }, [materialize, addToast])
 
   const streak = useNoSpendStreak(allTxns)
 
@@ -90,6 +121,28 @@ export default function DashboardPage() {
 
   const monthLabel = new Date(selYear, selMon0, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
   const isCurrentMonth = selYear === now.getFullYear() && selMon0 === now.getMonth()
+
+  // "Upcoming this month" only makes sense relative to the real current
+  // month, not whichever month MonthPicker happens to be browsing — a
+  // bill due next Tuesday is meaningless context while looking at March.
+  // Expense rules only ("bills"); a due salary isn't something to warn about.
+  const upcomingRecurring = useMemo(() => {
+    if (!isCurrentMonth) return { total: 0, items: [] as { rule: typeof recurringRules[number]; date: string }[] }
+    const tomorrow = new Date(now)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    const endOfThisMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+    const items: { rule: typeof recurringRules[number]; date: string }[] = []
+    let total = 0
+    for (const rule of recurringRules) {
+      if (!rule.is_active || rule.type !== 'Expense') continue
+      for (const date of generateOccurrences(rule, tomorrow, endOfThisMonth)) {
+        items.push({ rule, date })
+        total += rule.amount
+      }
+    }
+    items.sort((a, b) => a.date.localeCompare(b.date))
+    return { total, items }
+  }, [recurringRules, isCurrentMonth, now])
 
   return (
     <motion.div variants={staggerContainer} initial="initial" animate="animate" className="dash-page">
@@ -301,6 +354,32 @@ export default function DashboardPage() {
           </motion.div>
         )}
 
+        {/* Upcoming recurring bills — only meaningful while viewing the real current month */}
+        {isCurrentMonth && upcomingRecurring.items.length > 0 && (
+          <motion.div className="dash-card" variants={staggerItem}>
+            <div className="dash-card-header">
+              <h3 className="dash-card-title">Upcoming this month</h3>
+              <Link to="/settings/recurring" className="dash-card-link"><Repeat size={13} /> Manage</Link>
+            </div>
+            <div className="dash-upcoming-total">{formatCurrency(upcomingRecurring.total)}</div>
+            <p className="dash-upcoming-sub">
+              in {upcomingRecurring.items.length} recurring bill{upcomingRecurring.items.length !== 1 ? 's' : ''}
+            </p>
+            <div className="dash-recent-list">
+              {upcomingRecurring.items.slice(0, 4).map(({ rule, date }, i) => (
+                <div key={`${rule.id}-${date}-${i}`} className="dash-recent-row">
+                  <div className="dash-recent-cat-dot" style={{ background: 'linear-gradient(135deg,#C9736E,#C25B55)' }} />
+                  <div className="dash-recent-info">
+                    <span className="dash-recent-desc">{rule.description || rule.category?.name || 'Recurring bill'}</span>
+                    <span className="dash-recent-cat">{date}</span>
+                  </div>
+                  <div className="dash-recent-amount dash-amount-expense">−{formatCurrency(rule.amount)}</div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
       </div>
 
       <style>{`
@@ -429,6 +508,10 @@ export default function DashboardPage() {
         .dash-lv-bar { height: 100%; border-radius: 4px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
         .dash-lv-bar-lent { background: linear-gradient(90deg, #4FA981, #3E9B72); }
         .dash-lv-bar-debt { background: linear-gradient(90deg, #C9736E, #C25B55); }
+
+        /* Upcoming recurring */
+        .dash-upcoming-total { font-size: 22px; font-weight: 700; color: var(--accent-coral); margin-bottom: 2px; }
+        .dash-upcoming-sub { font-size: 12px; color: var(--text-muted); margin: 0 0 12px; }
 
         @keyframes shimmer { to { background-position: -200% 0; } }
       `}</style>
