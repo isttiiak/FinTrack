@@ -22,7 +22,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
 import { supabase } from '@/lib/supabase'
 import { exportTransactionsExcel, exportTransactionsCSV, exportFullExcel } from '@/lib/export'
-import { getCurrentMonthRange } from '@/lib/utils'
+import { getCurrentMonthRange, toISODateString } from '@/lib/utils'
 import ErrorBanner from '@/components/common/ErrorBanner'
 import { formatCurrency } from '@/lib/utils'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
@@ -162,8 +162,8 @@ function ExportSection() {
   // Current month
   const transactionsQ = useExpenses()
   const { data: transactions = [] } = transactionsQ
-  // All-time (empty filter object bypasses the current-month default)
-  const { data: allTransactions = [] } = useExpenses({})
+  // All-time
+  const { data: allTransactions = [] } = useExpenses({ from: '2000-01-01', to: toISODateString(new Date()) })
   // Persons with nested ledgers + payments
   const personsQ = usePersons()
   const { data: persons = [] } = personsQ
@@ -635,7 +635,7 @@ function DangerSection() {
   const [activeOp, setActiveOp]     = useState<string | null>(null)
   const { profile }                 = useAuthStore()
   const userId                      = useAuthStore((s) => s.user?.id)
-  const { data: transactions = [] } = useExpenses({})   // all-time for export count
+  const { data: transactions = [] } = useExpenses({ from: '2000-01-01', to: toISODateString(new Date()) })   // all-time for export count
   const confirm                     = useConfirmStore((s) => s.confirm)
   const addToast                    = useUIStore((s) => s.addToast)
   const qc                          = useQueryClient()
