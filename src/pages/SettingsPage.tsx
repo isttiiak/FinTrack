@@ -864,6 +864,25 @@ export default function SettingsPage() {
         </section>
       </motion.div>
 
+      {/* Recurring transactions card */}
+      <motion.div variants={staggerItem}>
+        <section className="settings-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+          <div>
+            <h2 className="settings-section-title">🔁 Recurring transactions</h2>
+            <p className="settings-section-desc">
+              Bills and income that repeat on a schedule — rent, subscriptions, salary.
+            </p>
+          </div>
+          <button
+            className="btn-primary"
+            style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}
+            onClick={() => navigate({ to: '/settings/recurring' })}
+          >
+            Manage →
+          </button>
+        </section>
+      </motion.div>
+
       <motion.div variants={staggerItem}><BudgetSection /></motion.div>
       <motion.div variants={staggerItem}><AISection /></motion.div>
       <motion.div variants={staggerItem}><NotificationsSection /></motion.div>
