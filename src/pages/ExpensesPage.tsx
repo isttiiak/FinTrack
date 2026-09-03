@@ -48,7 +48,18 @@ export default function ExpensesPage() {
   const transactionsQ = useExpenses(filters)
   const { data: transactions = [], isLoading } = transactionsQ
   const { data: budgets = [] } = useBudgets()
-  const streak = useNoSpendStreak(transactions)
+
+  // The no-spend streak must be computed from the *unfiltered, all-time*
+  // transaction list, not the month/type/method-filtered `transactions`
+  // above — matches DashboardPage/AnalyticsPage. Passing the filtered list
+  // here (as this page previously did) breaks in three ways: viewing a past
+  // month counts every day since as "no-spend" (the hook counts back from
+  // today, not from the viewed month); filtering to Income empties
+  // spendDays entirely; filtering to one payment method treats days paid
+  // another way as no-spend too. See TODO.md §3.2.
+  const allTxnsQ = useExpenses({ from: '2000-01-01', to: toISODateString(new Date()) })
+  const { data: allTxns = [] } = allTxnsQ
+  const streak = useNoSpendStreak(allTxns)
 
   const mainGroups = useMemo(() => {
     const groups = new Set<string>()
@@ -110,7 +121,9 @@ export default function ExpensesPage() {
         </motion.button>
       </div>
 
-      {transactionsQ.isError && <ErrorBanner onRetry={() => transactionsQ.refetch()} />}
+      {(transactionsQ.isError || allTxnsQ.isError) && (
+        <ErrorBanner onRetry={() => { transactionsQ.refetch(); allTxnsQ.refetch() }} />
+      )}
 
       {/* Summary cards */}
       <motion.div
