@@ -126,6 +126,9 @@ export type Currency = (typeof CURRENCIES)[number]
 export const LEDGER_STATUSES = ['Pending', 'Partial', 'Settled'] as const
 export type LedgerStatus = (typeof LEDGER_STATUSES)[number]
 
+export const RECURRING_CADENCES = ['Weekly', 'Monthly', 'Yearly'] as const
+export type RecurringCadence = (typeof RECURRING_CADENCES)[number]
+
 // ── Groq AI models ───────────────────────────────────────────────────────
 // Groq periodically decommissions free-tier models without much notice —
 // llama-3.1-8b-instant, the app's original default, was shut down 2026-08-16
