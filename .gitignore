@@ -38,3 +38,13 @@ Thumbs.db
 
 # pnpm
 .pnpmfile.cjs
+
+# Audit backlog — documents unpatched security issues on a live deployment.
+# Un-ignore once TODO.md section 2 (Security) is resolved.
+TODO.md
+
+# Supabase CLI scratch files — leak project ref + pooler connection string
+supabase/.temp/
+
+# Claude Code — machine-local overrides only; the shared config is .claude/settings.json
+.claude/settings.local.json
