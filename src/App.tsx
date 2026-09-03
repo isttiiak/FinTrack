@@ -13,6 +13,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
+import { clearLocalUserData } from '@/lib/utils'
 import { Logo } from '@/components/common/Logo'
 import ToastContainer from '@/components/common/ToastContainer'
 import type { UserProfile } from '@/types/database.types'
@@ -104,6 +105,9 @@ function Root() {
           router.navigate({ to: '/dashboard', replace: true })
         }
       } else if (event === 'SIGNED_OUT') {
+        useAuthStore.getState().clear()
+        queryClient.clear()
+        clearLocalUserData()
         router.navigate({ to: '/login', replace: true })
       }
     })

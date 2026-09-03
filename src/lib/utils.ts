@@ -5,6 +5,16 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// Clears device-local data that could otherwise leak between accounts on a
+// shared browser — the billable Groq key plus every fintrack_-prefixed
+// preference (last-used payment method/account, custom account lists, etc).
+export function clearLocalUserData(): void {
+  localStorage.removeItem('groq_api_key')
+  for (const key of Object.keys(localStorage)) {
+    if (key.startsWith('fintrack_')) localStorage.removeItem(key)
+  }
+}
+
 export function formatCurrency(amount: number, currency = 'BDT'): string {
   if (currency === 'BDT') {
     return `৳${amount.toLocaleString('en-BD', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
