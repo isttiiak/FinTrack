@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
+import { supabase, fetchAllRows } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
 import type { Transaction, TransactionFilters } from '@/types/expense.types'
@@ -34,6 +34,7 @@ export function useExpenses(filters?: TransactionFilters) {
         .eq('user_id', userId!)
         .order('txn_date', { ascending: false })
         .order('created_at', { ascending: false })
+        .order('id') // stable tiebreaker — needed so paginated .range() calls can't skip/duplicate rows that tie on the columns above
 
       if (from) query = query.gte('txn_date', from)
       if (to)   query = query.lte('txn_date', to)
@@ -41,9 +42,11 @@ export function useExpenses(filters?: TransactionFilters) {
       if (filters?.category_ids?.length) query = query.in('category_id', filters.category_ids)
       if (filters?.payment_method && filters.payment_method !== 'All') query = query.eq('payment_method', filters.payment_method)
 
-      const { data, error } = await query
-      if (error) throw error
-      return (data ?? []) as Transaction[]
+      // PostgREST caps responses at 1,000 rows by default — page through it
+      // rather than awaiting `query` directly, or a long-history "all time"
+      // fetch (Dashboard/AIHub/AnalyticsPage all call this hook that way)
+      // silently truncates. See TODO.md §3.1.
+      return await fetchAllRows<Transaction>((f, t) => query.range(f, t))
     },
   })
 }

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
+import { supabase, fetchAllRows } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
@@ -87,30 +87,29 @@ export function usePersons() {
         ))
       }
 
-      const { data: persons, error: pErr } = await supabase
-        .from('persons')
-        .select('*')
-        .eq('user_id', userId!)
-        .order('name')
-      if (pErr) throw pErr
+      // PostgREST caps responses at 1,000 rows by default — page through
+      // every one of these with fetchAllRows, or a long-running account's
+      // person_ledger/ledger_payments truncates and every outstanding
+      // balance in the app silently computes too high. See TODO.md §3.1.
+      // Each needs an explicit, fully-tiebroken .order() — pagination across
+      // multiple .range() calls isn't guaranteed stable otherwise.
+      const persons = await fetchAllRows<Person>((f, t) =>
+        supabase.from('persons').select('*').eq('user_id', userId!).order('name').order('id').range(f, t),
+      )
 
-      const { data: rawLedgers, error: lErr } = await supabase
-        .from('person_ledger')
-        .select('*')
-        .eq('user_id', userId!)
-        .order('start_date', { ascending: false })
-      if (lErr) throw lErr
+      const rawLedgers = await fetchAllRows<PersonLedger>((f, t) =>
+        supabase.from('person_ledger').select('*').eq('user_id', userId!)
+          .order('start_date', { ascending: false }).order('id').range(f, t),
+      )
 
-      const { data: rawPayments, error: payErr } = await supabase
-        .from('ledger_payments')
-        .select('*')
-        .eq('user_id', userId!)
-      if (payErr) throw payErr
+      const rawPayments = await fetchAllRows<LedgerPayment>((f, t) =>
+        supabase.from('ledger_payments').select('*').eq('user_id', userId!).order('id').range(f, t),
+      )
 
-      return (persons ?? []).map((p) => enrichPerson(
+      return persons.map((p) => enrichPerson(
         p,
-        (rawLedgers ?? []).filter((l) => l.person_id === p.id),
-        (rawPayments ?? []).filter((pay) => pay.person_id === p.id),
+        rawLedgers.filter((l) => l.person_id === p.id),
+        rawPayments.filter((pay) => pay.person_id === p.id),
       ))
     },
   })
@@ -146,22 +145,19 @@ export function usePerson(personId: string) {
         .single()
       if (pErr) throw pErr
 
-      const { data: rawLedgers, error: lErr } = await supabase
-        .from('person_ledger')
-        .select('*')
-        .eq('person_id', personId)
-        .eq('user_id', userId!)
-        .order('start_date', { ascending: false })
-      if (lErr) throw lErr
+      // Same 1,000-row cap as usePersons() above — a single person with a
+      // long enough history could still exceed it. See TODO.md §3.1.
+      const rawLedgers = await fetchAllRows<PersonLedger>((f, t) =>
+        supabase.from('person_ledger').select('*').eq('person_id', personId).eq('user_id', userId!)
+          .order('start_date', { ascending: false }).order('id').range(f, t),
+      )
 
-      const { data: rawPayments, error: payErr } = await supabase
-        .from('ledger_payments')
-        .select('*')
-        .eq('person_id', personId)
-        .eq('user_id', userId!)
-      if (payErr) throw payErr
+      const rawPayments = await fetchAllRows<LedgerPayment>((f, t) =>
+        supabase.from('ledger_payments').select('*').eq('person_id', personId).eq('user_id', userId!)
+          .order('id').range(f, t),
+      )
 
-      return enrichPerson(person, rawLedgers ?? [], rawPayments ?? [])
+      return enrichPerson(person, rawLedgers, rawPayments)
     },
   })
 }
