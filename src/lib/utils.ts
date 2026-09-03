@@ -23,7 +23,7 @@ export function formatCurrency(amount: number, currency = 'BDT'): string {
 // (including Asia/Dhaka, this app's default).
 const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/
 
-function parseDate(date: string | Date): Date {
+export function parseDate(date: string | Date): Date {
   if (date instanceof Date) return date
   if (DATE_ONLY_RE.test(date)) {
     const [y, m, d] = date.split('-').map(Number)
