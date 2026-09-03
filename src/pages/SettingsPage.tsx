@@ -16,6 +16,7 @@ import { useCategories } from '@/hooks/useCategories'
 import { useBudgets, useUpsertBudget, useDeleteBudget } from '@/hooks/useBudgets'
 import { useExpenses } from '@/hooks/useExpenses'
 import { usePersons } from '@/hooks/useLedger'
+import { useInvestments } from '@/hooks/useInvestments'
 import { useConfirmStore } from '@/stores/confirmStore'
 import { useUIStore } from '@/stores/uiStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -167,8 +168,11 @@ function ExportSection() {
   // Persons with nested ledgers + payments
   const personsQ = usePersons()
   const { data: persons = [] } = personsQ
-  const hasError = transactionsQ.isError || personsQ.isError
-  const retryAll = () => { transactionsQ.refetch(); personsQ.refetch() }
+  // Investments with nested returns + payments
+  const investmentsQ = useInvestments()
+  const { data: investments = [] } = investmentsQ
+  const hasError = transactionsQ.isError || personsQ.isError || investmentsQ.isError
+  const retryAll = () => { transactionsQ.refetch(); personsQ.refetch(); investmentsQ.refetch() }
 
   // Reuses the same range useExpenses() already defaults to internally above —
   // was previously hand-rolled here via `.toISOString().split('T')[0]`, which
@@ -222,7 +226,7 @@ function ExportSection() {
 
         <div className="export-card export-card-full">
           <div className="export-card-title">Full export</div>
-          <div className="export-card-sub">Transactions + Ledger + Persons — all sheets in one Excel file</div>
+          <div className="export-card-sub">Transactions + Ledger + Persons + Investments — all sheets in one Excel file</div>
           <div className="export-card-actions">
             <button
               className="export-btn"
@@ -231,6 +235,7 @@ function ExportSection() {
                 exportPersons,
                 exportLedgers,
                 exportPayments,
+                investments,
                 'fintrack-full-export',
               )}
             >

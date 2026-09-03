@@ -1,5 +1,6 @@
 import type { Transaction } from '@/types/expense.types'
 import type { PersonLedger, LedgerPayment, Person } from '@/types/ledger.types'
+import type { Investment } from '@/types/investment.types'
 
 // xlsx (~400 KB) is dynamically imported inside each function that needs it,
 // not at module scope — this file is imported from SettingsPage, so a
@@ -46,6 +47,7 @@ export async function exportFullExcel(
   persons: Person[],
   ledgers: PersonLedger[],
   payments: LedgerPayment[],
+  investments: Investment[],
   filename = 'fintrack-full-export',
 ) {
   const XLSX = await import('xlsx')
@@ -91,6 +93,8 @@ export async function exportFullExcel(
     'Payment Method': l.payment_method ?? '',
     Account:          l.account ?? '',
     'Settled Date':   l.settled_date ?? '',
+    Notes:            l.notes ?? '',
+    'Doc Link':       l.doc_link ?? '',
   }))
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ledgerRows), 'Ledger Entries')
 
@@ -106,6 +110,48 @@ export async function exportFullExcel(
     Notes:            p.notes ?? '',
   }))
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(paymentRows), 'Ledger Payments')
+
+  // Sheet 6: Investments
+  const investmentRows = investments.map((inv) => ({
+    Name:               inv.name,
+    Category:           inv.category ?? '',
+    Company:            inv.company_name ?? '',
+    'Committed Amount': inv.committed_amount ?? '',
+    'Start Date':       inv.start_date ?? '',
+    'End Date':         inv.end_date ?? '',
+    'Market Value':     inv.market_value ?? '',
+    'Total Returned':   inv.total_returned ?? 0,
+    'Total Paid':       inv.total_paid ?? 0,
+    'ROI %':            inv.roi_percent ?? '',
+    'Profit/Loss':      inv.profit_loss ?? '',
+    'Doc Link':         inv.doc_link ?? '',
+    Notes:              inv.notes ?? '',
+  }))
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(investmentRows), 'Investments')
+
+  // Sheet 7: Investment Returns
+  const investmentById = new Map(investments.map((inv) => [inv.id, inv.name]))
+  const returnRows = investments.flatMap((inv) => inv.returns ?? []).map((r) => ({
+    Investment:       investmentById.get(r.investment_id) ?? '',
+    Amount:           r.amount,
+    Date:             r.return_date,
+    Type:             r.return_type ?? '',
+    'Payment Method': r.payment_method ?? '',
+    Account:          r.account ?? '',
+    Notes:            r.notes ?? '',
+  }))
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(returnRows), 'Investment Returns')
+
+  // Sheet 8: Investment Payments (installments toward committed_amount)
+  const investmentPaymentRows = investments.flatMap((inv) => inv.payments ?? []).map((p) => ({
+    Investment:       investmentById.get(p.investment_id) ?? '',
+    Amount:           p.amount,
+    Date:             p.payment_date,
+    'Payment Method': p.payment_method ?? '',
+    Account:          p.account ?? '',
+    Notes:            p.notes ?? '',
+  }))
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(investmentPaymentRows), 'Investment Payments')
 
   XLSX.writeFile(wb, `${filename}.xlsx`)
 }
