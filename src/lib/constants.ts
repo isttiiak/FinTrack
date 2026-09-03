@@ -125,3 +125,30 @@ export type Currency = (typeof CURRENCIES)[number]
 
 export const LEDGER_STATUSES = ['Pending', 'Partial', 'Settled'] as const
 export type LedgerStatus = (typeof LEDGER_STATUSES)[number]
+
+// ── Groq AI models ───────────────────────────────────────────────────────
+// Groq periodically decommissions free-tier models without much notice —
+// llama-3.1-8b-instant, the app's original default, was shut down 2026-08-16
+// (see TODO.md §1.1). Keeping the active choice in localStorage (via
+// lib/groq.ts's getGroqModel/setGroqModel) rather than hardcoded means the
+// next deprecation is a Settings change, not a code change + redeploy.
+export interface GroqModelOption {
+  id: string
+  label: string
+  description: string
+}
+
+export const GROQ_MODELS: GroqModelOption[] = [
+  {
+    id: 'openai/gpt-oss-20b',
+    label: 'GPT-OSS 20B — fast',
+    description: 'Default. Fast and free-tier friendly — best for quick suggestions, digests, and analysis.',
+  },
+  {
+    id: 'openai/gpt-oss-120b',
+    label: 'GPT-OSS 120B — smarter',
+    description: 'Larger, more capable model — better for Chat and the Goal Planner. Slower and lower free-tier throughput.',
+  },
+]
+
+export const DEFAULT_GROQ_MODEL = GROQ_MODELS[0].id

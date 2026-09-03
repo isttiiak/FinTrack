@@ -27,6 +27,8 @@ import ErrorBanner from '@/components/common/ErrorBanner'
 import { formatCurrency } from '@/lib/utils'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { cn } from '@/lib/utils'
+import { getGroqModel, setGroqModel } from '@/lib/groq'
+import { GROQ_MODELS } from '@/lib/constants'
 
 // ── Budget Limit Row ──────────────────────────────────────────────────────────
 
@@ -451,11 +453,17 @@ function AISection() {
   const [showKey, setShowKey]   = useState(false)
   const [saved, setSaved]       = useState(false)
   const [aiEnabled, setAiEnabled] = useState(() => localStorage.getItem('fintrack_ai_enabled') !== 'false')
+  const [model, setModel]       = useState(() => getGroqModel())
 
   function handleSaveKey() {
     localStorage.setItem('groq_api_key', apiKey.trim())
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
+  }
+
+  function handleModelChange(id: string) {
+    setModel(id)
+    setGroqModel(id)
   }
 
   function toggleAI() {
@@ -524,6 +532,19 @@ function AISection() {
             <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
               Free key at <strong>console.groq.com</strong> → API Keys → Create API key. 14,400 requests/day. Stored in your browser only.
             </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 4 }}>
+              <label className="pf-label">AI model</label>
+              <select className="pf-select" value={model} onChange={(e) => handleModelChange(e.target.value)}>
+                {GROQ_MODELS.map((m) => (
+                  <option key={m.id} value={m.id}>{m.label}</option>
+                ))}
+              </select>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
+                {GROQ_MODELS.find((m) => m.id === model)?.description}
+                {' '}Groq occasionally retires free-tier models — if a feature starts erroring, try switching here.
+              </p>
+            </div>
           </motion.div>
         ) : (
           <motion.div

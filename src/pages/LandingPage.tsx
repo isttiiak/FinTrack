@@ -208,7 +208,7 @@ export default function LandingPage() {
 
           <motion.div className="lp-ai-header" variants={fadeUp}>
             <div className="lp-ai-badge">
-              <Brain size={14} /> Powered by Groq · llama-3.1-8b-instant · Free
+              <Brain size={14} /> Powered by Groq · Free
             </div>
             <h2 className="lp-section-title" style={{ marginBottom: 12 }}>
               Your AI finance analyst

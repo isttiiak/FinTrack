@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, Send, AlertCircle, RefreshCw, Settings } from 'lucide-react'
-import { groqChat, isGroqConfigured } from '@/lib/groq'
+import { groqChat, isGroqConfigured, getGroqModel } from '@/lib/groq'
 import { buildMonthlyContext, buildDebtContext, catBreakdown, monthlyAgg } from '@/lib/aiContext'
+import { GROQ_MODELS } from '@/lib/constants'
 import { useExpenses } from '@/hooks/useExpenses'
 import { useBudgets } from '@/hooks/useBudgets'
 import { usePersons } from '@/hooks/useLedger'
@@ -11,6 +12,17 @@ import { fadeUp } from '@/lib/animations'
 import ErrorBanner from '@/components/common/ErrorBanner'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+function groqModelLabel(id: string): string {
+  return GROQ_MODELS.find((m) => m.id === id)?.label ?? id
+}
+
+// Shown under a result so it's clear which model produced it — see TODO.md §1.2.
+// Captured at request time (not read live), so it stays correct even if the
+// user switches models in Settings while a result is still on screen.
+function ModelFooter({ model }: { model: string }) {
+  return <p className="aih-model-footer">via {groqModelLabel(model)}</p>
+}
+
 function formatResult(text: string) {
   return text.split('\n').filter(Boolean).map((line, i) => {
     const clean = line.replace(/^[•\-\*]\s*/, '')
@@ -40,10 +52,12 @@ function FeatureCard({ icon, title, desc, onRun, children, accent = '#8A968C' }:
   const [result, setResult] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError]   = useState<string | null>(null)
+  const [usedModel, setUsedModel] = useState<string | null>(null)
 
   async function run() {
     setLoading(true); setError(null); setResult(null)
-    try { setResult(await onRun()) }
+    const model = getGroqModel()
+    try { setResult(await onRun()); setUsedModel(model) }
     catch (e: unknown) { setError(e instanceof Error ? e.message : 'Unknown error') }
     finally { setLoading(false) }
   }
@@ -72,6 +86,7 @@ function FeatureCard({ icon, title, desc, onRun, children, accent = '#8A968C' }:
         {result && !loading && (
           <motion.div className="aih-result" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
             {formatResult(result)}
+            {usedModel && <ModelFooter model={usedModel} />}
           </motion.div>
         )}
       </AnimatePresence>
@@ -80,7 +95,7 @@ function FeatureCard({ icon, title, desc, onRun, children, accent = '#8A968C' }:
 }
 
 // ── Chat message type ─────────────────────────────────────────────────────────
-interface Msg { role: 'user' | 'ai'; text: string }
+interface Msg { role: 'user' | 'ai'; text: string; model?: string }
 
 // ── Main hub ──────────────────────────────────────────────────────────────────
 export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
@@ -123,6 +138,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
   const [goalResult, setGoalResult]  = useState<string | null>(null)
   const [goalLoading, setGoalLoading]= useState(false)
   const [goalError, setGoalError]    = useState<string | null>(null)
+  const [goalModel, setGoalModel]    = useState<string | null>(null)
 
   if (!configured) {
     return (
@@ -280,13 +296,14 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
     setChatInput('')
     setMsgs((prev) => [...prev, { role: 'user', text: q }])
     setChatLoading(true)
+    const model = getGroqModel()
     try {
       const answer = await groqChat(
         `You are a personal finance assistant. Answer questions based ONLY on the user's actual financial data provided. Be concise and specific. If data is insufficient, say so.`,
         `User question: ${q}\n\nFinancial data:\n${ctx}`,
         { maxTokens: 400 },
       )
-      setMsgs((prev) => [...prev, { role: 'ai', text: answer }])
+      setMsgs((prev) => [...prev, { role: 'ai', text: answer, model }])
     } catch (e: unknown) {
       setMsgs((prev) => [...prev, { role: 'ai', text: `Error: ${e instanceof Error ? e.message : 'Unknown error'}` }])
     } finally {
@@ -297,9 +314,10 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
   // ── Goal planner runner ─────────────────────────────────────────────────────
   async function handleRunGoal() {
     setGoalLoading(true); setGoalError(null); setGoalResult(null)
+    const model = getGroqModel()
     try {
       const result = await runGoalPlan()
-      if (result) setGoalResult(result)
+      if (result) { setGoalResult(result); setGoalModel(model) }
     } catch (e: unknown) {
       setGoalError(e instanceof Error ? e.message : 'Error')
     } finally {
@@ -315,7 +333,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
         <div className="aih-header-left">
           <Sparkles size={16} style={{ color: '#3E9B72' }} />
           <span className="aih-header-title">AI Insights</span>
-          <span className="aih-provider-badge">Groq · llama-3.1-8b-instant</span>
+          <span className="aih-provider-badge">Groq · {groqModelLabel(getGroqModel())}</span>
         </div>
         <span className="aih-header-sub">Powered by Groq free tier · Click any feature to analyze</span>
       </div>
@@ -389,7 +407,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
         </div>
         <AnimatePresence>
           {goalError && <motion.div className="aih-error" initial={{ opacity: 0 }} animate={{ opacity: 1 }}><AlertCircle size={13} /> {goalError}</motion.div>}
-          {goalResult && <motion.div className="aih-result" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>{formatResult(goalResult)}</motion.div>}
+          {goalResult && <motion.div className="aih-result" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>{formatResult(goalResult)}{goalModel && <ModelFooter model={goalModel} />}</motion.div>}
         </AnimatePresence>
       </div>
 
@@ -407,7 +425,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
           <div className="aih-messages">
             {msgs.map((m, i) => (
               <div key={i} className={`aih-msg ${m.role === 'user' ? 'aih-msg-user' : 'aih-msg-ai'}`}>
-                {m.role === 'ai' ? formatResult(m.text) : m.text}
+                {m.role === 'ai' ? <>{formatResult(m.text)}{m.model && <ModelFooter model={m.model} />}</> : m.text}
               </div>
             ))}
             {chatLoading && (
@@ -511,6 +529,7 @@ const STYLES = `
 
   .aih-error { display: flex; align-items: flex-start; gap: 7px; padding: 10px 12px; margin-top: 10px; background: rgba(194, 91, 85,0.08); border: 1px solid rgba(194, 91, 85,0.2); border-radius: 8px; font-size: 12px; color: var(--accent-red); }
   .aih-result { padding: 10px 0 0; margin-top: 4px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 2px; }
+  .aih-model-footer { font-size: 10px; color: var(--text-muted); margin: 6px 0 0; }
 
   /* Goal planner */
   .aih-goal-inputs { display: flex; gap: 10px; flex-wrap: wrap; }
