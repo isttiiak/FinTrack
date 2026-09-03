@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { Transaction, Category } from '@/types/expense.types'
 import type { Person, PersonLedger, LedgerPayment } from '@/types/ledger.types'
 import type { Investment, InvestmentReturn, InvestmentPayment } from '@/types/investment.types'
+import type { RecurringRule } from '@/types/recurring.types'
 import { toISODateString } from '@/lib/utils'
 
 interface DemoState {
@@ -14,6 +15,7 @@ interface DemoState {
   investments: Investment[]
   investmentReturns: InvestmentReturn[]
   investmentPayments: InvestmentPayment[]
+  recurringRules: RecurringRule[]
   enterDemo: () => void
   exitDemo: () => void
   addTransaction: (txn: Transaction) => void
@@ -36,6 +38,7 @@ function buildDemoData() {
     { id: 'c5', user_id: 'demo', name: 'Shopping',    main_group: 'Shopping',  type: 'Expense', color_hex: '#A855F7', is_default: true, created_at: '' },
     { id: 'c6', user_id: 'demo', name: 'Medical',     main_group: 'Medical',   type: 'Expense', color_hex: '#EF4444', is_default: true, created_at: '' },
     { id: 'c7', user_id: 'demo', name: 'Uber/Pathao', main_group: 'Transport', type: 'Expense', color_hex: '#06B6D4', is_default: true, created_at: '' },
+    { id: 'c8', user_id: 'demo', name: 'Phone Bill',  main_group: 'Utility',   type: 'Expense', color_hex: '#0EA5E9', is_default: true, created_at: '' },
   ]
 
   const rawTransactions = [
@@ -103,7 +106,34 @@ function buildDemoData() {
     { id: 'ir5', investment_id: 'inv2', user_id: 'demo', amount: 8000,  return_date: daysAgo(30),  return_type: 'Profit', payment_method: 'Bank Transfer', account: 'Prime Bank', notes: 'Partial share sale', created_at: '' },
   ]
 
-  return { transactions, categories, persons, ledgers, payments, investments, investmentReturns, investmentPayments }
+  const recurringRules: RecurringRule[] = [
+    {
+      id: 'r1', user_id: 'demo', category_id: 'c4', type: 'Income', amount: 45000,
+      description: 'Monthly salary', cadence: 'Monthly',
+      start_date: daysAgo(95), end_date: null,
+      payment_method: 'Bank Transfer', account: 'BRAC Bank Savings',
+      is_active: true, last_materialized_date: daysAgo(35), created_at: '',
+      category: categories.find((c) => c.id === 'c4') ?? null,
+    },
+    {
+      id: 'r2', user_id: 'demo', category_id: 'c8', type: 'Expense', amount: 599,
+      description: 'Phone bill', cadence: 'Monthly',
+      start_date: daysAgo(65), end_date: null,
+      payment_method: 'MFS - bKash', account: 'bKash',
+      is_active: true, last_materialized_date: daysAgo(35), created_at: '',
+      category: categories.find((c) => c.id === 'c8') ?? null,
+    },
+    {
+      id: 'r3', user_id: 'demo', category_id: 'c1', type: 'Expense', amount: 800,
+      description: 'Weekly groceries', cadence: 'Weekly',
+      start_date: daysAgo(30), end_date: null,
+      payment_method: 'Cash', account: 'Cash',
+      is_active: true, last_materialized_date: daysAgo(2), created_at: '',
+      category: categories.find((c) => c.id === 'c1') ?? null,
+    },
+  ]
+
+  return { transactions, categories, persons, ledgers, payments, investments, investmentReturns, investmentPayments, recurringRules }
 }
 
 export const useDemoStore = create<DemoState>((set) => ({
@@ -116,6 +146,7 @@ export const useDemoStore = create<DemoState>((set) => ({
   investments: [],
   investmentReturns: [],
   investmentPayments: [],
+  recurringRules: [],
 
   enterDemo: () => {
     const data = buildDemoData()
@@ -132,6 +163,7 @@ export const useDemoStore = create<DemoState>((set) => ({
     investments: [],
     investmentReturns: [],
     investmentPayments: [],
+    recurringRules: [],
   }),
 
   // Demo mode is otherwise entirely read-only (every other mutation is
