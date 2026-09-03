@@ -279,6 +279,7 @@ function ImportSection() {
   const [error, setError] = useState<string | null>(null)
   const [importing, setImporting] = useState(false)
   const [imported, setImported] = useState<number | null>(null)
+  const [importProgress, setImportProgress] = useState<{ done: number; total: number } | null>(null)
 
   function downloadTemplate() {
     const blob = new Blob([TEMPLATE_CSV], { type: 'text/csv' })
@@ -326,37 +327,79 @@ function ImportSection() {
           allCategories.forEach((c) => { catMap[c.name.toLowerCase()] = c.id })
           const othersId = allCategories.find((c) => c.name === 'Others')?.id ?? null
 
-          const rowsWithAmount = rows.map((r) => ({
-            user_id: userId,
-            txn_date: r['Date']?.trim() ?? '',
-            type: r['Type']?.trim() === 'Income' ? 'Income' : 'Expense',
-            amount: parseFloat(r['Amount']?.replace(/,/g, '') ?? '0') || 0,
-            category_id: catMap[r['Category']?.trim().toLowerCase() ?? ''] ?? othersId,
-            description: r['Description']?.trim() || null,
-            payment_method: r['Payment Method']?.trim() || null,
-            account: r['Account']?.trim() || null,
-          })).filter((t) => t.txn_date && t.amount > 0)
+          const parsed = rows.map((r) => {
+            const txn_date = r['Date']?.trim() ?? ''
+            const amount = parseFloat(r['Amount']?.replace(/,/g, '') ?? '0') || 0
+            return {
+              validDate: isValidIsoDate(txn_date),
+              validAmount: amount > 0,
+              txn: {
+                user_id: userId,
+                txn_date,
+                // Case-insensitive — a lowercase "income" in the source file
+                // shouldn't silently file as an Expense.
+                type: r['Type']?.trim().toLowerCase() === 'income' ? 'Income' : 'Expense',
+                amount,
+                category_id: catMap[r['Category']?.trim().toLowerCase() ?? ''] ?? othersId,
+                description: r['Description']?.trim() || null,
+                payment_method: r['Payment Method']?.trim() || null,
+                account: r['Account']?.trim() || null,
+              },
+            }
+          })
 
-          const txns = rowsWithAmount.filter((t) => isValidIsoDate(t.txn_date))
-          const skippedDates = rowsWithAmount.length - txns.length
+          const skippedDates = parsed.filter((p) => !p.validDate).length
+          const skippedAmounts = parsed.filter((p) => p.validDate && !p.validAmount).length
+          const txns = parsed.filter((p) => p.validDate && p.validAmount).map((p) => p.txn)
 
           if (txns.length === 0) {
-            setError(skippedDates > 0 ? 'No valid rows — all dates must be in YYYY-MM-DD format.' : 'No valid rows to import.')
+            setError(
+              skippedDates > 0 ? 'No valid rows — all dates must be in YYYY-MM-DD format.'
+              : skippedAmounts > 0 ? 'No valid rows — amounts must be greater than zero.'
+              : 'No valid rows to import.',
+            )
             setImporting(false)
             return
           }
 
-          const { error: dbErr } = await supabase.from('transactions').insert(txns)
-          if (dbErr) throw dbErr
+          // Batch so a large file can't time out or get rejected as one huge
+          // insert — and so a mid-file failure still keeps whatever landed
+          // before it instead of losing the whole import.
+          const CHUNK_SIZE = 500
+          let insertedCount = 0
+          let dbErrorMessage: string | null = null
+          for (let i = 0; i < txns.length; i += CHUNK_SIZE) {
+            const chunk = txns.slice(i, i + CHUNK_SIZE)
+            setImportProgress({ done: insertedCount, total: txns.length })
+            const { error: dbErr } = await supabase.from('transactions').insert(chunk)
+            if (dbErr) { dbErrorMessage = dbErr.message; break }
+            insertedCount += chunk.length
+          }
+          setImportProgress(null)
 
-          await qc.invalidateQueries({ queryKey: ['expenses'] })
-          setImported(txns.length)
-          setError(skippedDates > 0 ? `${skippedDates} row${skippedDates !== 1 ? 's' : ''} skipped — invalid date format (use YYYY-MM-DD).` : null)
-          setPreview([])
-          setFileName(null)
-          if (fileRef.current) fileRef.current.value = ''
-        } catch {
-          setError('Import failed. Check your data and try again.')
+          if (insertedCount > 0) {
+            await qc.invalidateQueries({ queryKey: ['expenses'] })
+            setImported(insertedCount)
+          }
+
+          const messages: string[] = []
+          if (dbErrorMessage) {
+            messages.push(insertedCount > 0
+              ? `Import stopped after ${insertedCount} of ${txns.length} rows: ${dbErrorMessage}`
+              : `Import failed: ${dbErrorMessage}`)
+          }
+          if (skippedDates > 0) messages.push(`${skippedDates} row${skippedDates !== 1 ? 's' : ''} skipped — invalid date format (use YYYY-MM-DD).`)
+          if (skippedAmounts > 0) messages.push(`${skippedAmounts} row${skippedAmounts !== 1 ? 's' : ''} skipped — amount must be greater than zero.`)
+          setError(messages.length > 0 ? messages.join(' ') : null)
+
+          if (!dbErrorMessage) {
+            setPreview([])
+            setFileName(null)
+            if (fileRef.current) fileRef.current.value = ''
+          }
+        } catch (err) {
+          setImportProgress(null)
+          setError(err instanceof Error ? `Import failed: ${err.message}` : 'Import failed. Check your data and try again.')
         } finally {
           setImporting(false)
         }
@@ -441,7 +484,9 @@ function ImportSection() {
                 onClick={handleImport}
                 disabled={importing}
               >
-                {importing ? <span className="auth-spinner" /> : <><Upload size={14} /> Import transactions</>}
+                {importing
+                  ? <><span className="auth-spinner" /> {importProgress ? `${importProgress.done} / ${importProgress.total}` : null}</>
+                  : <><Upload size={14} /> Import transactions</>}
               </button>
             </div>
           )}
