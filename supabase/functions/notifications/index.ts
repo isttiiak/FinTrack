@@ -29,6 +29,24 @@ function todayISO(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function timingSafeEqual(a: string, b: string): boolean {
+  const aBytes = new TextEncoder().encode(a)
+  const bBytes = new TextEncoder().encode(b)
+  if (aBytes.length !== bBytes.length) return false
+  let diff = 0
+  for (let i = 0; i < aBytes.length; i++) diff |= aBytes[i] ^ bBytes[i]
+  return diff === 0
+}
+
 async function sendEmail(to: string, subject: string, html: string) {
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -82,13 +100,14 @@ async function runBudgetAlerts() {
       if (existing) continue
 
       const categoryName = (b.category as unknown as { name: string } | null)?.name ?? 'a category'
+      const categoryNameHtml = escapeHtml(categoryName)
       // A failed send for one user (e.g. Resend sandbox restrictions, a bad
       // address) must not abort the loop for everyone else.
       try {
         await sendEmail(
           user.email,
           `Budget exceeded: ${categoryName}`,
-          `<p>You've spent <strong>${formatBDT(spent)}</strong> on <strong>${categoryName}</strong> this month — over your ${formatBDT(b.monthly_limit)} budget.</p>
+          `<p>You've spent <strong>${formatBDT(spent)}</strong> on <strong>${categoryNameHtml}</strong> this month — over your ${formatBDT(b.monthly_limit)} budget.</p>
            <p>— FinTrack</p>`,
         )
         await supabase.from('budget_alert_log').insert({ user_id: user.id, category_id: b.category_id, alert_month: currentMonth })
@@ -127,7 +146,7 @@ async function runWeeklyDigest() {
       byCategory.set(name, (byCategory.get(name) ?? 0) + Number(t.amount))
     }
     const top = [...byCategory.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5)
-    const topHtml = top.map(([name, amt]) => `<li>${name}: ${formatBDT(amt)}</li>`).join('')
+    const topHtml = top.map(([name, amt]) => `<li>${escapeHtml(name)}: ${formatBDT(amt)}</li>`).join('')
 
     try {
       await sendEmail(
@@ -176,7 +195,7 @@ async function runMonthlyDigest() {
       byCategory.set(name, (byCategory.get(name) ?? 0) + Number(t.amount))
     }
     const top = [...byCategory.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8)
-    const topHtml = top.map(([name, amt]) => `<li>${name}: ${formatBDT(amt)}</li>`).join('')
+    const topHtml = top.map(([name, amt]) => `<li>${escapeHtml(name)}: ${formatBDT(amt)}</li>`).join('')
 
     try {
       await sendEmail(
@@ -197,8 +216,8 @@ async function runMonthlyDigest() {
 }
 
 Deno.serve(async (req) => {
-  const authHeader = req.headers.get('authorization')
-  if (authHeader !== `Bearer ${CRON_SECRET}`) {
+  const authHeader = req.headers.get('authorization') ?? ''
+  if (!timingSafeEqual(authHeader, `Bearer ${CRON_SECRET}`)) {
     return new Response('Unauthorized', { status: 401 })
   }
 
