@@ -1,8 +1,13 @@
-import * as XLSX from 'xlsx'
 import type { Transaction } from '@/types/expense.types'
 import type { PersonLedger, LedgerPayment, Person } from '@/types/ledger.types'
 
-export function exportTransactionsExcel(transactions: Transaction[], filename = 'fintrack-expenses') {
+// xlsx (~400 KB) is dynamically imported inside each function that needs it,
+// not at module scope — this file is imported from SettingsPage, so a
+// top-level `import * as XLSX` would pull the whole library into the
+// initial bundle even for users who never click an Excel export button.
+// See TODO.md §4.1.
+export async function exportTransactionsExcel(transactions: Transaction[], filename = 'fintrack-expenses') {
+  const XLSX = await import('xlsx')
   const rows = transactions.map((t) => ({
     Date:           t.txn_date,
     Type:           t.type,
@@ -36,13 +41,14 @@ export function exportTransactionsCSV(transactions: Transaction[], filename = 'f
   downloadText(csv, `${filename}.csv`, 'text/csv')
 }
 
-export function exportFullExcel(
+export async function exportFullExcel(
   transactions: Transaction[],
   persons: Person[],
   ledgers: PersonLedger[],
   payments: LedgerPayment[],
   filename = 'fintrack-full-export',
 ) {
+  const XLSX = await import('xlsx')
   const wb = XLSX.utils.book_new()
 
   // Sheet 1: Transactions

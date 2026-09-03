@@ -4,6 +4,7 @@ import {
   createRouter,
   createRoute,
   createRootRoute,
+  lazyRouteComponent,
   Outlet,
   redirect,
 } from '@tanstack/react-router'
@@ -16,26 +17,32 @@ import { Logo } from '@/components/common/Logo'
 import ToastContainer from '@/components/common/ToastContainer'
 import type { UserProfile } from '@/types/database.types'
 
-// Pages
-import LoginPage from '@/pages/auth/LoginPage'
-import SignupPage from '@/pages/auth/SignupPage'
-import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage'
-import ResetPasswordPage from '@/pages/auth/ResetPasswordPage'
-import DashboardPage from '@/pages/DashboardPage'
-import ExpensesPage from '@/pages/ExpensesPage'
-import LedgerPage from '@/pages/LedgerPage'
-import PersonDetailPage from '@/pages/PersonDetailPage'
-import PeoplePage from '@/pages/PeoplePage'
-import InvestmentsPage from '@/pages/InvestmentsPage'
-import InvestmentDetailPage from '@/pages/InvestmentDetailPage'
-import AnalyticsPage from '@/pages/AnalyticsPage'
-import SettingsPage from '@/pages/SettingsPage'
-import DataSettingsPage from '@/pages/DataSettingsPage'
-import ProfilePage from '@/pages/ProfilePage'
-import LandingPage from '@/pages/LandingPage'
+// Pages — code-split per route via lazyRouteComponent (TanStack Router's own
+// wrapper around React.lazy/dynamic import; it integrates with the router's
+// pending state instead of needing a hand-wrapped <Suspense> per route). See
+// TODO.md §4.1 — this + the manualChunks split in vite.config.ts is what
+// gets recharts/xlsx and each page's own code out of the initial bundle.
+const LoginPage            = lazyRouteComponent(() => import('@/pages/auth/LoginPage'))
+const SignupPage           = lazyRouteComponent(() => import('@/pages/auth/SignupPage'))
+const ForgotPasswordPage   = lazyRouteComponent(() => import('@/pages/auth/ForgotPasswordPage'))
+const ResetPasswordPage    = lazyRouteComponent(() => import('@/pages/auth/ResetPasswordPage'))
+const DashboardPage        = lazyRouteComponent(() => import('@/pages/DashboardPage'))
+const ExpensesPage         = lazyRouteComponent(() => import('@/pages/ExpensesPage'))
+const LedgerPage           = lazyRouteComponent(() => import('@/pages/LedgerPage'))
+const PersonDetailPage     = lazyRouteComponent(() => import('@/pages/PersonDetailPage'))
+const PeoplePage           = lazyRouteComponent(() => import('@/pages/PeoplePage'))
+const InvestmentsPage      = lazyRouteComponent(() => import('@/pages/InvestmentsPage'))
+const InvestmentDetailPage = lazyRouteComponent(() => import('@/pages/InvestmentDetailPage'))
+const AnalyticsPage        = lazyRouteComponent(() => import('@/pages/AnalyticsPage'))
+const SettingsPage         = lazyRouteComponent(() => import('@/pages/SettingsPage'))
+const DataSettingsPage     = lazyRouteComponent(() => import('@/pages/DataSettingsPage'))
+const ProfilePage          = lazyRouteComponent(() => import('@/pages/ProfilePage'))
+const LandingPage          = lazyRouteComponent(() => import('@/pages/LandingPage'))
 
-// Layout
+// Layout — not split: AppShell is needed immediately by every protected
+// route, so lazy-loading it would only add a waterfall hop with no payoff.
 import AppShell from '@/components/layout/AppShell'
+import RoutePendingFallback from '@/components/common/RoutePendingFallback'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -240,7 +247,7 @@ const routeTree = rootRoute.addChildren([
   ]),
 ])
 
-const router = createRouter({ routeTree })
+const router = createRouter({ routeTree, defaultPendingComponent: RoutePendingFallback })
 
 declare module '@tanstack/react-router' {
   interface Register {

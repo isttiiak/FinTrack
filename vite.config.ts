@@ -42,4 +42,20 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Split the two heaviest, broadly-shared deps into their own vendor
+        // chunks. framer-motion is imported by ~48 files, so without this it
+        // gets pulled into the main shared chunk regardless of route-level
+        // splitting; recharts is only used by AnalyticsPage but is large
+        // enough (charting lib) to deserve its own cacheable chunk rather
+        // than being inlined into that page's chunk. See TODO.md §4.1.
+        manualChunks(id) {
+          if (id.includes('/node_modules/recharts/')) return 'recharts'
+          if (id.includes('/node_modules/framer-motion/')) return 'framer-motion'
+        },
+      },
+    },
+  },
 })
