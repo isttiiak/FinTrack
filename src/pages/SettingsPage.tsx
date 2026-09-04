@@ -9,7 +9,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import {
   DollarSign, Plus, Download, AlertTriangle,
   ChevronDown, Check, X, Upload, Sparkles, Eye, EyeOff,
-  Power, Trash2, Lock, Unlock, Bell, Loader2, CheckCircle2, XCircle, Camera,
+  Power, Trash2, Lock, Unlock, Bell,
 } from 'lucide-react'
 import DeleteButton from '@/components/common/DeleteButton'
 import { useCategories } from '@/hooks/useCategories'
@@ -28,13 +28,8 @@ import ErrorBanner from '@/components/common/ErrorBanner'
 import { formatCurrency, getActiveCurrencySymbol } from '@/lib/utils'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { cn } from '@/lib/utils'
-import {
-  getActiveProvider, setActiveProvider, getProviderKey, setProviderKey,
-  getProviderModel, setProviderModel, testProviderConnection,
-  getOcrModel, setOcrModel,
-} from '@/lib/aiProvider'
-import { AI_PROVIDERS, OCR_MODELS } from '@/lib/constants'
-import type { AIProvider } from '@/lib/constants'
+import { getGroqModel, setGroqModel } from '@/lib/groq'
+import { GROQ_MODELS } from '@/lib/constants'
 
 // ── Budget Limit Row ──────────────────────────────────────────────────────────
 
@@ -574,60 +569,24 @@ function ImportSection() {
   )
 }
 
-// ── AI Analytics Section (multi-provider: Groq + OpenRouter) ────────────────
-
-type TestStatus = 'idle' | 'testing' | 'ok' | 'error'
+// ── AI Analytics Section (Groq only) ─────────────────────────────────────────
 
 function AISection() {
-  const [provider, setProvider] = useState<AIProvider>(() => getActiveProvider())
-  const [apiKey, setApiKey]     = useState(() => getProviderKey(provider) ?? '')
+  const [apiKey, setApiKey]     = useState(() => localStorage.getItem('groq_api_key') ?? '')
   const [showKey, setShowKey]   = useState(false)
   const [saved, setSaved]       = useState(false)
   const [aiEnabled, setAiEnabled] = useState(() => localStorage.getItem('fintrack_ai_enabled') !== 'false')
-  const [model, setModel]       = useState(() => getProviderModel(provider))
-  const [testStatus, setTestStatus] = useState<TestStatus>('idle')
-  const [testError, setTestError]   = useState<string | null>(null)
-
-  const [ocrKey, setOcrKey]     = useState(() => getProviderKey('openrouter') ?? '')
-  const [showOcrKey, setShowOcrKey] = useState(false)
-  const [ocrSaved, setOcrSaved] = useState(false)
-  const [ocrModel, setOcrModelState] = useState(() => getOcrModel())
-
-  const providerConfig = AI_PROVIDERS.find((p) => p.id === provider)!
-
-  function handleProviderChange(next: AIProvider) {
-    setProvider(next)
-    setActiveProvider(next)
-    setApiKey(getProviderKey(next) ?? '')
-    setModel(getProviderModel(next))
-    setTestStatus('idle')
-    setTestError(null)
-  }
+  const [model, setModel]       = useState(() => getGroqModel())
 
   function handleSaveKey() {
-    setProviderKey(provider, apiKey)
+    localStorage.setItem('groq_api_key', apiKey.trim())
     setSaved(true)
-    setTestStatus('idle')
     setTimeout(() => setSaved(false), 2500)
   }
 
   function handleModelChange(id: string) {
     setModel(id)
-    setProviderModel(provider, id)
-    setTestStatus('idle')
-  }
-
-  async function handleTestConnection() {
-    setProviderKey(provider, apiKey) // test against whatever's currently typed, not just the last save
-    setTestStatus('testing')
-    setTestError(null)
-    const result = await testProviderConnection(provider)
-    if (result.ok) {
-      setTestStatus('ok')
-    } else {
-      setTestStatus('error')
-      setTestError(result.error)
-    }
+    setGroqModel(id)
   }
 
   function toggleAI() {
@@ -636,23 +595,7 @@ function AISection() {
     localStorage.setItem('fintrack_ai_enabled', String(next))
   }
 
-  function handleSaveOcrKey() {
-    setProviderKey('openrouter', ocrKey)
-    setOcrSaved(true)
-    setTimeout(() => setOcrSaved(false), 2500)
-  }
-
-  function handleOcrModelChange(id: string) {
-    setOcrModelState(id)
-    setOcrModel(id)
-  }
-
   const configured = !!apiKey.trim()
-  // Receipt scanning always uses OpenRouter — if that's also the active
-  // text-chat provider, its key field above already covers it, so the OCR
-  // section only needs its own key input when OpenRouter isn't selected.
-  const ocrSharesKeyField = provider === 'openrouter'
-  const ocrConfigured = ocrSharesKeyField ? configured : !!ocrKey.trim()
 
   return (
     <section className={`settings-section ai-section ${aiEnabled ? 'ai-section-on' : 'ai-section-off'}`}>
@@ -660,8 +603,7 @@ function AISection() {
         <div style={{ flex: 1 }}>
           <h2 className="settings-section-title"><Sparkles size={16} /> AI Insights</h2>
           <p className="settings-section-desc">
-            Powered by <strong style={{ color: 'var(--accent-teal)' }}>Groq</strong> or{' '}
-            <strong style={{ color: 'var(--accent-teal)' }}>OpenRouter</strong> — bring your own free-tier key.
+            Powered by <strong style={{ color: 'var(--accent-teal)' }}>Groq</strong> — free tier, no credit card.
             Smart analysis, anomaly detection, goal planning, and chat on the Analytics page.
           </p>
         </div>
@@ -681,17 +623,8 @@ function AISection() {
             transition={{ duration: 0.2 }}
             style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
           >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-              <label className="pf-label">AI provider</label>
-              <select className="pf-select" value={provider} onChange={(e) => handleProviderChange(e.target.value as AIProvider)}>
-                {AI_PROVIDERS.map((p) => (
-                  <option key={p.id} value={p.id}>{p.label}</option>
-                ))}
-              </select>
-            </div>
-
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <label className="pf-label">{providerConfig.label} API Key</label>
+              <label className="pf-label">Groq API Key</label>
               {configured && (
                 <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: 'rgba(79, 169, 129,0.12)', color: 'var(--accent-teal)', fontWeight: 600 }}>
                   ✓ Connected
@@ -703,7 +636,7 @@ function AISection() {
                 <input
                   type={showKey ? 'text' : 'password'}
                   className="pf-input"
-                  placeholder={providerConfig.keyPlaceholder}
+                  placeholder="gsk_…"
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
                   style={{ paddingRight: 40 }}
@@ -718,85 +651,21 @@ function AISection() {
                 onClick={handleSaveKey} disabled={!apiKey.trim()}>
                 {saved ? <><Check size={14} /> Saved!</> : 'Save key'}
               </button>
-              <button type="button" className="btn-ghost"
-                style={{ padding: '9px 16px', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}
-                onClick={handleTestConnection} disabled={!apiKey.trim() || testStatus === 'testing'}>
-                {testStatus === 'testing' ? <Loader2 size={14} className="ai-spin" />
-                  : testStatus === 'ok' ? <CheckCircle2 size={14} style={{ color: 'var(--accent-teal)' }} />
-                  : testStatus === 'error' ? <XCircle size={14} style={{ color: 'var(--accent-red)' }} />
-                  : null}
-                Test connection
-              </button>
             </div>
-            {testStatus === 'ok' && (
-              <p style={{ fontSize: 12, color: 'var(--accent-teal)', margin: 0 }}>Connected — {providerConfig.label} responded.</p>
-            )}
-            {testStatus === 'error' && testError && (
-              <p style={{ fontSize: 12, color: 'var(--accent-red)', margin: 0 }}>{testError}</p>
-            )}
             <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-              {providerConfig.keyHelp} Stored in your browser only.
+              Free key at <strong>console.groq.com</strong> → API Keys → Create API key. 14,400 requests/day. Stored in your browser only.
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 4 }}>
               <label className="pf-label">AI model</label>
               <select className="pf-select" value={model} onChange={(e) => handleModelChange(e.target.value)}>
-                {providerConfig.models.map((m) => (
+                {GROQ_MODELS.map((m) => (
                   <option key={m.id} value={m.id}>{m.label}</option>
                 ))}
               </select>
               <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-                {providerConfig.models.find((m) => m.id === model)?.description}
-                {' '}Free-tier models occasionally get retired — if a feature starts erroring, try switching here or switch provider above.
-              </p>
-            </div>
-
-            {/* Receipt scanning (OCR) — always OpenRouter, regardless of the active text provider above */}
-            <div style={{ borderTop: '1px solid var(--border)', marginTop: 6, paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <label className="pf-label"><Camera size={13} style={{ verticalAlign: -2, marginRight: 4 }} />Receipt scanning (OCR)</label>
-                {ocrConfigured && (
-                  <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: 'rgba(79, 169, 129,0.12)', color: 'var(--accent-teal)', fontWeight: 600 }}>
-                    ✓ Connected
-                  </span>
-                )}
-              </div>
-              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-                Scan a receipt photo to pre-fill an expense. Always uses OpenRouter's vision models — Groq's free tier is text-only.
-                Unlike the chat features above, this isn't free (a small per-scan cost billed to your OpenRouter key).
-              </p>
-
-              {!ocrSharesKeyField && (
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
-                    <input
-                      type={showOcrKey ? 'text' : 'password'}
-                      className="pf-input"
-                      placeholder="sk-or-…"
-                      value={ocrKey}
-                      onChange={(e) => setOcrKey(e.target.value)}
-                      style={{ paddingRight: 40 }}
-                    />
-                    <button type="button" onClick={() => setShowOcrKey((v) => !v)}
-                      style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', padding: 0 }}>
-                      {showOcrKey ? <EyeOff size={15} /> : <Eye size={15} />}
-                    </button>
-                  </div>
-                  <button className="btn-primary"
-                    style={{ padding: '9px 16px', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}
-                    onClick={handleSaveOcrKey} disabled={!ocrKey.trim()}>
-                    {ocrSaved ? <><Check size={14} /> Saved!</> : 'Save key'}
-                  </button>
-                </div>
-              )}
-
-              <select className="pf-select" value={ocrModel} onChange={(e) => handleOcrModelChange(e.target.value)}>
-                {OCR_MODELS.map((m) => (
-                  <option key={m.id} value={m.id}>{m.label}</option>
-                ))}
-              </select>
-              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-                {OCR_MODELS.find((m) => m.id === ocrModel)?.description}
+                {GROQ_MODELS.find((m) => m.id === model)?.description}
+                {' '}Groq occasionally retires free-tier models — if a feature starts erroring, try switching here.
               </p>
             </div>
           </motion.div>
@@ -810,7 +679,7 @@ function AISection() {
             style={{ padding: '16px', borderRadius: 10, background: 'var(--bg-card)', border: '1px solid var(--border)', textAlign: 'center' }}
           >
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-              Turn on AI Insights to access smart spending analysis, receipt scanning, and the chat assistant.
+              Turn on AI Insights to access smart spending analysis and the chat assistant on the Analytics page.
             </p>
           </motion.div>
         )}
@@ -1269,7 +1138,6 @@ const settingsStyles = `
     0%, 100% { box-shadow: 0 0 12px rgba(79, 169, 129,0.4); }
     50%       { box-shadow: 0 0 24px rgba(62, 155, 114,0.7); }
   }
-  .ai-spin { animation: spin 0.8s linear infinite; }
 
   /* ── Danger zone ── */
   .settings-divider {

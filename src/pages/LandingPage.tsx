@@ -59,7 +59,7 @@ const AI_FEATURES = [
 const STEPS = [
   { num: '01', title: 'Create your account', desc: 'Sign up with email or Google. Your categories, budgets, and defaults are created automatically.' },
   { num: '02', title: 'Log your first transaction', desc: 'Enter an amount, pick a category — or let AI suggest one from your description. Done in 5 seconds.' },
-  { num: '03', title: 'Let AI do the heavy lifting', desc: 'Add your free Groq or OpenRouter key in Settings and get anomaly alerts, spending digests, and a chat assistant.' },
+  { num: '03', title: 'Let AI do the heavy lifting', desc: 'Add your free Groq key in Settings and get anomaly alerts, spending digests, and a chat assistant.' },
 ]
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -208,13 +208,13 @@ export default function LandingPage() {
 
           <motion.div className="lp-ai-header" variants={fadeUp}>
             <div className="lp-ai-badge">
-              <Brain size={14} /> Powered by Groq or OpenRouter · Free
+              <Brain size={14} /> Powered by Groq · Free
             </div>
             <h2 className="lp-section-title" style={{ marginBottom: 12 }}>
               Your AI finance analyst
             </h2>
             <p className="lp-section-sub" style={{ marginBottom: 0 }}>
-              Add your free Groq or OpenRouter API key (no credit card) and unlock 10 AI features across the app, plus receipt scanning.
+              Add your free Groq API key (console.groq.com, no credit card) and unlock 10 AI features across the app.
             </p>
           </motion.div>
 
@@ -232,7 +232,7 @@ export default function LandingPage() {
 
           <motion.div variants={fadeUp} style={{ textAlign: 'center', marginTop: 32 }}>
             <span className="lp-ai-cta-note">
-              <MessageSquare size={13} /> All AI runs directly from your browser to your chosen provider — no server, no data shared with us.
+              <MessageSquare size={13} /> All AI runs directly from your browser to Groq — no server, no data shared with us.
             </span>
           </motion.div>
 
@@ -270,7 +270,7 @@ export default function LandingPage() {
             <p className="lp-final-sub">
               {isLoggedIn
                 ? "You're all set — jump back into your dashboard."
-                : 'Free to use. Free to self-host. Free AI with your own Groq or OpenRouter key. Your data stays in your own database.'}
+                : 'Free to use. Free to self-host. Free AI with your own Groq key. Your data stays in your own database.'}
             </p>
             <div className="lp-cta-row">
               {isLoggedIn ? (
