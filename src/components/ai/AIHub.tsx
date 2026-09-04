@@ -23,19 +23,49 @@ function ModelFooter({ model }: { model: string }) {
   return <p className="aih-model-footer">via {groqModelLabel(model)}</p>
 }
 
+// Groq's responses use standard markdown for emphasis (**bold**, _italic_,
+// `code`) even though results render as plain text, not through a markdown
+// library — this turns that into real inline elements instead of leaving
+// literal asterisks/underscores/backticks on screen. Regex-based on purpose
+// (matches Groq's actual output style; a full markdown parser is overkill
+// for it) — see TODO.md §1.4.
+function renderInline(text: string): React.ReactNode {
+  const pattern = /(\*\*.+?\*\*|__.+?__|`.+?`|\*[^*\n]+?\*|(?<!\w)_[^_\n]+?_(?!\w))/g
+  return text.split(pattern).filter(Boolean).map((part, i) => {
+    if (/^\*\*.+\*\*$/.test(part) || /^__.+__$/.test(part)) return <strong key={i}>{part.slice(2, -2)}</strong>
+    if (/^`.+`$/.test(part)) return <code key={i} className="aih-inline-code">{part.slice(1, -1)}</code>
+    if (/^\*[^*]+\*$/.test(part) || /^_[^_]+_$/.test(part)) return <em key={i}>{part.slice(1, -1)}</em>
+    return part
+  })
+}
+
 function formatResult(text: string) {
   return text.split('\n').filter(Boolean).map((line, i) => {
-    const clean = line.replace(/^[•\-*]\s*/, '')
-    const isBullet = /^[•\-*]/.test(line) || /^\d+\./.test(line)
-    const isHeader = /^#{1,3}\s/.test(line) || (line.endsWith(':') && line.length < 60 && !line.startsWith(' '))
-    if (isHeader) return <p key={i} style={{ fontWeight: 700, color: 'var(--text-primary)', margin: '10px 0 4px', fontSize: 13 }}>{clean.replace(/^#+\s*/, '')}</p>
+    const trimmed = line.trim()
+    // A whole line wrapped in "**Like This**" is the model using bold as a
+    // section title instead of a markdown header — treat it as one.
+    const wholeLineBold = /^\*\*(.+)\*\*$/.test(trimmed) && trimmed.length < 70
+    // A bullet marker is "* " with a trailing space — "**bold**" starts with
+    // two asterisks and no space, so it must never be read as a bullet.
+    // (Previously matched here via a `\s*` that allowed zero trailing
+    // space, which is exactly why bold section titles rendered as literal
+    // asterisks — see TODO.md §1.4.)
+    const isBullet = !wholeLineBold && !/^\*\*/.test(trimmed)
+      && (/^[•-]\s+/.test(line) || /^\*\s+/.test(line) || /^\d+\.\s*/.test(line))
+    const isHeader = !isBullet && (wholeLineBold || /^#{1,3}\s/.test(line) || (trimmed.endsWith(':') && trimmed.length < 60 && !line.startsWith(' ')))
+    const clean = isBullet
+      ? line.replace(/^([•*-]|\d+\.)\s*/, '')
+      : wholeLineBold
+        ? trimmed.slice(2, -2)
+        : line.replace(/^#+\s*/, '')
+    if (isHeader) return <p key={i} style={{ fontWeight: 700, color: 'var(--text-primary)', margin: '10px 0 4px', fontSize: 13 }}>{renderInline(clean)}</p>
     if (isBullet) return (
       <div key={i} style={{ display: 'flex', gap: 8, margin: '3px 0' }}>
         <span style={{ color: 'var(--accent-primary)', flexShrink: 0, marginTop: 1 }}>•</span>
-        <span style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{clean}</span>
+        <span style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{renderInline(clean)}</span>
       </div>
     )
-    return <p key={i} style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '4px 0', lineHeight: 1.55 }}>{line}</p>
+    return <p key={i} style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '4px 0', lineHeight: 1.55 }}>{renderInline(line)}</p>
   })
 }
 
@@ -171,12 +201,18 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
     const anomalyLines = Object.entries(currentCats)
       .map(([cat, val]) => {
         const avg = avgMap[cat] ?? 0
-        const pct = avg > 0 ? Math.round(((val - avg) / avg) * 100) : 0
+        // A category with zero prior-month spending isn't "0% change" —
+        // that reads as unremarkable when it's actually a brand-new spend,
+        // which is exactly the kind of thing this feature should flag.
+        // Previously silently coerced to 0%, hiding new categories from
+        // the anomaly check entirely (see TODO.md §1.4's AI-feature review).
+        if (avg === 0) return `  ${cat}: ${formatCurrency(val)} (NEW — no spending in this category in the prior 3 months)`
+        const pct = Math.round(((val - avg) / avg) * 100)
         return `  ${cat}: ${formatCurrency(val)} (avg: ${formatCurrency(Math.round(avg))}, ${pct >= 0 ? '+' : ''}${pct}%)`
       })
       .join('\n')
     return groqChat(
-      'You are a financial anomaly detector. Identify unusual spending spikes (>40% above average). Be concise and specific. Use bullet points. Flag top 3 anomalies only.',
+      'You are a financial anomaly detector. Identify unusual spending: spikes over 40% above a category\'s average, AND brand-new categories (marked NEW) with a meaningfully large amount. Be concise and specific. Use bullet points. Flag top 3 anomalies only. If nothing looks unusual, say so plainly instead of forcing three.',
       `Category spending vs 3-month average:\n${anomalyLines}\n\nFull context:\n${ctx}`,
       { maxTokens: 350 },
     )
@@ -184,13 +220,20 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
 
   async function runWeeklyDigest() {
     const weekTxns = last7DaysTxns
+    const weekExpenseTxns = weekTxns.filter((t) => t.type === 'Expense')
     const weekMap  = catBreakdown(weekTxns)
     const weekTotal = Object.values(weekMap).reduce((s, v) => s + v, 0)
+    const weekIncome = weekTxns.filter((t) => t.type === 'Income').reduce((s, t) => s + t.amount, 0)
     const top = Object.entries(weekMap).sort(([,a],[,b]) => b-a).slice(0,5)
       .map(([k,v]) => `  ${k}: ${formatCurrency(v)}`).join('\n')
     return groqChat(
       'Generate a brief, friendly weekly spending digest. Include 2-3 highlights, 1 concern, and 1 motivational tip. Use emojis. Keep under 180 words. Use bullet points.',
-      `Week summary:\nTotal spent: ${formatCurrency(weekTotal)}\nTransaction count: ${weekTxns.length}\nTop categories:\n${top}\n\nMonth context:\n${ctx}`,
+      // Expense count/total kept on the same basis (previously mixed Income
+      // rows into "Transaction count" while the total and categories were
+      // Expense-only, inflating the count against a total it didn't match —
+      // see TODO.md §1.4's AI-feature review). Income surfaced separately
+      // instead of silently dropped.
+      `Week summary:\nTotal spent: ${formatCurrency(weekTotal)}\nExpense transaction count: ${weekExpenseTxns.length}\nIncome received this week: ${formatCurrency(weekIncome)}\nTop categories:\n${top}\n\nMonth context:\n${ctx}`,
       { maxTokens: 350 },
     )
   }
@@ -200,7 +243,10 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
     const catMap = catBreakdown(thisTxns)
     const lines  = budgets.filter((b) => b.category).map((b) => {
       const spent = catMap[b.category!.name] ?? 0
-      const pct   = Math.round((spent / b.monthly_limit) * 100)
+      // Guard against a zero/negative limit reaching the model as
+      // "Infinity%"/"NaN%" — matches the same guard buildMonthlyContext's
+      // own budget-performance block already has (aiContext.ts).
+      const pct   = b.monthly_limit > 0 ? Math.round((spent / b.monthly_limit) * 100) : 0
       const status = pct > 100 ? '🔴 OVER' : pct > 80 ? '🟡 NEAR' : '🟢 OK'
       return `  ${b.category!.name}: budget ${formatCurrency(b.monthly_limit)}, spent ${formatCurrency(spent)} (${pct}%) ${status}`
     }).join('\n')
@@ -255,15 +301,28 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
     const amount = Number(goalAmount)
     const months = Number(goalMonths)
     if (!amount || !months) { setGoalError('Enter a savings goal amount and timeframe first.'); return '' }
-    const totalIncome  = thisTxns.filter((t) => t.type === 'Income').reduce((s,t)=>s+t.amount, 0)
-    const totalExpense = thisTxns.filter((t) => t.type === 'Expense').reduce((s,t)=>s+t.amount, 0)
     const neededPerMonth = Math.ceil(amount / months)
+
+    // A 3-month average, not thisTxns — thisTxns is whatever month is
+    // selected, which for the real current month is often still partway
+    // through (e.g. 5 days elapsed), so "current spending" would silently
+    // understate the real monthly run-rate and overstate how easy the goal
+    // is. Same excluding-the-most-recent-month pattern anomaly detection
+    // already uses. Falls back to whatever's available if there's under 3
+    // full months of history yet. See TODO.md §1.4's AI-feature review.
+    const monthly = monthlyAgg(allTxns)
+    const monthKeys = Object.keys(monthly).sort()
+    const baselineMonths = monthKeys.slice(-4, -1).length ? monthKeys.slice(-4, -1) : monthKeys.slice(-1)
+    const avgIncome  = baselineMonths.reduce((s, m) => s + monthly[m].income, 0) / baselineMonths.length
+    const avgExpense = baselineMonths.reduce((s, m) => s + monthly[m].expense, 0) / baselineMonths.length
+    const monthLabel = `${baselineMonths.length}-month avg: ${baselineMonths.join(', ')}`
+
     const catMap = catBreakdown(thisTxns)
     const spendingList = Object.entries(catMap).sort(([,a],[,b])=>b-a).slice(0,8)
       .map(([k,v]) => `  ${k}: ${formatCurrency(v)}`).join('\n')
     return groqChat(
-      'Create a specific, achievable monthly savings plan to meet the user\'s financial goal. Show exactly which categories to cut and by how much. Be realistic and encouraging. Use bullet points and show before/after amounts.',
-      `Goal: Save ${formatCurrency(amount)} in ${months} months (${formatCurrency(neededPerMonth)}/month needed)\nCurrent income: ${formatCurrency(totalIncome)}/month\nCurrent spending: ${formatCurrency(totalExpense)}/month\nCurrent savings: ${formatCurrency(totalIncome - totalExpense)}/month\n\nSpending breakdown:\n${spendingList}`,
+      'Create a specific, achievable monthly savings plan to meet the user\'s financial goal. Show exactly which categories to cut and by how much. Base it on the average income/spending figures given, not the partial-month breakdown, which is only there for category detail. Be realistic and encouraging. Use bullet points and show before/after amounts.',
+      `Goal: Save ${formatCurrency(amount)} in ${months} months (${formatCurrency(neededPerMonth)}/month needed)\nTypical monthly income (${monthLabel}): ${formatCurrency(avgIncome)}\nTypical monthly spending (${monthLabel}): ${formatCurrency(avgExpense)}\nTypical monthly savings: ${formatCurrency(avgIncome - avgExpense)}\n\nMost recent category breakdown (${selectedMonth}, may be a partial month):\n${spendingList}`,
       { maxTokens: 500 },
     )
   }
@@ -273,7 +332,14 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
     const spendingList = Object.entries(catMap).sort(([,a],[,b])=>b-a).slice(0,8)
       .map(([k,v]) => `  ${k}: ${formatCurrency(v)}`).join('\n')
     return groqChat(
-      'Compare the user\'s spending to typical Bangladesh middle-class household benchmarks. Note where they are above/below average. Be encouraging for good areas and specific about areas needing attention. Use a simple table or bullet format.',
+      // No real benchmark dataset is passed in — there isn't one in this
+      // app. Without this line the model still answers confidently with
+      // invented-sounding percentages ("you spend 23% more than average")
+      // that read as verified statistics but aren't. Explicitly demoted to
+      // "rough, general impression" and required to say so, rather than
+      // silently presenting fabricated precision as fact — see TODO.md
+      // §1.4's AI-feature review.
+      'Give the user a rough, general impression of how their spending compares to a typical Bangladesh household, using your general knowledge — you do NOT have a real benchmark dataset, so do not invent precise percentages or cite specific statistics as if they were verified. Say plainly this is a general estimate, not verified data. Be encouraging for areas that look reasonable and specific about areas that look high. Use a simple bullet format.',
       `User monthly spending:\n${spendingList}\n\nTotal: ${formatCurrency(Object.values(catMap).reduce((s,v)=>s+v,0))}\n\nContext:\n${ctx}`,
       { maxTokens: 450 },
     )
@@ -361,7 +427,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
             onRun={runSpendingPatterns} />
 
           <FeatureCard icon="📊" title="Benchmarking" accent="#B4923F"
-            desc="Compares your spending to typical Bangladesh household benchmarks."
+            desc="A rough, AI-estimated comparison to typical Bangladesh household spending — not verified statistics."
             onRun={runBenchmarking} />
 
           <FeatureCard icon="🏦" title="Debt Payoff Strategy" accent="#C9736E"
@@ -530,6 +596,7 @@ const STYLES = `
   .aih-error { display: flex; align-items: flex-start; gap: 7px; padding: 10px 12px; margin-top: 10px; background: rgba(194, 91, 85,0.08); border: 1px solid rgba(194, 91, 85,0.2); border-radius: 8px; font-size: 12px; color: var(--accent-red); }
   .aih-result { padding: 10px 0 0; margin-top: 4px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 2px; }
   .aih-model-footer { font-size: 10px; color: var(--text-muted); margin: 6px 0 0; }
+  .aih-inline-code { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 12px; font-family: ui-monospace, monospace; color: var(--accent-gold); }
 
   /* Goal planner */
   .aih-goal-inputs { display: flex; gap: 10px; flex-wrap: wrap; }
