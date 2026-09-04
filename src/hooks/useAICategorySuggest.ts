@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { groqChat, isGroqConfigured } from '@/lib/groq'
+import { aiChat, isAIConfigured } from '@/lib/aiProvider'
 import type { Category } from '@/types/expense.types'
 
 export function useAICategorySuggest(
@@ -12,14 +12,14 @@ export function useAICategorySuggest(
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Monotonic token identifying the "current" request. Bumped in the cleanup
   // below so a superseded (fast retyping) or post-unmount response can tell
-  // it's stale and skip touching state — groqChat() has no cancellable
+  // it's stale and skip touching state — aiChat() has no cancellable
   // signal to actually abort the in-flight fetch, so this discards the
   // result instead. See TODO.md §3.8.
   const requestIdRef = useRef(0)
 
   useEffect(() => {
     setSuggestedId(null)
-    if (!isGroqConfigured() || description.trim().length < 4 || currentCategoryId) return
+    if (!isAIConfigured() || description.trim().length < 4 || currentCategoryId) return
 
     if (timerRef.current) clearTimeout(timerRef.current)
 
@@ -32,7 +32,7 @@ export function useAICategorySuggest(
         const catList = categories.map((c) => `${c.name} (${c.main_group})`).join(', ')
         const system = 'You are a financial transaction categorizer. Return ONLY the exact category name from the list that best matches. No explanation, no punctuation — just the category name.'
         const user   = `Transaction: "${description.trim()}"\nAvailable categories: ${catList}`
-        const result = await groqChat(system, user, { maxTokens: 20, temperature: 0.1 })
+        const result = await aiChat(system, user, { maxTokens: 20, temperature: 0.1 })
         if (requestId !== requestIdRef.current) return // superseded or unmounted
         const matched = categories.find(
           (c) => c.name.toLowerCase() === result.trim().toLowerCase(),

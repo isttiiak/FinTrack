@@ -129,19 +129,21 @@ export type LedgerStatus = (typeof LEDGER_STATUSES)[number]
 export const RECURRING_CADENCES = ['Weekly', 'Monthly', 'Yearly'] as const
 export type RecurringCadence = (typeof RECURRING_CADENCES)[number]
 
-// ── Groq AI models ───────────────────────────────────────────────────────
-// Groq periodically decommissions free-tier models without much notice —
-// llama-3.1-8b-instant, the app's original default, was shut down 2026-08-16
-// (see TODO.md §1.1). Keeping the active choice in localStorage (via
-// lib/groq.ts's getGroqModel/setGroqModel) rather than hardcoded means the
-// next deprecation is a Settings change, not a code change + redeploy.
-export interface GroqModelOption {
+// ── AI providers ─────────────────────────────────────────────────────────
+// Multi-provider so one vendor's outage/shutdown never kills every AI
+// feature at once — Groq decommissioned llama-3.1-8b-instant on 2026-08-16
+// with no fallback (TODO.md §1.1). Groq stays the default so existing users
+// notice nothing; OpenRouter is the fallback provider, and also the only one
+// that can do vision (receipt OCR) — see OCR_MODELS below.
+export type AIProvider = 'groq' | 'openrouter'
+
+export interface AIModelOption {
   id: string
   label: string
   description: string
 }
 
-export const GROQ_MODELS: GroqModelOption[] = [
+export const GROQ_MODELS: AIModelOption[] = [
   {
     id: 'openai/gpt-oss-20b',
     label: 'GPT-OSS 20B — fast',
@@ -153,5 +155,65 @@ export const GROQ_MODELS: GroqModelOption[] = [
     description: 'Larger, more capable model — better for Chat and the Goal Planner. Slower and lower free-tier throughput.',
   },
 ]
-
 export const DEFAULT_GROQ_MODEL = GROQ_MODELS[0].id
+
+export const OPENROUTER_MODELS: AIModelOption[] = [
+  {
+    id: 'qwen/qwen3.6-flash',
+    label: 'Qwen3.6 Flash — fast & cheap',
+    description: 'Default. Cheap per-token text model — good fallback for quick suggestions and digests.',
+  },
+  {
+    id: 'qwen/qwen3.6-27b',
+    label: 'Qwen3.6 27B — smarter',
+    description: 'Larger model — better for Chat and the Goal Planner. Slower and pricier per token.',
+  },
+]
+export const DEFAULT_OPENROUTER_MODEL = OPENROUTER_MODELS[0].id
+
+export interface AIProviderConfig {
+  id: AIProvider
+  label: string
+  models: AIModelOption[]
+  defaultModel: string
+  keyPlaceholder: string
+  keyHelp: string
+}
+
+export const AI_PROVIDERS: AIProviderConfig[] = [
+  {
+    id: 'groq',
+    label: 'Groq',
+    models: GROQ_MODELS,
+    defaultModel: DEFAULT_GROQ_MODEL,
+    keyPlaceholder: 'gsk_…',
+    keyHelp: 'Free key at console.groq.com → API Keys → Create API key. 14,400 requests/day.',
+  },
+  {
+    id: 'openrouter',
+    label: 'OpenRouter',
+    models: OPENROUTER_MODELS,
+    defaultModel: DEFAULT_OPENROUTER_MODEL,
+    keyPlaceholder: 'sk-or-…',
+    keyHelp: 'Key at openrouter.ai/keys. 50 requests/day free, 1,000/day after $10 spent — good fallback when Groq is unavailable.',
+  },
+]
+
+// Vision-capable models for receipt scanning (TODO.md §5.4). OpenRouter
+// only — Groq's free tier is text-only. Unlike the text models above these
+// are NOT free (small per-token cost billed to the user's own OpenRouter
+// key/credits), so they're kept in their own list rather than folded into
+// OPENROUTER_MODELS above.
+export const OCR_MODELS: AIModelOption[] = [
+  {
+    id: 'qwen/qwen3.6-27b',
+    label: 'Qwen3.6 27B',
+    description: 'Default. Native vision-language model, strong multilingual OCR. ~$0.30/$2 per M tokens.',
+  },
+  {
+    id: 'qwen/qwen3.8-27b',
+    label: 'Qwen3.8 27B',
+    description: 'Newer, larger context window. ~$0.22/$2.42 per M tokens.',
+  },
+]
+export const DEFAULT_OCR_MODEL = OCR_MODELS[0].id

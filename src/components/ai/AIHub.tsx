@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, Send, AlertCircle, RefreshCw, Settings } from 'lucide-react'
-import { groqChat, isGroqConfigured, getGroqModel } from '@/lib/groq'
+import { aiChat, isAIConfigured, getProviderModel, getActiveProvider } from '@/lib/aiProvider'
 import { buildMonthlyContext, buildDebtContext, catBreakdown, monthlyAgg } from '@/lib/aiContext'
-import { GROQ_MODELS } from '@/lib/constants'
+import { AI_PROVIDERS, GROQ_MODELS, OPENROUTER_MODELS } from '@/lib/constants'
 import { useExpenses } from '@/hooks/useExpenses'
 import { useBudgets } from '@/hooks/useBudgets'
 import { usePersons } from '@/hooks/useLedger'
@@ -12,15 +12,15 @@ import { fadeUp } from '@/lib/animations'
 import ErrorBanner from '@/components/common/ErrorBanner'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-function groqModelLabel(id: string): string {
-  return GROQ_MODELS.find((m) => m.id === id)?.label ?? id
+function modelLabel(id: string): string {
+  return [...GROQ_MODELS, ...OPENROUTER_MODELS].find((m) => m.id === id)?.label ?? id
 }
 
 // Shown under a result so it's clear which model produced it — see TODO.md §1.2.
 // Captured at request time (not read live), so it stays correct even if the
 // user switches models in Settings while a result is still on screen.
 function ModelFooter({ model }: { model: string }) {
-  return <p className="aih-model-footer">via {groqModelLabel(model)}</p>
+  return <p className="aih-model-footer">via {modelLabel(model)}</p>
 }
 
 function formatResult(text: string) {
@@ -56,7 +56,7 @@ function FeatureCard({ icon, title, desc, onRun, children, accent = '#8A968C' }:
 
   async function run() {
     setLoading(true); setError(null); setResult(null)
-    const model = getGroqModel()
+    const model = getProviderModel()
     try { setResult(await onRun()); setUsedModel(model) }
     catch (e: unknown) { setError(e instanceof Error ? e.message : 'Unknown error') }
     finally { setLoading(false) }
@@ -99,7 +99,7 @@ interface Msg { role: 'user' | 'ai'; text: string; model?: string }
 
 // ── Main hub ──────────────────────────────────────────────────────────────────
 export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
-  const configured = isGroqConfigured()
+  const configured = isAIConfigured()
 
   // Data — both queries anchored to selectedMonth (not "today"), since every
   // AI feature below builds context relative to whichever month the user is
@@ -146,7 +146,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
         <div className="aih-setup-icon">✨</div>
         <h3 className="aih-setup-title">Set up AI Insights</h3>
         <p className="aih-setup-desc">
-          Get smart spending analysis powered by Groq (free, no credit card needed).
+          Get smart spending analysis powered by Groq or OpenRouter (both offer a free tier, no credit card needed).
           <br />Add your free API key in <strong>Settings → AI Insights</strong>.
         </p>
         <a href="/settings" className="aih-setup-link">
@@ -175,7 +175,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
         return `  ${cat}: ${formatCurrency(val)} (avg: ${formatCurrency(Math.round(avg))}, ${pct >= 0 ? '+' : ''}${pct}%)`
       })
       .join('\n')
-    return groqChat(
+    return aiChat(
       'You are a financial anomaly detector. Identify unusual spending spikes (>40% above average). Be concise and specific. Use bullet points. Flag top 3 anomalies only.',
       `Category spending vs 3-month average:\n${anomalyLines}\n\nFull context:\n${ctx}`,
       { maxTokens: 350 },
@@ -188,7 +188,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
     const weekTotal = Object.values(weekMap).reduce((s, v) => s + v, 0)
     const top = Object.entries(weekMap).sort(([,a],[,b]) => b-a).slice(0,5)
       .map(([k,v]) => `  ${k}: ${formatCurrency(v)}`).join('\n')
-    return groqChat(
+    return aiChat(
       'Generate a brief, friendly weekly spending digest. Include 2-3 highlights, 1 concern, and 1 motivational tip. Use emojis. Keep under 180 words. Use bullet points.',
       `Week summary:\nTotal spent: ${formatCurrency(weekTotal)}\nTransaction count: ${weekTxns.length}\nTop categories:\n${top}\n\nMonth context:\n${ctx}`,
       { maxTokens: 350 },
@@ -204,7 +204,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
       const status = pct > 100 ? '🔴 OVER' : pct > 80 ? '🟡 NEAR' : '🟢 OK'
       return `  ${b.category!.name}: budget ${formatCurrency(b.monthly_limit)}, spent ${formatCurrency(spent)} (${pct}%) ${status}`
     }).join('\n')
-    return groqChat(
+    return aiChat(
       'Analyze budget vs actual spending. Explain WHY over-budget categories are high, suggest specific actions to bring them in line. Be concise and use bullet points.',
       `Budget performance for ${selectedMonth}:\n${lines}\n\nContext:\n${ctx}`,
       { maxTokens: 400 },
@@ -220,7 +220,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
     ).join('\n')
     const topAll = Object.entries(catMap).sort(([,a],[,b]) => b-a).slice(0,8)
       .map(([k,v]) => `  ${k}: ${formatCurrency(v)} total`).join('\n')
-    return groqChat(
+    return aiChat(
       'Identify recurring spending patterns and habits. Look for expensive habits, daily/weekly patterns, and optimization opportunities. Suggest 3-5 concrete ways to save money. Use bullet points.',
       `6-month spending trend:\n${trendLines}\n\nCumulative top categories:\n${topAll}\n\nCurrent month:\n${ctx}`,
       { maxTokens: 450 },
@@ -244,7 +244,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
       const avg = Math.round(vs.reduce((s,v)=>s+v,0)/vs.length)
       return `  ${k}: avg ${formatCurrency(avg)}/month`
     }).join('\n')
-    return groqChat(
+    return aiChat(
       'Based on the user\'s actual spending patterns, suggest realistic monthly budget targets for each category. Aim for 10-20% reductions where possible. Show the recommended budget amount and expected savings. Use a clean format.',
       `3-month average spending:\n${avgLines}\n\nContext:\n${ctx}`,
       { maxTokens: 450 },
@@ -261,7 +261,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
     const catMap = catBreakdown(thisTxns)
     const spendingList = Object.entries(catMap).sort(([,a],[,b])=>b-a).slice(0,8)
       .map(([k,v]) => `  ${k}: ${formatCurrency(v)}`).join('\n')
-    return groqChat(
+    return aiChat(
       'Create a specific, achievable monthly savings plan to meet the user\'s financial goal. Show exactly which categories to cut and by how much. Be realistic and encouraging. Use bullet points and show before/after amounts.',
       `Goal: Save ${formatCurrency(amount)} in ${months} months (${formatCurrency(neededPerMonth)}/month needed)\nCurrent income: ${formatCurrency(totalIncome)}/month\nCurrent spending: ${formatCurrency(totalExpense)}/month\nCurrent savings: ${formatCurrency(totalIncome - totalExpense)}/month\n\nSpending breakdown:\n${spendingList}`,
       { maxTokens: 500 },
@@ -272,7 +272,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
     const catMap = catBreakdown(thisTxns)
     const spendingList = Object.entries(catMap).sort(([,a],[,b])=>b-a).slice(0,8)
       .map(([k,v]) => `  ${k}: ${formatCurrency(v)}`).join('\n')
-    return groqChat(
+    return aiChat(
       'Compare the user\'s spending to typical Bangladesh middle-class household benchmarks. Note where they are above/below average. Be encouraging for good areas and specific about areas needing attention. Use a simple table or bullet format.',
       `User monthly spending:\n${spendingList}\n\nTotal: ${formatCurrency(Object.values(catMap).reduce((s,v)=>s+v,0))}\n\nContext:\n${ctx}`,
       { maxTokens: 450 },
@@ -282,7 +282,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
   async function runDebtStrategy() {
     const debtCtx = buildDebtContext(persons)
     if (debtCtx.includes('No outstanding')) return 'No outstanding debts or lent amounts found in your Lent & Debt records.'
-    return groqChat(
+    return aiChat(
       'Analyze the debts/loans and recommend optimal payoff strategies. Compare Snowball vs Avalanche approaches. Estimate time to payoff. Be specific with monthly payment recommendations. Use bullet points.',
       `Outstanding debts and lent amounts:\n${debtCtx}\n\nFinancial context:\n${ctx}`,
       { maxTokens: 500 },
@@ -296,9 +296,9 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
     setChatInput('')
     setMsgs((prev) => [...prev, { role: 'user', text: q }])
     setChatLoading(true)
-    const model = getGroqModel()
+    const model = getProviderModel()
     try {
-      const answer = await groqChat(
+      const answer = await aiChat(
         `You are a personal finance assistant. Answer questions based ONLY on the user's actual financial data provided. Be concise and specific. If data is insufficient, say so.`,
         `User question: ${q}\n\nFinancial data:\n${ctx}`,
         { maxTokens: 400 },
@@ -314,7 +314,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
   // ── Goal planner runner ─────────────────────────────────────────────────────
   async function handleRunGoal() {
     setGoalLoading(true); setGoalError(null); setGoalResult(null)
-    const model = getGroqModel()
+    const model = getProviderModel()
     try {
       const result = await runGoalPlan()
       if (result) { setGoalResult(result); setGoalModel(model) }
@@ -333,9 +333,11 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
         <div className="aih-header-left">
           <Sparkles size={16} style={{ color: '#3E9B72' }} />
           <span className="aih-header-title">AI Insights</span>
-          <span className="aih-provider-badge">Groq · {groqModelLabel(getGroqModel())}</span>
+          <span className="aih-provider-badge">
+            {AI_PROVIDERS.find((p) => p.id === getActiveProvider())?.label} · {modelLabel(getProviderModel())}
+          </span>
         </div>
-        <span className="aih-header-sub">Powered by Groq free tier · Click any feature to analyze</span>
+        <span className="aih-header-sub">Click any feature to analyze</span>
       </div>
 
       {hasError && <ErrorBanner onRetry={retryAll} />}

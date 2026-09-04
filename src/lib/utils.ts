@@ -6,10 +6,12 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // Clears device-local data that could otherwise leak between accounts on a
-// shared browser — the billable Groq key plus every fintrack_-prefixed
-// preference (last-used payment method/account, custom account lists, etc).
+// shared browser — the billable Groq/OpenRouter keys plus every
+// fintrack_-prefixed preference (last-used payment method/account, custom
+// account lists, etc).
 export function clearLocalUserData(): void {
   localStorage.removeItem('groq_api_key')
+  localStorage.removeItem('openrouter_api_key')
   for (const key of Object.keys(localStorage)) {
     if (key.startsWith('fintrack_')) localStorage.removeItem(key)
   }
