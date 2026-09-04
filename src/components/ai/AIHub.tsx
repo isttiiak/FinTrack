@@ -42,6 +42,10 @@ function renderInline(text: string): React.ReactNode {
 function formatResult(text: string) {
   return text.split('\n').filter(Boolean).map((line, i) => {
     const trimmed = line.trim()
+    // A markdown horizontal rule — confirmed live (Goal Planner, real Groq
+    // key) the model uses "---" as a section divider; rendered literally
+    // otherwise, same class of bug as the asterisk issue this pass fixed.
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(trimmed)) return <hr key={i} className="aih-result-hr" />
     // A whole line wrapped in "**Like This**" is the model using bold as a
     // section title instead of a markdown header — treat it as one.
     const wholeLineBold = /^\*\*(.+)\*\*$/.test(trimmed) && trimmed.length < 70
@@ -49,12 +53,16 @@ function formatResult(text: string) {
     // two asterisks and no space, so it must never be read as a bullet.
     // (Previously matched here via a `\s*` that allowed zero trailing
     // space, which is exactly why bold section titles rendered as literal
-    // asterisks — see TODO.md §1.4.)
+    // asterisks — see TODO.md §1.4.) Tested against `trimmed`, not the raw
+    // `line` — Groq nests sub-bullets under a heading with leading spaces
+    // ("  - Shopping: …"), which a start-of-string match against the
+    // indented raw line never catches, leaving the "- " on screen verbatim
+    // (confirmed live testing the Weekly Digest with a real key).
     const isBullet = !wholeLineBold && !/^\*\*/.test(trimmed)
-      && (/^[•-]\s+/.test(line) || /^\*\s+/.test(line) || /^\d+\.\s*/.test(line))
+      && (/^[•-]\s+/.test(trimmed) || /^\*\s+/.test(trimmed) || /^\d+\.\s*/.test(trimmed))
     const isHeader = !isBullet && (wholeLineBold || /^#{1,3}\s/.test(line) || (trimmed.endsWith(':') && trimmed.length < 60 && !line.startsWith(' ')))
     const clean = isBullet
-      ? line.replace(/^([•*-]|\d+\.)\s*/, '')
+      ? trimmed.replace(/^([•*-]|\d+\.)\s*/, '')
       : wholeLineBold
         ? trimmed.slice(2, -2)
         : line.replace(/^#+\s*/, '')
@@ -212,7 +220,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
       })
       .join('\n')
     return groqChat(
-      'You are a financial anomaly detector. Identify unusual spending: spikes over 40% above a category\'s average, AND brand-new categories (marked NEW) with a meaningfully large amount. Be concise and specific. Use bullet points. Flag top 3 anomalies only. If nothing looks unusual, say so plainly instead of forcing three.',
+      'You are a financial anomaly detector. Identify unusual spending: spikes over 40% above a category\'s average, AND brand-new categories (marked NEW) with a meaningfully large amount. Be concise and specific. Use bullet points, never a markdown table. Flag top 3 anomalies only. If nothing looks unusual, say so plainly instead of forcing three.',
       `Category spending vs 3-month average:\n${anomalyLines}\n\nFull context:\n${ctx}`,
       { maxTokens: 350 },
     )
@@ -227,7 +235,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
     const top = Object.entries(weekMap).sort(([,a],[,b]) => b-a).slice(0,5)
       .map(([k,v]) => `  ${k}: ${formatCurrency(v)}`).join('\n')
     return groqChat(
-      'Generate a brief, friendly weekly spending digest. Include 2-3 highlights, 1 concern, and 1 motivational tip. Use emojis. Keep under 180 words. Use bullet points.',
+      'Generate a brief, friendly weekly spending digest. Include 2-3 highlights, 1 concern, and 1 motivational tip. Use emojis. Keep under 180 words. Use bullet points, never a markdown table.',
       // Expense count/total kept on the same basis (previously mixed Income
       // rows into "Transaction count" while the total and categories were
       // Expense-only, inflating the count against a total it didn't match —
@@ -251,7 +259,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
       return `  ${b.category!.name}: budget ${formatCurrency(b.monthly_limit)}, spent ${formatCurrency(spent)} (${pct}%) ${status}`
     }).join('\n')
     return groqChat(
-      'Analyze budget vs actual spending. Explain WHY over-budget categories are high, suggest specific actions to bring them in line. Be concise and use bullet points.',
+      'Analyze budget vs actual spending. Explain WHY over-budget categories are high, suggest specific actions to bring them in line. Be concise and use bullet points, never a markdown table.',
       `Budget performance for ${selectedMonth}:\n${lines}\n\nContext:\n${ctx}`,
       { maxTokens: 400 },
     )
@@ -267,7 +275,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
     const topAll = Object.entries(catMap).sort(([,a],[,b]) => b-a).slice(0,8)
       .map(([k,v]) => `  ${k}: ${formatCurrency(v)} total`).join('\n')
     return groqChat(
-      'Identify recurring spending patterns and habits. Look for expensive habits, daily/weekly patterns, and optimization opportunities. Suggest 3-5 concrete ways to save money. Use bullet points.',
+      'Identify recurring spending patterns and habits. Look for expensive habits, daily/weekly patterns, and optimization opportunities. Suggest 3-5 concrete ways to save money. Use bullet points, never a markdown table.',
       `6-month spending trend:\n${trendLines}\n\nCumulative top categories:\n${topAll}\n\nCurrent month:\n${ctx}`,
       { maxTokens: 450 },
     )
@@ -291,7 +299,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
       return `  ${k}: avg ${formatCurrency(avg)}/month`
     }).join('\n')
     return groqChat(
-      'Based on the user\'s actual spending patterns, suggest realistic monthly budget targets for each category. Aim for 10-20% reductions where possible. Show the recommended budget amount and expected savings. Use a clean format.',
+      'Based on the user\'s actual spending patterns, suggest realistic monthly budget targets for each category. Aim for 10-20% reductions where possible. Show the recommended budget amount and expected savings. Use bullet points, never a markdown table.',
       `3-month average spending:\n${avgLines}\n\nContext:\n${ctx}`,
       { maxTokens: 450 },
     )
@@ -320,10 +328,30 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
     const catMap = catBreakdown(thisTxns)
     const spendingList = Object.entries(catMap).sort(([,a],[,b])=>b-a).slice(0,8)
       .map(([k,v]) => `  ${k}: ${formatCurrency(v)}`).join('\n')
+    const alreadyCovered = avgIncome - avgExpense >= neededPerMonth
     return groqChat(
-      'Create a specific, achievable monthly savings plan to meet the user\'s financial goal. Show exactly which categories to cut and by how much. Base it on the average income/spending figures given, not the partial-month breakdown, which is only there for category detail. Be realistic and encouraging. Use bullet points and show before/after amounts.',
-      `Goal: Save ${formatCurrency(amount)} in ${months} months (${formatCurrency(neededPerMonth)}/month needed)\nTypical monthly income (${monthLabel}): ${formatCurrency(avgIncome)}\nTypical monthly spending (${monthLabel}): ${formatCurrency(avgExpense)}\nTypical monthly savings: ${formatCurrency(avgIncome - avgExpense)}\n\nMost recent category breakdown (${selectedMonth}, may be a partial month):\n${spendingList}`,
-      { maxTokens: 500 },
+      // Confirmed live (2026-09-04, real Groq key) that GPT-OSS-20B's
+      // hidden reasoning would spiral trying to reconcile two things this
+      // prompt used to leave ambiguous: (1) the average and the
+      // partial-month category breakdown not summing to the same total,
+      // and (2) being told to "show cuts" for a goal the user's average
+      // savings already covers, with nothing sensible to cut toward it. It
+      // burned its entire token budget "thinking" about the mismatch and
+      // never wrote an answer — not a formatting bug, a genuinely confusing
+      // prompt. Both are addressed explicitly below rather than left for
+      // the model to puzzle out.
+      `Create a specific, achievable monthly savings plan to meet the user's financial goal.
+The category breakdown below is a different, partial-month figure than the monthly averages above it — that's expected, they won't sum to match. Use the averages for the savings math and the categories only for realistic examples of what to trim.
+${alreadyCovered
+        ? 'The user\'s average monthly savings already covers the amount needed for this goal — say that plainly up front, and frame the rest as optional guidance (e.g. how to reach it faster, or a buffer), not mandatory cuts.'
+        : 'Show exactly which categories to cut and by how much to close the gap.'}
+Be realistic and encouraging. Use bullet points and show before/after amounts, never a markdown table.`,
+      `Goal: Save ${formatCurrency(amount)} in ${months} months (${formatCurrency(neededPerMonth)}/month needed)\nTypical monthly income (${monthLabel}): ${formatCurrency(avgIncome)}\nTypical monthly spending (${monthLabel}): ${formatCurrency(avgExpense)}\nTypical monthly savings: ${formatCurrency(avgIncome - avgExpense)}\n\nMost recent category breakdown (${selectedMonth}, partial month, for examples only):\n${spendingList}`,
+      // 1000 — even after the prompt fix above stopped the reasoning
+      // spiral, a real run still got cut off mid-sentence on its optional
+      // second section at 800 (core answer was intact, just the bonus
+      // ideas trailed off). Confirmed live.
+      { maxTokens: 1000 },
     )
   }
 
@@ -339,9 +367,12 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
       // "rough, general impression" and required to say so, rather than
       // silently presenting fabricated precision as fact — see TODO.md
       // §1.4's AI-feature review.
-      'Give the user a rough, general impression of how their spending compares to a typical Bangladesh household, using your general knowledge — you do NOT have a real benchmark dataset, so do not invent precise percentages or cite specific statistics as if they were verified. Say plainly this is a general estimate, not verified data. Be encouraging for areas that look reasonable and specific about areas that look high. Use a simple bullet format.',
+      'Give the user a rough, general impression of how their spending compares to a typical Bangladesh household, using your general knowledge — you do NOT have a real benchmark dataset, so do not invent precise percentages or cite specific statistics as if they were verified. Say plainly this is a general estimate, not verified data. Be encouraging for areas that look reasonable and specific about areas that look high. Use a simple bullet format, never a markdown table.',
       `User monthly spending:\n${spendingList}\n\nTotal: ${formatCurrency(Object.values(catMap).reduce((s,v)=>s+v,0))}\n\nContext:\n${ctx}`,
-      { maxTokens: 450 },
+      // 600, not 450 — confirmed live (2026-09-04) the response got cut off
+      // mid-sentence at 450 ("...Mobile plans in Bangladesh can be cheaper,
+      // so you could"). Same headroom issue as Goal Planner above.
+      { maxTokens: 600 },
     )
   }
 
@@ -349,7 +380,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
     const debtCtx = buildDebtContext(persons)
     if (debtCtx.includes('No outstanding')) return 'No outstanding debts or lent amounts found in your Lent & Debt records.'
     return groqChat(
-      'Analyze the debts/loans and recommend optimal payoff strategies. Compare Snowball vs Avalanche approaches. Estimate time to payoff. Be specific with monthly payment recommendations. Use bullet points.',
+      'Analyze the debts/loans and recommend optimal payoff strategies. Compare Snowball vs Avalanche approaches. Estimate time to payoff. Be specific with monthly payment recommendations. Use bullet points, never a markdown table — this app cannot render tables.',
       `Outstanding debts and lent amounts:\n${debtCtx}\n\nFinancial context:\n${ctx}`,
       { maxTokens: 500 },
     )
@@ -365,7 +396,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
     const model = getGroqModel()
     try {
       const answer = await groqChat(
-        `You are a personal finance assistant. Answer questions based ONLY on the user's actual financial data provided. Be concise and specific. If data is insufficient, say so.`,
+        `You are a personal finance assistant. Answer questions based ONLY on the user's actual financial data provided. Be concise and specific. If data is insufficient, say so. Use plain text or bullet points, never a markdown table.`,
         `User question: ${q}\n\nFinancial data:\n${ctx}`,
         { maxTokens: 400 },
       )
@@ -597,6 +628,7 @@ const STYLES = `
   .aih-result { padding: 10px 0 0; margin-top: 4px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 2px; }
   .aih-model-footer { font-size: 10px; color: var(--text-muted); margin: 6px 0 0; }
   .aih-inline-code { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 12px; font-family: ui-monospace, monospace; color: var(--accent-gold); }
+  .aih-result-hr { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
 
   /* Goal planner */
   .aih-goal-inputs { display: flex; gap: 10px; flex-wrap: wrap; }

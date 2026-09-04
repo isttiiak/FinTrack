@@ -88,6 +88,17 @@ async function requestOnce(
   }
 }
 
+// Extracts the answer text from a successful (res.ok) response. Returns
+// null instead of throwing when the model produced no usable content, so
+// the caller can decide whether to retry before giving up.
+async function extractContent(res: Response): Promise<{ content: string } | { emptyReason: 'length' | 'other' }> {
+  const data = await res.json()
+  const content: string = data.choices?.[0]?.message?.content?.trim() ?? ''
+  if (content) return { content }
+  const finishReason = data.choices?.[0]?.finish_reason
+  return { emptyReason: finishReason === 'length' ? 'length' : 'other' }
+}
+
 export async function groqChat(
   system: string,
   user: string,
@@ -124,8 +135,40 @@ export async function groqChat(
     const message = (body as { error?: { message?: string } } | undefined)?.error?.message
     throw new Error(message ?? `Groq error (HTTP ${res.status})`)
   }
-  const data = await res.json()
-  return data.choices?.[0]?.message?.content?.trim() ?? 'No response received.'
+
+  let result = await extractContent(res)
+  if ('content' in result) return result.content
+
+  // GPT-OSS's reasoning models (the current default/only Groq models — see
+  // TODO.md §1.1) put hidden chain-of-thought in a separate `reasoning`
+  // field before writing the actual answer into `content`. On a
+  // token-hungry prompt they can burn the entire max_tokens budget on that
+  // reasoning and never get to write anything into `content` — confirmed
+  // live (Goal Planner, 2026-09-04): HTTP 200, `content: ""`,
+  // finish_reason "length". It's not consistently reproducible (the same
+  // prompt sometimes answers fine, sometimes doesn't — also confirmed
+  // live), so one retry with extra token headroom clears it more often
+  // than not, before bothering the user with an error. Only retried for
+  // the "ran out of room" case — an actually-empty answer with a normal
+  // finish_reason is a different, probably-not-transient problem.
+  if (result.emptyReason === 'length') {
+    res = await requestOnce(key, model, system, user, { ...opts, maxTokens: (opts?.maxTokens ?? 700) + 400 })
+    if (res.ok) {
+      result = await extractContent(res)
+      if ('content' in result) return result.content
+    }
+  }
+
+  // Previously `?? 'No response received.'` only caught null/undefined, so
+  // an empty string silently became the "successful" result — the Run
+  // button would just go back to idle with no error and no result, the
+  // worst possible outcome. Thrown as a real error instead so it surfaces
+  // through the same error UI every feature already has.
+  throw new Error(
+    result.emptyReason === 'length'
+      ? 'The AI ran out of room "thinking" before finishing an answer, even after a retry — try again, or switch to a smaller/simpler question.'
+      : 'No response received from Groq — try again.',
+  )
 }
 
 // Convenience: single-turn with no system prompt
