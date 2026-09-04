@@ -260,6 +260,13 @@ function isValidIsoDate(value: string): boolean {
   return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day
 }
 
+// Likely-duplicate key: same date + amount + description as an already-
+// imported row. Not a guarantee (two genuinely separate ৳280 lunches on the
+// same day collide), just a heuristic to flag before the user commits.
+function txnKey(date: string, amount: number, description: string | null): string {
+  return `${date}|${amount}|${(description ?? '').trim().toLowerCase()}`
+}
+
 const CSV_HEADERS = ['Date', 'Type', 'Amount', 'Category', 'Description', 'Payment Method', 'Account']
 const TEMPLATE_CSV = [
   CSV_HEADERS.join(','),
@@ -272,6 +279,11 @@ function ImportSection() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const isDemo = useDemoStore((s) => s.isDemo)
+  const addToast = useUIStore((s) => s.addToast)
+  // Existing transactions to check incoming rows against for likely
+  // duplicates. Same all-time query shape ExportSection uses, so it shares
+  // that cache entry rather than issuing a second fetch.
+  const { data: existingTxns = [] } = useExpenses({ from: '2000-01-01', to: toISODateString(new Date()) })
 
   const fileRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<Record<string, string>[]>([])
@@ -280,6 +292,8 @@ function ImportSection() {
   const [importing, setImporting] = useState(false)
   const [imported, setImported] = useState<number | null>(null)
   const [importProgress, setImportProgress] = useState<{ done: number; total: number } | null>(null)
+  const [duplicateInfo, setDuplicateInfo] = useState<{ duplicates: number; total: number } | null>(null)
+  const [skipDuplicates, setSkipDuplicates] = useState(true)
 
   function downloadTemplate() {
     const blob = new Blob([TEMPLATE_CSV], { type: 'text/csv' })
@@ -293,7 +307,7 @@ function ImportSection() {
   }
 
   function handleFile(file: File) {
-    setError(null); setImported(null); setPreview([])
+    setError(null); setImported(null); setPreview([]); setDuplicateInfo(null); setSkipDuplicates(true)
     setFileName(file.name)
     Papa.parse<Record<string, string>>(file, {
       header: true,
@@ -307,6 +321,21 @@ function ImportSection() {
           return
         }
         setPreview(rows.slice(0, 5))
+
+        // Duplicate check against existing data — informational at this
+        // stage; the checkbox this populates decides whether handleImport
+        // actually skips them.
+        const existingKeys = new Set(existingTxns.map((t) => txnKey(t.txn_date, t.amount, t.description)))
+        let total = 0
+        let duplicates = 0
+        for (const r of rows) {
+          const txn_date = r['Date']?.trim() ?? ''
+          const amount = parseFloat(r['Amount']?.replace(/,/g, '') ?? '0') || 0
+          if (!isValidIsoDate(txn_date) || amount <= 0) continue
+          total++
+          if (existingKeys.has(txnKey(txn_date, amount, r['Description']?.trim() || null))) duplicates++
+        }
+        if (duplicates > 0) setDuplicateInfo({ duplicates, total })
       },
       error: () => setError('Could not parse CSV. Make sure it uses commas as separators.'),
     })
@@ -353,12 +382,22 @@ function ImportSection() {
 
           const skippedDates = parsed.filter((p) => !p.validDate).length
           const skippedAmounts = parsed.filter((p) => p.validDate && !p.validAmount).length
-          const txns = parsed.filter((p) => p.validDate && p.validAmount).map((p) => p.txn)
+          const validParsed = parsed.filter((p) => p.validDate && p.validAmount)
+
+          let skippedDuplicates = 0
+          const existingKeys = new Set(existingTxns.map((t) => txnKey(t.txn_date, t.amount, t.description)))
+          const txns = validParsed.filter((p) => {
+            if (!skipDuplicates) return true
+            const isDup = existingKeys.has(txnKey(p.txn.txn_date, p.txn.amount, p.txn.description))
+            if (isDup) skippedDuplicates++
+            return !isDup
+          }).map((p) => p.txn)
 
           if (txns.length === 0) {
             setError(
               skippedDates > 0 ? 'No valid rows — all dates must be in YYYY-MM-DD format.'
               : skippedAmounts > 0 ? 'No valid rows — amounts must be greater than zero.'
+              : skippedDuplicates > 0 ? 'No valid rows — every row already exists in your data.'
               : 'No valid rows to import.',
             )
             setImporting(false)
@@ -367,22 +406,39 @@ function ImportSection() {
 
           // Batch so a large file can't time out or get rejected as one huge
           // insert — and so a mid-file failure still keeps whatever landed
-          // before it instead of losing the whole import.
+          // before it instead of losing the whole import. select('id') so a
+          // successful import can be undone in one click.
           const CHUNK_SIZE = 500
           let insertedCount = 0
           let dbErrorMessage: string | null = null
+          const insertedIds: string[] = []
           for (let i = 0; i < txns.length; i += CHUNK_SIZE) {
             const chunk = txns.slice(i, i + CHUNK_SIZE)
             setImportProgress({ done: insertedCount, total: txns.length })
-            const { error: dbErr } = await supabase.from('transactions').insert(chunk)
+            const { data: inserted, error: dbErr } = await supabase.from('transactions').insert(chunk).select('id')
             if (dbErr) { dbErrorMessage = dbErr.message; break }
             insertedCount += chunk.length
+            if (inserted) insertedIds.push(...inserted.map((row: { id: string }) => row.id))
           }
           setImportProgress(null)
 
           if (insertedCount > 0) {
             await qc.invalidateQueries({ queryKey: ['expenses'] })
             setImported(insertedCount)
+            if (insertedIds.length > 0) {
+              addToast({
+                type: 'success',
+                message: `${insertedCount} transaction${insertedCount !== 1 ? 's' : ''} imported`,
+                duration: 8000,
+                action: {
+                  label: 'Undo',
+                  onClick: async () => {
+                    await supabase.from('transactions').delete().in('id', insertedIds)
+                    qc.invalidateQueries({ queryKey: ['expenses'] })
+                  },
+                },
+              })
+            }
           }
 
           const messages: string[] = []
@@ -393,11 +449,13 @@ function ImportSection() {
           }
           if (skippedDates > 0) messages.push(`${skippedDates} row${skippedDates !== 1 ? 's' : ''} skipped — invalid date format (use YYYY-MM-DD).`)
           if (skippedAmounts > 0) messages.push(`${skippedAmounts} row${skippedAmounts !== 1 ? 's' : ''} skipped — amount must be greater than zero.`)
+          if (skippedDuplicates > 0) messages.push(`${skippedDuplicates} row${skippedDuplicates !== 1 ? 's' : ''} skipped — already in your data.`)
           setError(messages.length > 0 ? messages.join(' ') : null)
 
           if (!dbErrorMessage) {
             setPreview([])
             setFileName(null)
+            setDuplicateInfo(null)
             if (fileRef.current) fileRef.current.value = ''
           }
         } catch (err) {
@@ -481,6 +539,18 @@ function ImportSection() {
                   </tbody>
                 </table>
               </div>
+
+              {duplicateInfo && (
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-secondary)', marginTop: 12 }}>
+                  <input
+                    type="checkbox"
+                    checked={skipDuplicates}
+                    onChange={(e) => setSkipDuplicates(e.target.checked)}
+                  />
+                  {duplicateInfo.duplicates} of {duplicateInfo.total} row{duplicateInfo.total !== 1 ? 's' : ''} look{duplicateInfo.total === 1 ? 's' : ''} like duplicate{duplicateInfo.duplicates !== 1 ? 's' : ''} already in your data — skip {duplicateInfo.duplicates !== 1 ? 'them' : 'it'}?
+                </label>
+              )}
+
               <button
                 className="btn-primary"
                 style={{ marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 8 }}
