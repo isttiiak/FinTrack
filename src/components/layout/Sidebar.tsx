@@ -17,6 +17,7 @@ import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
 import { cn } from '@/lib/utils'
 import { Logo } from '@/components/common/Logo'
+import CalculatorToggleButton from '@/components/common/CalculatorToggleButton'
 
 const NAV_ITEMS = [
   { to: '/dashboard',   label: 'Dashboard',   icon: LayoutDashboard },
@@ -114,6 +115,7 @@ export default function Sidebar() {
         {/* Bottom nav */}
         <div className="sidebar-bottom">
           <div className="sidebar-divider" />
+          <CalculatorToggleButton className="sidebar-nav-item sidebar-nav-item-btn" showLabel />
           {BOTTOM_ITEMS.map(({ to, label, icon: Icon }) => {
             const active = location === to
             return (
@@ -215,6 +217,8 @@ const sidebarStyles = `
 }
 .sidebar-nav-item:hover { color: var(--text-primary); background: var(--bg-hover); }
 .sidebar-nav-item-active { color: var(--text-primary); }
+.sidebar-nav-item-btn { background: none; border: none; width: 100%; font: inherit; cursor: pointer; }
+.sidebar-nav-item-btn.calc-toggle-btn-active { color: var(--accent-primary); background: rgba(79, 169, 129,0.1); }
 .sidebar-active-bg {
   position: absolute; inset: 0; border-radius: 10px;
   background: var(--bg-elevated);

@@ -61,15 +61,19 @@ export default function FloatingCalculatorPanel() {
     const maxX = Math.max(8, window.innerWidth - rect.width - 8)
     const maxY = Math.max(8, window.innerHeight - rect.height - 8)
 
-    // Default first-open position: just above the trigger FAB. The FAB sits
-    // at left:24px on mobile, but shifts to left:264px on desktop to clear
-    // the fixed 240px sidebar — mirror that here so the panel opens where
-    // the button visually is.
+    // Default first-open position: near wherever the trigger button
+    // actually is. On desktop that's the sidebar's bottom-left (240px
+    // sidebar + margin), so open just clear of it, low on screen. On
+    // mobile the trigger is the topbar's calculator icon (top-right), so
+    // open near the top-right instead of the old bottom-left default —
+    // it used to visually match a bottom-left FAB that no longer exists
+    // (see globals.css's .calc-toggle-btn note).
     const isDesktop = window.innerWidth >= 769
-    const defaultX = isDesktop ? 264 : 24
+    const defaultX = isDesktop ? 264 : maxX
+    const defaultY = isDesktop ? Math.max(8, maxY - 100) : 64
     const isUnset = calculatorPosition.x === 0 && calculatorPosition.y === 0
     const nextX = isUnset ? Math.min(defaultX, maxX) : Math.min(Math.max(calculatorPosition.x, 8), maxX)
-    const nextY = isUnset ? Math.max(8, maxY - 100) : Math.min(Math.max(calculatorPosition.y, 8), maxY)
+    const nextY = isUnset ? Math.min(defaultY, maxY) : Math.min(Math.max(calculatorPosition.y, 8), maxY)
     x.set(nextX)
     y.set(nextY)
     // eslint-disable-next-line react-hooks/exhaustive-deps

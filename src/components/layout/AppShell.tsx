@@ -4,14 +4,15 @@ import { Menu } from 'lucide-react'
 import Sidebar from './Sidebar'
 import MobileNav from './MobileNav'
 import ConfirmDialog from '@/components/common/ConfirmDialog'
-import FloatingCalculatorFAB from '@/components/common/FloatingCalculatorFAB'
+import CalculatorToggleButton from '@/components/common/CalculatorToggleButton'
+import FloatingCalculatorPanel from '@/components/common/FloatingCalculatorPanel'
 import { Logo } from '@/components/common/Logo'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
 
 export default function AppShell() {
   const isDemo = useDemoStore((s) => s.isDemo)
-  const { toggleSidebar } = useUIStore()
+  const { toggleSidebar, calculatorOpen } = useUIStore()
 
   return (
     <div className="app-shell">
@@ -42,7 +43,7 @@ export default function AppShell() {
             <Logo size={24} />
             <span>FinTrack</span>
           </div>
-          <div style={{ width: 36 }} />
+          <CalculatorToggleButton className="topbar-calc-btn" />
         </header>
 
         {/* Page content — each page handles its own entrance animation */}
@@ -53,7 +54,9 @@ export default function AppShell() {
 
       <MobileNav />
       <ConfirmDialog />
-      <FloatingCalculatorFAB />
+      <AnimatePresence>
+        {calculatorOpen && <FloatingCalculatorPanel />}
+      </AnimatePresence>
 
       <style>{`
         .app-shell {
@@ -108,6 +111,18 @@ export default function AppShell() {
         }
         .topbar-menu-btn:hover { background: var(--bg-hover); }
 
+        .topbar-calc-btn {
+          width: 36px; height: 36px; border-radius: 8px;
+          background: var(--bg-elevated); border: 1px solid var(--border);
+          color: var(--text-secondary); cursor: pointer;
+          display: flex; align-items: center; justify-content: center;
+          transition: background 0.15s, color 0.15s, border-color 0.15s;
+        }
+        .topbar-calc-btn:hover { background: var(--bg-hover); }
+        .topbar-calc-btn.calc-toggle-btn-active {
+          color: var(--accent-primary); border-color: rgba(79, 169, 129,0.4); background: rgba(79, 169, 129,0.12);
+        }
+
         .topbar-brand {
           display: flex; align-items: center; gap: 8px;
           font-size: 15px; font-weight: 700; color: var(--text-primary);
@@ -116,12 +131,21 @@ export default function AppShell() {
         .app-content {
           flex: 1;
           padding: 24px;
+          /* Extra clearance at the bottom so scrolling to the end of
+             Expenses never leaves the last row sitting under the fixed
+             Quick Add FAB (bottom:32px desktop / bottom:88px mobile, see
+             .fab in globals.css). The calculator used to float here too
+             and covered content mid-scroll, not just at the end — moved
+             into the topbar/sidebar instead (CalculatorToggleButton),
+             which is the real fix for that; this padding only handles the
+             one FAB that's still genuinely fixed-over-content. */
+          padding-bottom: 90px;
           overflow-y: auto;
           overflow-x: hidden;
           min-width: 0;
         }
-        @media (max-width: 768px) { .app-content { padding: 14px; } }
-        @media (max-width: 400px) { .app-content { padding: 10px; } }
+        @media (max-width: 768px) { .app-content { padding: 14px; padding-bottom: 110px; } }
+        @media (max-width: 400px) { .app-content { padding: 10px; padding-bottom: 110px; } }
       `}</style>
     </div>
   )
