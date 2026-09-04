@@ -13,7 +13,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
-import { clearLocalUserData } from '@/lib/utils'
+import { clearLocalUserData, setActiveCurrency } from '@/lib/utils'
 import { Logo } from '@/components/common/Logo'
 import ToastContainer from '@/components/common/ToastContainer'
 import type { UserProfile } from '@/types/database.types'
@@ -58,7 +58,15 @@ const rootRoute = createRootRoute({
 })
 
 function Root() {
-  const { setSession, setLoading, setProfile, loading } = useAuthStore()
+  const { setSession, setLoading, setProfile, loading, profile } = useAuthStore()
+
+  // Keeps every formatCurrency(amount) call across the app (the vast
+  // majority never pass a currency explicitly) in sync with the signed-in
+  // user's actual Profile → Currency setting instead of a hardcoded BDT
+  // default. See lib/utils.ts's setActiveCurrency.
+  useEffect(() => {
+    setActiveCurrency(profile?.currency ?? 'BDT')
+  }, [profile?.currency])
 
   useEffect(() => {
     async function loadProfile(userId: string) {

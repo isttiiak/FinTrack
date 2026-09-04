@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -36,7 +36,7 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const { register, handleSubmit, watch, formState: { errors, isDirty } } = useForm<FormValues>({
+  const { register, handleSubmit, watch, reset, formState: { errors, isDirty } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       full_name:  profile?.full_name ?? '',
@@ -45,6 +45,22 @@ export default function ProfilePage() {
       timezone:   profile?.timezone ?? 'Asia/Dhaka',
     },
   })
+
+  // `defaultValues` above is captured once at mount — if `profile` is still
+  // loading at that exact instant, the form is silently stuck on blank
+  // fallback values forever, even after the real profile arrives (Sidebar
+  // doesn't have this problem since it reads `profile` directly on every
+  // render instead of through a one-time form snapshot). Re-sync once the
+  // real profile lands or changes.
+  useEffect(() => {
+    if (!profile) return
+    reset({
+      full_name:  profile.full_name ?? '',
+      avatar_url: profile.avatar_url ?? '',
+      currency:   profile.currency ?? 'BDT',
+      timezone:   profile.timezone ?? 'Asia/Dhaka',
+    })
+  }, [profile, reset])
 
   const avatarUrl = watch('avatar_url')
   const displayName = watch('full_name') || (isDemo ? 'Demo User' : 'You')

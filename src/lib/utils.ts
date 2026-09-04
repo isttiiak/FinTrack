@@ -15,7 +15,19 @@ export function clearLocalUserData(): void {
   }
 }
 
-export function formatCurrency(amount: number, currency = 'BDT'): string {
+// The signed-in user's profile.currency, mirrored here so the ~90 call sites
+// across the app that call formatCurrency(amount) with no currency argument
+// pick up the real setting instead of silently defaulting to BDT. Set once
+// from App.tsx's Root() whenever the loaded profile's currency changes —
+// a plain module variable rather than threading a currency prop through
+// every page/component that formats money.
+let activeCurrency = 'BDT'
+
+export function setActiveCurrency(currency: string): void {
+  activeCurrency = currency
+}
+
+export function formatCurrency(amount: number, currency = activeCurrency): string {
   if (currency === 'BDT') {
     return `৳${amount.toLocaleString('en-BD', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
   }
