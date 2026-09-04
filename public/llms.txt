@@ -1,0 +1,19 @@
+# FinTrack
+
+> Open-source personal finance management web app — expense tracking, a lent & debt
+> ledger, an investment portfolio tracker, and AI-powered insights, in a self-hostable,
+> mobile-first PWA. Users own their data 100%: it lives in their own Supabase project,
+> with full export and full delete.
+
+FinTrack combines expense tracking (with budgets, a no-spend streak, CSV import/export),
+a lent & debt ledger for tracking money owed between people, an investment portfolio
+tracker (ROI, P&L, installments, returns), and optional AI features (categorization,
+anomaly detection, digests, budgeting help) powered by a user-supplied free Groq API key.
+
+## Docs
+
+- [Live app](https://fin-track-eight-blue.vercel.app/)
+- [README](https://github.com/isttiiak/FinTrack/blob/main/README.md): features, tech
+  stack, self-hosting instructions
+- [Source](https://github.com/isttiiak/FinTrack)
+- [License](https://github.com/isttiiak/FinTrack/blob/main/LICENSE): MIT
