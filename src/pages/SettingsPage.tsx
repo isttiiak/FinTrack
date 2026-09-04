@@ -285,8 +285,11 @@ function ImportSection() {
     const blob = new Blob([TEMPLATE_CSV], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href = url; a.download = 'fintrack-import-template.csv'; a.click()
-    URL.revokeObjectURL(url)
+    a.href = url; a.download = 'fintrack-import-template.csv'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    setTimeout(() => URL.revokeObjectURL(url), 0)
   }
 
   function handleFile(file: File) {

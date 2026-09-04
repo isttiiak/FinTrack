@@ -26,6 +26,15 @@ export async function exportTransactionsExcel(transactions: Transaction[], filen
   XLSX.writeFile(wb, `${filename}.xlsx`)
 }
 
+// Excel/Sheets treats a cell starting with =, +, -, @, tab, or CR as a
+// formula regardless of CSV quoting — a description like
+// =HYPERLINK("http://evil","click") executes on open. Prefixing with a
+// single quote forces it to render as text instead.
+const CSV_FORMULA_PREFIX_RE = /^[=+\-@\t\r]/
+function sanitizeCsvCell(value: string): string {
+  return CSV_FORMULA_PREFIX_RE.test(value) ? `'${value}` : value
+}
+
 export function exportTransactionsCSV(transactions: Transaction[], filename = 'fintrack-expenses') {
   const headers = ['Date', 'Type', 'Category', 'Main Group', 'Amount', 'Description', 'Payment Method', 'Account']
   const rows = transactions.map((t) => [
@@ -36,7 +45,7 @@ export function exportTransactionsCSV(transactions: Transaction[], filename = 'f
   ])
 
   const csv = [headers, ...rows]
-    .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    .map((row) => row.map((cell) => `"${sanitizeCsvCell(String(cell)).replace(/"/g, '""')}"`).join(','))
     .join('\n')
 
   downloadText(csv, `${filename}.csv`, 'text/csv')
@@ -162,6 +171,8 @@ function downloadText(content: string, filename: string, mimeType: string) {
   const a = document.createElement('a')
   a.href = url
   a.download = filename
+  document.body.appendChild(a)
   a.click()
-  URL.revokeObjectURL(url)
+  document.body.removeChild(a)
+  setTimeout(() => URL.revokeObjectURL(url), 0)
 }
