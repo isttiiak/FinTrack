@@ -8,6 +8,12 @@
 //   unary      := ('-'|'+')? postfix
 //   postfix    := primary ('%')?
 //   primary    := NUMBER | '(' expression ')'
+//
+// '%' is context-aware, calculator-app style: a bare "N%" immediately after
+// a '+' or '-' means "N% of the running total so far" (1000+15% = 1150), not
+// "N/100" (which would give 1000.15 — surprising in a money field). Every
+// other position ('%' after '*'/'/', standalone, or buried inside parens)
+// still means plain N/100, matching a real calculator. See TODO.md §3.10.
 
 export type CalcResult =
   | { ok: true; value: number }
@@ -47,6 +53,13 @@ function tokenize(input: string): Token[] {
   return tokens
 }
 
+// A term's value, plus whether it's a bare "N%" — i.e. nothing but a
+// (possibly negated) percentage literal, with no '*'/'/' applied to it.
+// Only that shape triggers the "percent of the running total" rule in
+// expression() — 1000+10*2% still means 1000 + (10*0.02), same as any
+// ordinary calculator.
+interface TermResult { value: number; isBarePercent: boolean }
+
 class Parser {
   private tokens: Token[]
   private pos = 0
@@ -73,43 +86,49 @@ class Parser {
   }
 
   private expression(): number {
-    let value = this.term()
+    let value = this.term().value
     while (this.peek()?.type === '+' || this.peek()?.type === '-') {
       const op = this.next().type
       const rhs = this.term()
-      value = op === '+' ? value + rhs : value - rhs
-    }
-    return value
-  }
-
-  private term(): number {
-    let value = this.unary()
-    while (this.peek()?.type === '*' || this.peek()?.type === '/') {
-      const op = this.next().type
-      const rhs = this.unary()
-      if (op === '/') {
-        if (rhs === 0) throw new DivByZeroError()
-        value = value / rhs
+      if (rhs.isBarePercent) {
+        value = op === '+' ? value + value * rhs.value : value - value * rhs.value
       } else {
-        value = value * rhs
+        value = op === '+' ? value + rhs.value : value - rhs.value
       }
     }
     return value
   }
 
-  private unary(): number {
-    if (this.peek()?.type === '-') { this.next(); return -this.postfix() }
+  private term(): TermResult {
+    let result = this.unary()
+    while (this.peek()?.type === '*' || this.peek()?.type === '/') {
+      const op = this.next().type
+      const rhs = this.unary()
+      if (op === '/') {
+        if (rhs.value === 0) throw new DivByZeroError()
+        result = { value: result.value / rhs.value, isBarePercent: false }
+      } else {
+        result = { value: result.value * rhs.value, isBarePercent: false }
+      }
+    }
+    return result
+  }
+
+  private unary(): TermResult {
+    if (this.peek()?.type === '-') { this.next(); const r = this.postfix(); return { value: -r.value, isBarePercent: r.isBarePercent } }
     if (this.peek()?.type === '+') { this.next(); return this.postfix() }
     return this.postfix()
   }
 
-  private postfix(): number {
+  private postfix(): TermResult {
     let value = this.primary()
+    let isBarePercent = false
     while (this.peek()?.type === '%') {
       this.next()
       value = value / 100
+      isBarePercent = true
     }
-    return value
+    return { value, isBarePercent }
   }
 
   private primary(): number {

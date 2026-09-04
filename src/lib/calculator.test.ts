@@ -26,8 +26,17 @@ describe('evaluate', () => {
     expect(evaluate('-5+10')).toEqual({ ok: true, value: 5 })
   })
 
-  it('treats % as divide-by-100, not "percent of" (TODO.md §3.10 — documented, intentional)', () => {
-    expect(evaluate('1000+15%')).toEqual({ ok: true, value: 1000.15 })
+  it('treats a bare N% right after +/- as "percent of the running total" (TODO.md §3.10)', () => {
+    expect(evaluate('1000+15%')).toEqual({ ok: true, value: 1150 })
+    expect(evaluate('1000-15%')).toEqual({ ok: true, value: 850 })
+  })
+
+  it('still treats % as plain divide-by-100 everywhere else', () => {
+    expect(evaluate('15%')).toEqual({ ok: true, value: 0.15 })
+    expect(evaluate('1000*15%')).toEqual({ ok: true, value: 150 })
+    // A composite term (more than a bare N%) after +/- isn't special-cased —
+    // matches ordinary calculator-app behavior, not "percent of 1000".
+    expect(evaluate('1000+10*2%')).toEqual({ ok: true, value: 1000.2 })
   })
 
   it('accepts the × and ÷ operator-chip glyphs as aliases', () => {
