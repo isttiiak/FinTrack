@@ -30,7 +30,19 @@ jobs:
       - run: pnpm build
       - run: pnpm lint
       - run: pnpm test
-      - run: pnpm audit
+      - name: pnpm audit
+        run: |
+          # registry.npmjs.org's audit endpoint times out often enough on GitHub's
+          # runners that pnpm's own built-in retry (which this log already shows
+          # exhausting — 10s then 1min backoff) isn't always enough. Outer retry
+          # so a transient registry blip doesn't fail the whole build; a real
+          # vulnerability finding will still fail every attempt.
+          for i in 1 2 3; do
+            pnpm audit && exit 0
+            echo "pnpm audit attempt $i/3 failed, retrying in 30s..."
+            sleep 30
+          done
+          exit 1
 
   audit:
     if: github.event_name == 'schedule'
@@ -48,4 +60,11 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
-      - run: pnpm audit
+      - name: pnpm audit
+        run: |
+          for i in 1 2 3; do
+            pnpm audit && exit 0
+            echo "pnpm audit attempt $i/3 failed, retrying in 30s..."
+            sleep 30
+          done
+          exit 1
