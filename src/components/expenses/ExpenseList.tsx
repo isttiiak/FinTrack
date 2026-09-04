@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import type { Transaction } from '@/types/expense.types'
-import ExpenseCard, { expenseCardStyles } from './ExpenseCard'
+import ExpenseCard from './ExpenseCard'
 import { formatCurrency, formatDateLabel } from '@/lib/utils'
 import { staggerContainer, staggerItem } from '@/lib/animations'
 
@@ -49,20 +49,6 @@ export default function ExpenseList({ transactions, onEdit }: ExpenseListProps) 
           </motion.div>
         )
       })}
-
-      <style>{`
-        .expense-list { display: flex; flex-direction: column; gap: 20px; }
-        .expense-group { display: flex; flex-direction: column; gap: 6px; }
-        .expense-group-header {
-          display: flex; align-items: center; justify-content: space-between;
-          padding: 0 4px 4px;
-          border-bottom: 1px solid var(--border);
-        }
-        .expense-group-date { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
-        .expense-group-total { font-size: 13px; font-weight: 600; }
-        .expense-group-items { display: flex; flex-direction: column; gap: 6px; }
-        ${expenseCardStyles}
-      `}</style>
     </motion.div>
   )
 }

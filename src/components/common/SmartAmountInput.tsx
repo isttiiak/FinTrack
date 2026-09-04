@@ -125,24 +125,6 @@ export default function SmartAmountInput({
               : 'keep typing…'}
         </p>
       )}
-
-      <style>{`
-        .sai-wrap { display: flex; flex-direction: column; gap: 6px; }
-        .sai-input-error { border-color: var(--accent-red) !important; }
-
-        .sai-chip-row { display: flex; gap: 6px; }
-        .sai-chip {
-          width: 34px; height: 30px; border-radius: 8px;
-          background: rgba(79, 169, 129,0.1); border: 1px solid rgba(79, 169, 129,0.3);
-          color: var(--accent-primary); font-size: 15px; font-weight: 600; cursor: pointer;
-          display: flex; align-items: center; justify-content: center;
-          transition: background 0.12s;
-        }
-        .sai-chip:hover { background: rgba(79, 169, 129,0.2); }
-
-        .sai-preview { font-size: 12px; color: var(--accent-teal); margin: 0; font-weight: 500; }
-        .sai-preview-error { color: var(--text-muted); }
-      `}</style>
     </div>
   )
 }

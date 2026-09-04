@@ -26,20 +26,6 @@ export default function QuickAddFAB() {
       <AnimatePresence>
         {open && <ExpenseForm onClose={() => setOpen(false)} />}
       </AnimatePresence>
-
-      <style>{`
-        .fab {
-          position: fixed; bottom: 88px; right: 24px; z-index: 20;
-          width: 56px; height: 56px; border-radius: 16px;
-          background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E);
-          border: none; color: #fff; cursor: pointer;
-          display: flex; align-items: center; justify-content: center;
-          box-shadow: 0 6px 20px rgba(79, 169, 129,0.45);
-        }
-        @media (min-width: 769px) {
-          .fab { bottom: 32px; }
-        }
-      `}</style>
     </>
   )
 }

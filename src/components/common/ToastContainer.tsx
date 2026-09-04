@@ -46,46 +46,6 @@ export default function ToastContainer() {
           )
         })}
       </AnimatePresence>
-
-      <style>{`
-        .toast-container {
-          position: fixed;
-          bottom: 24px;
-          left: 50%;
-          transform: translateX(-50%);
-          z-index: 9500;
-          display: flex;
-          flex-direction: column-reverse;
-          gap: 8px;
-          width: min(360px, calc(100vw - 32px));
-          pointer-events: none;
-        }
-        @media (max-width: 768px) {
-          .toast-container { bottom: 76px; }
-        }
-        .toast-item {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 11px 12px;
-          border-radius: 12px;
-          border: 1px solid;
-          box-shadow: 0 12px 32px rgba(0,0,0,0.35);
-          backdrop-filter: blur(8px);
-          pointer-events: auto;
-        }
-        .toast-message { flex: 1; font-size: 13px; color: var(--text-primary); line-height: 1.4; }
-        .toast-action {
-          flex-shrink: 0; background: none; border: none; cursor: pointer;
-          font-size: 12px; font-weight: 700; padding: 2px 4px;
-        }
-        .toast-close {
-          flex-shrink: 0; background: none; border: none; cursor: pointer;
-          color: var(--text-muted); padding: 2px; display: flex;
-          border-radius: 4px; transition: color 0.15s, background 0.15s;
-        }
-        .toast-close:hover { color: var(--text-primary); background: var(--bg-hover); }
-      `}</style>
     </div>
   )
 }

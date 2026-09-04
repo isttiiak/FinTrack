@@ -34,36 +34,6 @@ export default function MobileNav() {
         <Menu size={20} />
         <span>More</span>
       </button>
-
-      <style>{`
-        .mobile-nav {
-          display: none;
-          position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
-          background: var(--bg-card);
-          border-top: 1px solid var(--border);
-          padding: 6px 0 env(safe-area-inset-bottom, 6px);
-        }
-        @media (max-width: 768px) { .mobile-nav { display: flex; } }
-
-        .mobile-nav-item {
-          position: relative; flex: 1;
-          display: flex; flex-direction: column; align-items: center; gap: 2px;
-          padding: 4px 2px;
-          font-size: 9px; font-weight: 500;
-          color: var(--text-muted); text-decoration: none;
-          background: none; border: none; cursor: pointer;
-          transition: color 0.15s; min-width: 0; overflow: hidden;
-        }
-        .mobile-nav-item-active { color: var(--accent-primary); }
-        .mobile-nav-menu-btn { color: var(--text-muted); }
-        .mobile-nav-menu-btn:hover { color: var(--text-primary); }
-
-        .mobile-nav-indicator {
-          position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-          width: 24px; height: 3px; border-radius: 0 0 3px 3px;
-          background: var(--accent-primary);
-        }
-      `}</style>
     </nav>
   )
 }
