@@ -17,8 +17,6 @@ import { scaleIn } from '@/lib/animations'
 import { cn } from '@/lib/utils'
 import type { Transaction } from '@/types/expense.types'
 import CategoryCombobox from '@/components/expenses/CategoryCombobox'
-import ReceiptScanner from '@/components/expenses/ReceiptScanner'
-import type { ReceiptScanResult } from '@/components/expenses/ReceiptScanner'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
 
 const schema = z.object({
@@ -88,13 +86,6 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
   useEffect(() => {
     if (!editing) setValue('category_id', '')
   }, [selectedType, editing, setValue])
-
-  function handleReceiptExtracted(result: ReceiptScanResult) {
-    if (result.amount !== undefined) setValue('amount', result.amount)
-    if (result.txn_date) setValue('txn_date', result.txn_date)
-    if (result.description) setValue('description', result.description)
-    if (result.category_id) setValue('category_id', result.category_id)
-  }
 
   async function onSubmit(values: FormValues) {
     if (values.payment_method) localStorage.setItem(LS_METHOD_KEY, values.payment_method)
@@ -178,13 +169,6 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
               />
             ))}
           </div>
-
-          {/* Scan receipt — only useful when adding a new expense */}
-          {!editing && selectedType === 'Expense' && (
-            <div className="ef-field">
-              <ReceiptScanner categories={filteredCategories} onExtracted={handleReceiptExtracted} />
-            </div>
-          )}
 
           {/* Amount */}
           <div className="ef-field">
