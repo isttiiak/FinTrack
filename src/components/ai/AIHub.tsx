@@ -7,7 +7,7 @@ import { GROQ_MODELS } from '@/lib/constants'
 import { useExpenses } from '@/hooks/useExpenses'
 import { useBudgets } from '@/hooks/useBudgets'
 import { usePersons } from '@/hooks/useLedger'
-import { formatCurrency, toISODateString } from '@/lib/utils'
+import { formatCurrency, getActiveCurrencySymbol, toISODateString } from '@/lib/utils'
 import { fadeUp } from '@/lib/animations'
 import ErrorBanner from '@/components/common/ErrorBanner'
 
@@ -391,7 +391,7 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
         </div>
         <div className="aih-goal-inputs">
           <div className="aih-goal-field">
-            <label className="aih-goal-label">Save amount (৳)</label>
+            <label className="aih-goal-label">Save amount ({getActiveCurrencySymbol()})</label>
             <input className="aih-input" type="number" placeholder="e.g. 50000"
               value={goalAmount} onChange={(e) => setGoalAmount(e.target.value)} />
           </div>

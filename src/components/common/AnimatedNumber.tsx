@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useMotionValue, useSpring, useTransform, motion } from 'framer-motion'
+import { formatCurrency } from '@/lib/utils'
 
 interface AnimatedNumberProps {
   value: number
@@ -8,13 +9,16 @@ interface AnimatedNumberProps {
   duration?: number
 }
 
-export default function AnimatedNumber({ value, currency = 'BDT', className, duration = 0.6 }: AnimatedNumberProps) {
+// `currency` intentionally has no default here — omitting it (as every call
+// site does) lets it fall through to formatCurrency's own default, the
+// signed-in user's actual currency. This component previously hardcoded its
+// own 'BDT'-only formatting independent of formatCurrency entirely, so every
+// KPI using it stayed pinned to ৳ regardless of the Profile currency
+// setting. See TODO.md §3.13.
+export default function AnimatedNumber({ value, currency, className, duration = 0.6 }: AnimatedNumberProps) {
   const motionValue = useMotionValue(0)
   const spring = useSpring(motionValue, { duration: duration * 1000, bounce: 0 })
-  const display = useTransform(spring, (v) => {
-    const formatted = v.toLocaleString('en-BD', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
-    return currency === 'BDT' ? `৳${formatted}` : formatted
-  })
+  const display = useTransform(spring, (v) => formatCurrency(Math.round(v), currency))
   const prevRef = useRef(0)
 
   useEffect(() => {

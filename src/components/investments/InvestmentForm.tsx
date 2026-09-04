@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 import { scaleIn } from '@/lib/animations'
-import { cn, toISODateString } from '@/lib/utils'
+import { cn, toISODateString, getActiveCurrencySymbol } from '@/lib/utils'
 import { INVESTMENT_CATEGORIES } from '@/types/investment.types'
 import { useCreateInvestment, useUpdateInvestment } from '@/hooks/useInvestments'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
@@ -121,7 +121,7 @@ export default function InvestmentForm({ editing, onClose }: InvestmentFormProps
           </div>
 
           <div className="invf-field">
-            <label className="invf-label">Committed amount (৳) <span className="req">*</span></label>
+            <label className="invf-label">Committed amount ({getActiveCurrencySymbol()}) <span className="req">*</span></label>
             <input
               {...register('committed_amount', { setValueAs: (v) => (v === '' || v === null || v === undefined) ? undefined : Number(v) })}
               type="number" step="0.01" placeholder="0.00"
@@ -144,7 +144,7 @@ export default function InvestmentForm({ editing, onClose }: InvestmentFormProps
           </div>
 
           <div className="invf-field">
-            <label className="invf-label">Current market value (৳) <span className="invf-optional">(optional — update any time)</span></label>
+            <label className="invf-label">Current market value ({getActiveCurrencySymbol()}) <span className="invf-optional">(optional — update any time)</span></label>
             <input
               {...register('market_value', { setValueAs: (v) => (v === '' || v === null || v === undefined) ? undefined : Number(v) })}
               type="number" step="0.01" placeholder="Current value of your investment"

@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ArrowUpRight } from 'lucide-react'
 import { scaleIn } from '@/lib/animations'
-import { cn, toISODateString, formatCurrency } from '@/lib/utils'
+import { cn, toISODateString, formatCurrency, getActiveCurrencySymbol } from '@/lib/utils'
 import { useCreateInvestmentPayment } from '@/hooks/useInvestments'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
@@ -96,7 +96,7 @@ export default function InvestmentPaymentForm({ investment, onClose }: Investmen
               />
             </div>
             {remaining > 0 && (
-              <p className="ipf-remaining">৳{formatCurrency(remaining)} remaining to pay</p>
+              <p className="ipf-remaining">{formatCurrency(remaining)} remaining to pay</p>
             )}
             {remaining === 0 && paid > 0 && (
               <p className="ipf-remaining" style={{ color: 'var(--accent-teal)' }}>Fully paid ✓</p>
@@ -106,7 +106,7 @@ export default function InvestmentPaymentForm({ investment, onClose }: Investmen
 
         <form onSubmit={handleSubmit(onSubmit)} className="ipf-form">
           <div className="ipf-field">
-            <label className="ipf-label">Amount paid (৳) <span className="req">*</span></label>
+            <label className="ipf-label">Amount paid ({getActiveCurrencySymbol()}) <span className="req">*</span></label>
             <input
               {...register('amount', { valueAsNumber: true })}
               type="number" step="0.01" placeholder="0.00"

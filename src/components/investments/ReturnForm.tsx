@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 import { scaleIn } from '@/lib/animations'
-import { cn, toISODateString, formatCurrency } from '@/lib/utils'
+import { cn, toISODateString, formatCurrency, getActiveCurrencySymbol } from '@/lib/utils'
 import { RETURN_TYPES } from '@/types/investment.types'
 import { useCreateReturn } from '@/hooks/useInvestments'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
@@ -86,7 +86,7 @@ export default function ReturnForm({ investment, onClose }: ReturnFormProps) {
 
         <form onSubmit={handleSubmit(onSubmit)} className="retf-form">
           <div className="retf-field">
-            <label className="retf-label">Amount received (৳)</label>
+            <label className="retf-label">Amount received ({getActiveCurrencySymbol()})</label>
             <input
               {...register('amount', { valueAsNumber: true })}
               type="number" step="0.01" placeholder="0.00"

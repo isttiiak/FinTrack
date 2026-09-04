@@ -6,7 +6,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts'
 import { staggerContainer, staggerItem } from '@/lib/animations'
-import { formatCurrency, toISODateString } from '@/lib/utils'
+import { formatCurrency, getActiveCurrencySymbol, toISODateString } from '@/lib/utils'
 import { useExpenses } from '@/hooks/useExpenses'
 import { useBudgets } from '@/hooks/useBudgets'
 import { useNoSpendStreak } from '@/hooks/useNoSpendStreak'
@@ -19,9 +19,10 @@ function fmtMonth(ym: string) {
   return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' })
 }
 function fmtK(v: number) {
-  if (v >= 100000) return `৳${(v / 1000).toFixed(0)}k`
-  if (v >= 10000)  return `৳${(v / 1000).toFixed(1)}k`
-  return `৳${v.toLocaleString()}`
+  const symbol = getActiveCurrencySymbol()
+  if (v >= 100000) return `${symbol}${(v / 1000).toFixed(0)}k`
+  if (v >= 10000)  return `${symbol}${(v / 1000).toFixed(1)}k`
+  return `${symbol}${v.toLocaleString()}`
 }
 
 // Deliberately literal hex, not var(--accent-*) tokens: the new Emerald & Gold
@@ -553,7 +554,7 @@ function NoSpendCalendar({
           if (isToday) cls += ' nsc-today'
 
           return (
-            <div key={day} className={cls} title={spend > 0 ? `৳${spend.toLocaleString()}` : 'No spend'}>
+            <div key={day} className={cls} title={spend > 0 ? formatCurrency(spend) : 'No spend'}>
               <span className="nsc-day-num">{day}</span>
             </div>
           )

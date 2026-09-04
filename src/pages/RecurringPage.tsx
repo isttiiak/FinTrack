@@ -17,7 +17,7 @@ import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
 import SmartAmountInput from '@/components/common/SmartAmountInput'
 import DeleteButton from '@/components/common/DeleteButton'
 import ErrorBanner from '@/components/common/ErrorBanner'
-import { formatCurrency, toISODateString } from '@/lib/utils'
+import { formatCurrency, getActiveCurrencySymbol, toISODateString } from '@/lib/utils'
 import { fadeUp, staggerContainer, staggerItem, modalIn } from '@/lib/animations'
 import { cn } from '@/lib/utils'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
@@ -123,7 +123,7 @@ function RecurringRuleForm({ editing, onClose }: { editing?: RecurringRule | nul
           </div>
 
           <div className="rf-field">
-            <label className="rf-label">Amount (৳) <span className="req">*</span></label>
+            <label className="rf-label">Amount ({getActiveCurrencySymbol()}) <span className="req">*</span></label>
             <Controller
               control={control}
               name="amount"

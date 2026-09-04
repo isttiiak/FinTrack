@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 import { scaleIn } from '@/lib/animations'
-import { cn, toISODateString } from '@/lib/utils'
+import { cn, toISODateString, getActiveCurrencySymbol } from '@/lib/utils'
 import { LEDGER_TYPES } from '@/lib/constants'
 import type { PaymentMethod, Account } from '@/lib/constants'
 import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
@@ -113,7 +113,7 @@ export default function LedgerEntryForm({ personId, editing, defaultType = 'Lent
 
           {/* Amount */}
           <div className="lef-field">
-            <label className="lef-label">Amount (৳)</label>
+            <label className="lef-label">Amount ({getActiveCurrencySymbol()})</label>
             <input
               {...register('total_amount', { valueAsNumber: true })}
               type="number" step="0.01" placeholder="0.00"

@@ -39,6 +39,17 @@ export function formatCurrency(amount: number, currency = activeCurrency): strin
   }).format(amount)
 }
 
+// Just the symbol/code half of the active currency — for spots that build
+// their own compact string (chart axis ticks, "Amount (…)" field labels)
+// instead of calling formatCurrency for a full formatted value.
+export function getActiveCurrencySymbol(currency = activeCurrency): string {
+  if (currency === 'BDT') return '৳'
+  const part = new Intl.NumberFormat('en-US', { style: 'currency', currency })
+    .formatToParts(0)
+    .find((p) => p.type === 'currency')
+  return part?.value ?? currency
+}
+
 // Date-only strings (e.g. "2026-07-01") must be parsed as local-time y/m/d
 // components — passing them straight to `new Date(...)` parses as UTC
 // midnight, which then renders as the previous day for any UTC+ timezone

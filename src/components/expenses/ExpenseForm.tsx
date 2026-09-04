@@ -12,7 +12,7 @@ import { TXN_TYPES, RECURRING_CADENCES } from '@/lib/constants'
 import type { PaymentMethod, Account, RecurringCadence } from '@/lib/constants'
 import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
 import SmartAmountInput from '@/components/common/SmartAmountInput'
-import { toISODateString } from '@/lib/utils'
+import { toISODateString, getActiveCurrencySymbol } from '@/lib/utils'
 import { scaleIn } from '@/lib/animations'
 import { cn } from '@/lib/utils'
 import type { Transaction } from '@/types/expense.types'
@@ -172,7 +172,7 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
 
           {/* Amount */}
           <div className="ef-field">
-            <label className="ef-label">Amount (৳) <span className="req">*</span></label>
+            <label className="ef-label">Amount ({getActiveCurrencySymbol()}) <span className="req">*</span></label>
             <Controller
               control={control}
               name="amount"

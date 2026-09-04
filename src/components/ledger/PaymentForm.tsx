@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 import { scaleIn } from '@/lib/animations'
-import { cn, toISODateString, formatCurrency } from '@/lib/utils'
+import { cn, toISODateString, formatCurrency, getActiveCurrencySymbol } from '@/lib/utils'
 import type { PaymentMethod, Account } from '@/lib/constants'
 import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
 import { useCreatePayment } from '@/hooks/useLedger'
@@ -82,7 +82,7 @@ export default function PaymentForm({ personId, personName, ledgerType, remainin
 
         <form onSubmit={handleSubmit(onSubmit)} className="payf-form">
           <div className="payf-field">
-            <label className="payf-label">Amount (৳)</label>
+            <label className="payf-label">Amount ({getActiveCurrencySymbol()})</label>
             <input
               {...register('amount', { valueAsNumber: true })}
               type="number" step="0.01" placeholder="0.00"

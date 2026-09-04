@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ChevronDown, Search, UserPlus } from 'lucide-react'
 import { scaleIn } from '@/lib/animations'
-import { cn, toISODateString } from '@/lib/utils'
+import { cn, toISODateString, getActiveCurrencySymbol } from '@/lib/utils'
 import { LEDGER_TYPES, RELATIONSHIPS } from '@/lib/constants'
 import type { PaymentMethod, Account } from '@/lib/constants'
 import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
@@ -363,7 +363,7 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
 
           {/* Amount */}
           <div className="qle-field">
-            <label className="qle-label">Amount (৳)</label>
+            <label className="qle-label">Amount ({getActiveCurrencySymbol()})</label>
             <input
               {...register('total_amount', { valueAsNumber: true })}
               type="number" step="0.01" placeholder="0.00"

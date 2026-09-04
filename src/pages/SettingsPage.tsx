@@ -25,7 +25,7 @@ import { supabase } from '@/lib/supabase'
 import { exportTransactionsExcel, exportTransactionsCSV, exportFullExcel } from '@/lib/export'
 import { getCurrentMonthRange, toISODateString } from '@/lib/utils'
 import ErrorBanner from '@/components/common/ErrorBanner'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, getActiveCurrencySymbol } from '@/lib/utils'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { cn } from '@/lib/utils'
 import { getGroqModel, setGroqModel } from '@/lib/groq'
@@ -102,7 +102,7 @@ function BudgetSection() {
               </div>
 
               <div className="pf-field" style={{ width: 160 }}>
-                <label className="pf-label">Monthly limit (৳)</label>
+                <label className="pf-label">Monthly limit ({getActiveCurrencySymbol()})</label>
                 <input {...register('monthly_limit', { valueAsNumber: true })} type="number" placeholder="e.g. 5000" className={cn('pf-input', errors.monthly_limit && 'pf-input-error')} />
                 {errors.monthly_limit && <p className="pf-error">{errors.monthly_limit.message}</p>}
               </div>
