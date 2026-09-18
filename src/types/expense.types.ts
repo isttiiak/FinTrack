@@ -54,5 +54,7 @@ export interface TransactionFilters {
   category_ids?: string[]
   type?: TxnType | 'All'
   payment_method?: PaymentMethod | 'All'
+  min_amount?: number   // inclusive bounds on amount
+  max_amount?: number
   search?: string   // free-text match against description
 }

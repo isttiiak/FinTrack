@@ -184,6 +184,10 @@
   flex-wrap: wrap;
   gap: 6px;
 }
+.filter-chips-wrap {
+  max-height: 148px;
+  overflow-y: auto;
+}
 .filter-chips-scroll {
   flex-wrap: nowrap;
   overflow-x: auto;

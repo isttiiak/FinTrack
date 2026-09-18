@@ -25,6 +25,8 @@ export function useExpenses(filters?: TransactionFilters) {
         if (filters?.type && filters.type !== 'All') txns = txns.filter((t) => t.type === filters.type)
         if (filters?.category_ids?.length) txns = txns.filter((t) => t.category_id && filters.category_ids!.includes(t.category_id))
         if (filters?.payment_method && filters.payment_method !== 'All') txns = txns.filter((t) => t.payment_method === filters.payment_method)
+        if (filters?.min_amount !== undefined) txns = txns.filter((t) => t.amount >= filters.min_amount!)
+        if (filters?.max_amount !== undefined) txns = txns.filter((t) => t.amount <= filters.max_amount!)
         if (filters?.search?.trim()) {
           const q = filters.search.trim().toLowerCase()
           txns = txns.filter((t) => t.description?.toLowerCase().includes(q))
@@ -45,6 +47,8 @@ export function useExpenses(filters?: TransactionFilters) {
       if (filters?.type && filters.type !== 'All') query = query.eq('type', filters.type)
       if (filters?.category_ids?.length) query = query.in('category_id', filters.category_ids)
       if (filters?.payment_method && filters.payment_method !== 'All') query = query.eq('payment_method', filters.payment_method)
+      if (filters?.min_amount !== undefined) query = query.gte('amount', filters.min_amount)
+      if (filters?.max_amount !== undefined) query = query.lte('amount', filters.max_amount)
       if (filters?.search?.trim()) query = query.ilike('description', `%${filters.search.trim()}%`)
 
       // PostgREST caps responses at 1,000 rows by default — page through it

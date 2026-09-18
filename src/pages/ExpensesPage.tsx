@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Receipt, Filter, X, CalendarRange } from 'lucide-react'
 import { useExpenses } from '@/hooks/useExpenses'
 import { useBudgets } from '@/hooks/useBudgets'
+import { useCategories } from '@/hooks/useCategories'
 import { useNoSpendStreak } from '@/hooks/useNoSpendStreak'
-import ExpenseList from '@/components/expenses/ExpenseList'
+import ExpenseList, { type ExpenseSort } from '@/components/expenses/ExpenseList'
 import ExpenseForm from '@/components/expenses/ExpenseForm'
 import BudgetIndicator from '@/components/expenses/BudgetIndicator'
 import QuickAddFAB from '@/components/expenses/QuickAddFAB'
@@ -22,6 +23,20 @@ import { cn } from '@/lib/utils'
 import { useIsExpensesOnly } from '@/hooks/useTrackingMode'
 import './ExpensesPage.css'
 
+const SORT_OPTIONS = [
+  ['newest', 'Newest'],
+  ['oldest', 'Oldest'],
+  ['highest', 'Highest amount'],
+  ['lowest', 'Lowest amount'],
+] as const
+
+// Blank or non-numeric input means "no bound".
+function parseAmount(v: string): number | undefined {
+  if (v.trim() === '') return undefined
+  const n = Number(v)
+  return Number.isFinite(n) && n >= 0 ? n : undefined
+}
+
 export default function ExpensesPage() {
   const isExpensesOnly = useIsExpensesOnly()
   const now = new Date()
@@ -34,6 +49,10 @@ export default function ExpensesPage() {
   const [rangeFrom, setRangeFrom] = useState('')
   const [rangeTo, setRangeTo] = useState('')
   const [search, setSearch] = useState('')
+  const [categoryIds, setCategoryIds] = useState<string[]>([])
+  const [minAmount, setMinAmount] = useState('')
+  const [maxAmount, setMaxAmount] = useState('')
+  const [sort, setSort] = useState<ExpenseSort>('newest')
   const [editingTxn, setEditingTxn] = useState<Transaction | null>(null)
   const [addOpen, setAddOpen] = useState(false)
 
@@ -49,11 +68,29 @@ export default function ExpensesPage() {
     type: typeFilter === 'All' ? undefined : typeFilter,
     payment_method: methodFilter === 'All' ? undefined : (methodFilter as TransactionFilters['payment_method']),
     search: search.trim() || undefined,
+    category_ids: categoryIds.length ? categoryIds : undefined,
+    min_amount: parseAmount(minAmount),
+    max_amount: parseAmount(maxAmount),
   }
 
   const transactionsQ = useExpenses(filters)
   const { data: transactions = [], isLoading } = transactionsQ
   const { data: budgets = [] } = useBudgets()
+  const { data: allCategories = [] } = useCategories()
+
+  // Category multi-select choices follow the Type filter, so "Income" doesn't
+  // offer expense categories that could never match.
+  const categoryChoices = useMemo(
+    () => allCategories.filter((c) => typeFilter === 'All' || c.type === typeFilter),
+    [allCategories, typeFilter],
+  )
+  const hasActiveFilters =
+    typeFilter !== 'All' || methodFilter !== 'All' || groupFilter !== 'All' ||
+    categoryIds.length > 0 || minAmount !== '' || maxAmount !== ''
+
+  function toggleCategory(id: string) {
+    setCategoryIds((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]))
+  }
 
   // The no-spend streak must be computed from the *unfiltered, all-time*
   // transaction list, not the month/type/method-filtered `transactions`
@@ -210,7 +247,7 @@ export default function ExpensesPage() {
           onClick={() => setFilterOpen((v) => !v)}
         >
           <Filter size={14} /> Filters
-          {(typeFilter !== 'All' || methodFilter !== 'All' || groupFilter !== 'All') && (
+          {hasActiveFilters && (
             <span className="filter-active-dot" />
           )}
         </button>
@@ -297,11 +334,79 @@ export default function ExpensesPage() {
                 </div>
               </div>
 
+              {/* Category multi-select */}
+              {categoryChoices.length > 0 && (
+                <div className="filter-group">
+                  <div className="filter-group-header">
+                    <label className="filter-label">Categories</label>
+                    {categoryIds.length > 0 && (
+                      <button className="filter-group-clear" onClick={() => setCategoryIds([])}>Clear</button>
+                    )}
+                  </div>
+                  <div className="filter-chips filter-chips-wrap">
+                    {categoryChoices.map((c) => (
+                      <button
+                        key={c.id}
+                        className={cn('filter-chip', categoryIds.includes(c.id) && 'filter-chip-active')}
+                        onClick={() => toggleCategory(c.id)}
+                        aria-pressed={categoryIds.includes(c.id)}
+                      >
+                        {c.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Amount range */}
+              <div className="filter-group">
+                <div className="filter-group-header">
+                  <label className="filter-label">Amount</label>
+                  {(minAmount !== '' || maxAmount !== '') && (
+                    <button className="filter-group-clear" onClick={() => { setMinAmount(''); setMaxAmount('') }}>Clear</button>
+                  )}
+                </div>
+                <div className="date-range-wrap">
+                  <input
+                    type="number" inputMode="decimal" min="0" step="any"
+                    value={minAmount} onChange={(e) => setMinAmount(e.target.value)}
+                    className="range-date-input" placeholder="Min" aria-label="Minimum amount"
+                  />
+                  <span className="range-sep">→</span>
+                  <input
+                    type="number" inputMode="decimal" min="0" step="any"
+                    value={maxAmount} onChange={(e) => setMaxAmount(e.target.value)}
+                    className="range-date-input" placeholder="Max" aria-label="Maximum amount"
+                  />
+                </div>
+              </div>
+
+              {/* Sort order */}
+              <div className="filter-group">
+                <div className="filter-group-header">
+                  <label className="filter-label">Sort by</label>
+                </div>
+                <div className="filter-chips">
+                  {SORT_OPTIONS.map(([v, label]) => (
+                    <button
+                      key={v}
+                      className={cn('filter-chip', sort === v && 'filter-chip-active')}
+                      onClick={() => setSort(v)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Clear */}
-              {(typeFilter !== 'All' || methodFilter !== 'All' || groupFilter !== 'All') && (
+              {hasActiveFilters && (
                 <button
                   className="filter-clear-btn"
-                  onClick={() => { setTypeFilter('All'); setMethodFilter('All'); setGroupFilter('All') }}
+                  onClick={() => {
+                    setTypeFilter('All'); setMethodFilter('All'); setGroupFilter('All')
+                    setCategoryIds([]); setMinAmount(''); setMaxAmount('')
+                  }}
                 >
                   <X size={13} /> Clear filters
                 </button>
@@ -327,7 +432,7 @@ export default function ExpensesPage() {
             }
           />
         ) : (
-          <ExpenseList transactions={displayedTransactions} onEdit={setEditingTxn} />
+          <ExpenseList transactions={displayedTransactions} onEdit={setEditingTxn} sort={sort} />
         )}
       </div>
 
