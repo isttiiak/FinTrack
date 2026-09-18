@@ -35,6 +35,7 @@ const PeoplePage           = lazyRouteComponent(() => import('@/pages/PeoplePage
 const InvestmentsPage      = lazyRouteComponent(() => import('@/pages/InvestmentsPage'))
 const InvestmentDetailPage = lazyRouteComponent(() => import('@/pages/InvestmentDetailPage'))
 const AnalyticsPage        = lazyRouteComponent(() => import('@/pages/AnalyticsPage'))
+const HouseholdPage        = lazyRouteComponent(() => import('@/pages/HouseholdPage'))
 const SettingsPage         = lazyRouteComponent(() => import('@/pages/SettingsPage'))
 const DataSettingsPage     = lazyRouteComponent(() => import('@/pages/DataSettingsPage'))
 const RecurringPage        = lazyRouteComponent(() => import('@/pages/RecurringPage'))
@@ -234,6 +235,7 @@ const personDetailRoute   = createRoute({ getParentRoute: () => appRoute, path: 
 const investmentsRoute       = createRoute({ getParentRoute: () => appRoute, path: '/investments',                 component: InvestmentsPage })
 const investmentDetailRoute  = createRoute({ getParentRoute: () => appRoute, path: '/investments/$investmentId',   component: InvestmentDetailPage })
 const analyticsRoute      = createRoute({ getParentRoute: () => appRoute, path: '/analytics',         component: AnalyticsPage })
+const householdRoute      = createRoute({ getParentRoute: () => appRoute, path: '/household',         component: HouseholdPage })
 const settingsRoute       = createRoute({ getParentRoute: () => appRoute, path: '/settings',          component: SettingsPage })
 const dataSettingsRoute   = createRoute({ getParentRoute: () => appRoute, path: '/settings/data',     component: DataSettingsPage })
 const recurringRoute      = createRoute({ getParentRoute: () => appRoute, path: '/settings/recurring', component: RecurringPage })
@@ -255,6 +257,7 @@ const routeTree = rootRoute.addChildren([
     investmentsRoute,
     investmentDetailRoute,
     analyticsRoute,
+    householdRoute,
     settingsRoute,
     dataSettingsRoute,
     recurringRoute,

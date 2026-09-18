@@ -3,7 +3,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, Plus, Calculator, LayoutDashboard, Receipt, Users, TrendingUp, BarChart3, Repeat,
-  Database, Settings, User, ArrowUpRight, ArrowDownLeft,
+  Database, Settings, User, ArrowUpRight, ArrowDownLeft, Home,
 } from 'lucide-react'
 import { useUIStore } from '@/stores/uiStore'
 import { useExpenses } from '@/hooks/useExpenses'
@@ -14,7 +14,7 @@ import { formatCurrency, formatDate, toISODateString } from '@/lib/utils'
 import './CommandPalette.css'
 
 type StaticRoute =
-  | '/dashboard' | '/expenses' | '/ledger' | '/ledger/people' | '/investments' | '/analytics'
+  | '/dashboard' | '/expenses' | '/ledger' | '/ledger/people' | '/investments' | '/analytics' | '/household'
   | '/settings/recurring' | '/settings/data' | '/settings' | '/profile'
 
 interface PaletteItem {
@@ -75,6 +75,7 @@ function PaletteDialog({ onClose }: { onClose: () => void }) {
       { id: 'g-people', group: 'Actions', label: 'Go to People', icon: <Users size={15} />, run: go('/ledger/people') },
       { id: 'g-inv', group: 'Actions', label: 'Go to Investments', icon: <TrendingUp size={15} />, run: go('/investments') },
       { id: 'g-ana', group: 'Actions', label: 'Go to Analytics', icon: <BarChart3 size={15} />, run: go('/analytics') },
+      { id: 'g-house', group: 'Actions', label: 'Go to Household', icon: <Home size={15} />, run: go('/household') },
       { id: 'g-rec', group: 'Actions', label: 'Go to Recurring rules', icon: <Repeat size={15} />, run: go('/settings/recurring') },
       { id: 'g-data', group: 'Actions', label: 'Go to Data preferences', icon: <Database size={15} />, run: go('/settings/data') },
       { id: 'g-set', group: 'Actions', label: 'Go to Settings', icon: <Settings size={15} />, run: go('/settings') },

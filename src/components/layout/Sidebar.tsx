@@ -11,6 +11,7 @@ import {
   X,
   TrendingUp,
   Search,
+  Home,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
@@ -27,6 +28,7 @@ const NAV_ITEMS = [
   { to: '/ledger',      label: 'Lent & Debt', icon: Users },
   { to: '/investments', label: 'Investments', icon: TrendingUp },
   { to: '/analytics',   label: 'Analytics',   icon: BarChart3 },
+  { to: '/household',   label: 'Household',   icon: Home },
 ] as const
 
 const BOTTOM_ITEMS = [
