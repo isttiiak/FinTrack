@@ -63,7 +63,16 @@ export default function SmartAmountInput({
   }
 
   function handleBlur() {
-    setFocused(false)
+    // Deferred by a tick rather than called synchronously: collapsing the
+    // chip row immediately reflows the layout of whatever sits below this
+    // field (e.g. the Category combobox in ExpenseForm) *between* the
+    // mousedown and click of whatever the user just clicked on, so the
+    // click's hit-test lands on the wrong element and gets swallowed — the
+    // user has to click twice. Deferring the collapse until after the click
+    // has already been dispatched fixes it with no visible behavior change.
+    setTimeout(() => {
+      if (document.activeElement !== inputRef.current) setFocused(false)
+    }, 0)
     const result = evaluate(rawText)
     if (result.ok) setRawText(String(round2(result.value)))
   }
