@@ -172,6 +172,8 @@ export default function InvestmentPaymentForm({ investment, onClose }: Investmen
           width: 100%; max-width: 420px;
           background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 20px;
           padding: 24px; box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+          max-height: 92vh;
+          overflow-y: auto;
         }
         .ipf-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
         .ipf-title { font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0 0 3px; }

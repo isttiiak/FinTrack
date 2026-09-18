@@ -171,6 +171,8 @@ export default function PersonForm({ editing, onClose }: PersonFormProps) {
           width: 100%; max-width: 420px;
           background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 20px;
           padding: 24px; box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+          max-height: 92vh;
+          overflow-y: auto;
         }
         .pf-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
         .pf-title { font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0; }

@@ -205,12 +205,14 @@ export default function InvestmentForm({ editing, onClose }: InvestmentFormProps
         }
         @media (max-width: 640px) {
           .invf-overlay { align-items: flex-end; padding: 0; }
-          .invf-panel { border-radius: 20px 20px 0 0 !important; max-height: 92vh; overflow-y: auto; }
+          .invf-panel { border-radius: 20px 20px 0 0 !important; }
         }
         .invf-panel {
           width: 100%; max-width: 500px;
           background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 20px;
           padding: 24px; box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+          max-height: 92vh;
+          overflow-y: auto;
         }
         .invf-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
         .invf-title { font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0; }
