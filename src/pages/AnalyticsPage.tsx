@@ -11,6 +11,7 @@ import { useExpenses } from '@/hooks/useExpenses'
 import { useBudgets } from '@/hooks/useBudgets'
 import { useNoSpendStreak } from '@/hooks/useNoSpendStreak'
 import AIHub from '@/components/ai/AIHub'
+import SpendingForecast from '@/components/analytics/SpendingForecast'
 import ErrorBanner from '@/components/common/ErrorBanner'
 import { useIsExpensesOnly } from '@/hooks/useTrackingMode'
 import './AnalyticsPage.css'
@@ -77,6 +78,7 @@ export default function AnalyticsPage() {
   const retryAll = () => { allTxnsQ.refetch(); thisTxnsQ.refetch() }
   const { data: budgets = [] }  = useBudgets()
   const streak = useNoSpendStreak(allTxns)
+  const isCurrentMonth = selectedMonth === toISODateString(new Date()).slice(0, 7)
 
   // Monthly trend
   const trendData = useMemo(() => {
@@ -227,6 +229,9 @@ export default function AnalyticsPage() {
 
       {tab === 'overview' && (
         <motion.div className="analytics-grid" variants={staggerContainer} initial="initial" animate="animate">
+
+          {/* Month-end forecast — only meaningful while the month is still in progress */}
+          {isCurrentMonth && <SpendingForecast transactions={allTxns} budgets={budgets} />}
 
           {/* Monthly trend */}
           <motion.div className="analytics-card analytics-card-wide" variants={staggerItem}>

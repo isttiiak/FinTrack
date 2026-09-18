@@ -1,0 +1,144 @@
+/* Styles for SpendingForecast.tsx. Classes are prefixed sf- (global CSS — see TODO.md §4.1). */
+.sf-title-icon {
+  vertical-align: -2px;
+  margin-right: 4px;
+  color: var(--accent-gold);
+}
+.sf-headline {
+  margin: 0 0 6px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.sf-headline strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.sf-over {
+  color: var(--accent-coral);
+  font-weight: 600;
+}
+.sf-under {
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+.sf-note {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.sf-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin: 12px 0 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+}
+.sf-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.sf-stat-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.sf-stat-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.sf-burndown {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.sf-burndown-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.sf-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.sf-row-head,
+.sf-row-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.sf-row-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sf-row-status {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.sf-tone-ok {
+  color: var(--accent-primary);
+}
+.sf-tone-warn {
+  color: var(--accent-gold);
+}
+.sf-tone-over {
+  color: var(--accent-red);
+}
+
+.sf-bar {
+  position: relative;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--bg-hover);
+  overflow: hidden;
+}
+.sf-bar-projected,
+.sf-bar-spent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 4px;
+}
+.sf-bar-projected {
+  background: var(--border-focus);
+  opacity: 0.3;
+}
+.sf-bar-spent {
+  background: var(--accent-primary);
+}
+.sf-bar-warn {
+  background: var(--accent-gold);
+}
+.sf-bar-over {
+  background: var(--accent-red);
+}
+.sf-bar-limit {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background: var(--text-primary);
+  opacity: 0.7;
+}
