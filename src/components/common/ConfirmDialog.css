@@ -1,0 +1,153 @@
+/* Styles for ConfirmDialog.tsx — extracted from an inline <style> block (TODO.md §4.1). */
+.cd-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.cd-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 32px 28px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+.cd-card-danger {
+  border-color: rgba(194, 91, 85, 0.3);
+}
+
+.cd-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+.cd-icon-warn {
+  background: rgba(201, 115, 110, 0.12);
+  color: var(--accent-coral);
+  border: 1px solid rgba(201, 115, 110, 0.25);
+}
+.cd-icon-danger {
+  background: rgba(194, 91, 85, 0.12);
+  color: var(--accent-red);
+  border: 1px solid rgba(194, 91, 85, 0.3);
+  animation: cd-pulse 1.4s ease-in-out infinite;
+}
+@keyframes cd-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(194, 91, 85, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(194, 91, 85, 0);
+  }
+}
+
+.cd-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+.cd-title-danger {
+  color: var(--accent-red);
+}
+.cd-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+  max-width: 340px;
+}
+
+.cd-item-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 8px 16px;
+  border-radius: 10px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cd-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-top: 8px;
+}
+.cd-btn-cancel {
+  flex: 1;
+  padding: 11px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.cd-btn-cancel:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.cd-btn-cancel-lg {
+  flex: 1.4;
+  font-weight: 600;
+}
+
+.cd-btn-delete {
+  flex: 1;
+  padding: 11px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background: rgba(201, 115, 110, 0.12);
+  border: 1px solid rgba(201, 115, 110, 0.35);
+  color: var(--accent-coral);
+  transition: background 0.15s;
+}
+.cd-btn-delete:hover {
+  background: rgba(201, 115, 110, 0.22);
+}
+
+.cd-btn-final {
+  flex: 1.6;
+  padding: 11px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  background: linear-gradient(135deg, #c25b55, #dc2626);
+  border: none;
+  color: #fff;
+  transition: opacity 0.15s;
+  box-shadow: 0 4px 14px rgba(194, 91, 85, 0.35);
+}
+.cd-btn-final:hover {
+  opacity: 0.88;
+}

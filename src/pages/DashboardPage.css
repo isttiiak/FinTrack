@@ -1,0 +1,398 @@
+/* Styles for DashboardPage.tsx — extracted from an inline <style> block (TODO.md §4.1). */
+.dash-page {
+  max-width: 960px;
+}
+.dash-greeting-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.dash-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+}
+.dash-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* KPI grid */
+.dash-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+@media (max-width: 400px) {
+  .dash-kpi-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+}
+.dash-kpi {
+  border-radius: 16px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  cursor: default;
+}
+.dash-kpi-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.dash-kpi-coral {
+  background: rgba(201, 115, 110, 0.05);
+  border-color: rgba(201, 115, 110, 0.15);
+}
+.dash-kpi-coral .dash-kpi-icon {
+  background: rgba(201, 115, 110, 0.15);
+  color: var(--accent-coral);
+}
+.dash-kpi-coral .dash-kpi-value {
+  color: var(--accent-coral);
+}
+.dash-kpi-teal {
+  background: rgba(79, 169, 129, 0.05);
+  border-color: rgba(79, 169, 129, 0.12);
+}
+.dash-kpi-teal .dash-kpi-icon {
+  background: rgba(79, 169, 129, 0.15);
+  color: var(--accent-teal);
+}
+.dash-kpi-teal .dash-kpi-value {
+  color: var(--accent-teal);
+}
+.dash-kpi-purple {
+  background: rgba(79, 169, 129, 0.05);
+  border-color: rgba(79, 169, 129, 0.12);
+}
+.dash-kpi-purple .dash-kpi-icon {
+  background: rgba(79, 169, 129, 0.15);
+  color: var(--accent-primary);
+}
+.dash-kpi-purple .dash-kpi-value {
+  color: var(--accent-primary);
+}
+.dash-kpi-amber {
+  background: rgba(194, 162, 78, 0.05);
+  border-color: rgba(194, 162, 78, 0.12);
+}
+.dash-kpi-amber .dash-kpi-icon {
+  background: rgba(194, 162, 78, 0.15);
+  color: var(--accent-amber);
+}
+.dash-kpi-amber .dash-kpi-value {
+  color: var(--accent-amber);
+}
+.dash-kpi-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.dash-kpi-value {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  min-height: 30px;
+}
+.dash-kpi-skeleton {
+  display: inline-block;
+  width: 80px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--bg-elevated);
+  animation: dashboardpage-shimmer 1.5s infinite;
+  background: linear-gradient(
+    90deg,
+    var(--bg-elevated) 25%,
+    var(--bg-hover) 50%,
+    var(--bg-elevated) 75%
+  );
+  background-size: 200% 100%;
+}
+.dash-kpi-delta {
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.dash-delta-bad {
+  color: #c9736e;
+}
+.dash-delta-good {
+  color: var(--accent-teal);
+}
+.dash-delta-neutral {
+  color: var(--text-muted);
+}
+
+/* Bottom grid */
+.dash-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 680px) {
+  .dash-bottom-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+.dash-card-wide {
+  grid-column: 1 / -1;
+}
+
+.dash-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+}
+.dash-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.dash-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+.dash-card-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--accent-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+.dash-card-link:hover {
+  text-decoration: underline;
+}
+.dash-card-empty {
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 8px 0;
+}
+
+/* Top category */
+.dash-top-cat {
+}
+.dash-top-cat-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.dash-top-cat-amount {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent-coral);
+  margin-bottom: 10px;
+}
+.dash-top-cat-bar-wrap {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg-elevated);
+  margin-bottom: 6px;
+  overflow: hidden;
+}
+.dash-top-cat-bar {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #c9736e, #c25b55);
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.dash-top-cat-pct {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Ledger snapshot */
+.dash-ledger-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dash-ledger-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 10px;
+  text-decoration: none;
+  transition: background 0.12s;
+}
+.dash-ledger-row:hover {
+  background: var(--bg-elevated);
+}
+.dash-ledger-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  background: rgba(79, 169, 129, 0.15);
+  color: var(--accent-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+}
+.dash-ledger-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.dash-ledger-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.dash-ledger-rel {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.dash-ledger-net {
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.dash-net-pos {
+  color: var(--accent-teal);
+}
+.dash-net-neg {
+  color: var(--accent-coral);
+}
+.dash-ledger-settled-note {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 4px 0 0;
+  padding: 0 8px;
+}
+
+/* Recent transactions */
+.dash-recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dash-recent-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border-radius: 10px;
+  transition: background 0.12s;
+}
+.dash-recent-row:hover {
+  background: var(--bg-elevated);
+}
+.dash-recent-cat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dash-recent-info {
+  flex: 1;
+  min-width: 0;
+}
+.dash-recent-desc {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dash-recent-cat {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.dash-recent-amount {
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.dash-amount-income {
+  color: var(--accent-teal);
+}
+.dash-amount-expense {
+  color: var(--accent-coral);
+}
+
+/* Lent vs Debt bars */
+.dash-lv-bars {
+}
+.dash-lv-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.dash-lv-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.dash-lv-amount {
+  font-size: 13px;
+  font-weight: 700;
+}
+.dash-lv-bar-wrap {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--bg-elevated);
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.dash-lv-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.dash-lv-bar-lent {
+  background: linear-gradient(90deg, #4fa981, #3e9b72);
+}
+.dash-lv-bar-debt {
+  background: linear-gradient(90deg, #c9736e, #c25b55);
+}
+
+/* Upcoming recurring */
+.dash-upcoming-total {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent-coral);
+  margin-bottom: 2px;
+}
+.dash-upcoming-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+}
+
+@keyframes dashboardpage-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}

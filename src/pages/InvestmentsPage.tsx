@@ -12,6 +12,7 @@ import InvestmentForm from '@/components/investments/InvestmentForm'
 import InvestmentTransactionLogs from '@/components/investments/InvestmentTransactionLogs'
 import ErrorBanner from '@/components/common/ErrorBanner'
 import SearchToggle from '@/components/common/SearchToggle'
+import './InvestmentsPage.css'
 
 type InvTab = 'portfolio' | 'logs'
 
@@ -269,118 +270,6 @@ export default function InvestmentsPage() {
         )}
       </AnimatePresence>
 
-      <style>{`
-        .inv-page { max-width: 960px; }
-        .inv-header-row { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; gap: 16px; flex-wrap: wrap; }
-        .page-title { font-size: 28px; font-weight: 700; color: var(--text-primary); margin: 0 0 4px; }
-        .page-subtitle { font-size: 14px; color: var(--text-secondary); margin: 0; }
-
-        /* Summary grid */
-        .inv-summary-grid {
-          display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px;
-        }
-        @media (max-width: 800px) { .inv-summary-grid { grid-template-columns: 1fr 1fr; } }
-        @media (max-width: 400px) { .inv-summary-grid { grid-template-columns: 1fr; gap: 8px; } }
-        .inv-sum-card {
-          border-radius: 14px; padding: 16px; border: 1px solid var(--border);
-          display: flex; flex-direction: column; gap: 5px;
-        }
-        .inv-sum-icon { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
-        .inv-sum-label { font-size: 11px; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
-        .inv-sum-value { font-size: 20px; font-weight: 700; }
-        .inv-sum-sub { font-size: 11px; color: var(--text-muted); }
-
-        .inv-sum-amber { background: rgba(194, 162, 78,0.06); border-color: rgba(194, 162, 78,0.15); }
-        .inv-sum-amber .inv-sum-icon { background: rgba(194, 162, 78,0.15); color: #C2A24E; }
-        .inv-sum-amber .inv-sum-value { color: #C2A24E; }
-        .inv-sum-teal { background: rgba(79, 169, 129,0.06); border-color: rgba(79, 169, 129,0.12); }
-        .inv-sum-teal .inv-sum-icon { background: rgba(79, 169, 129,0.15); color: var(--accent-teal); }
-        .inv-sum-teal .inv-sum-value { color: var(--accent-teal); }
-        .inv-sum-coral { background: rgba(201, 115, 110,0.06); border-color: rgba(201, 115, 110,0.12); }
-        .inv-sum-coral .inv-sum-icon { background: rgba(201, 115, 110,0.15); color: var(--accent-coral); }
-        .inv-sum-purple { background: rgba(79, 169, 129,0.06); border-color: rgba(79, 169, 129,0.12); }
-        .inv-sum-purple .inv-sum-icon { background: rgba(79, 169, 129,0.15); color: var(--accent-primary); }
-        .inv-sum-purple .inv-sum-value { color: var(--accent-primary); }
-
-        /* Card list */
-        /* Tabs */
-        .inv-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-        .inv-tab {
-          padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer;
-          background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary);
-          transition: background 0.15s, color 0.15s;
-        }
-        .inv-tab:hover { background: var(--bg-hover); color: var(--text-primary); }
-        .inv-tab-active { background: linear-gradient(135deg,#C2A24E,#C9736E); border-color: transparent; color: #fff; }
-
-        .inv-list { display: flex; flex-direction: column; gap: 10px; }
-        .inv-empty { display: flex; flex-direction: column; align-items: center; padding: 64px 20px; text-align: center; }
-        .inv-empty-icon { font-size: 48px; margin-bottom: 12px; }
-        .inv-skeleton {
-          height: 90px; border-radius: 14px;
-          background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-elevated) 50%, var(--bg-card) 75%);
-          background-size: 200% 100%; animation: shimmer 1.5s infinite;
-        }
-        @keyframes shimmer { to { background-position: -200% 0; } }
-
-        .inv-card {
-          background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
-          transition: border-color 0.15s, box-shadow 0.15s;
-        }
-        .inv-card:hover { border-color: rgba(194, 162, 78,0.25); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
-        .inv-card-header { display: flex; align-items: flex-start; gap: 10px; padding: 14px; flex-wrap: wrap; }
-        @media (max-width: 400px) { .inv-card-header { padding: 12px; gap: 8px; } }
-        .inv-card-icon {
-          width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
-          background: rgba(194, 162, 78,0.12); display: flex; align-items: center; justify-content: center;
-          font-size: 22px;
-        }
-        .inv-card-info { flex: 1; min-width: 0; }
-        .inv-card-name-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 3px; }
-        .inv-card-name { font-size: 15px; font-weight: 700; color: var(--text-primary); }
-        .inv-card-cat {
-          font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 20px;
-          background: rgba(194, 162, 78,0.12); color: #C2A24E;
-        }
-        .inv-card-company { font-size: 12px; color: var(--text-muted); }
-        .inv-card-meta { font-size: 12px; color: var(--text-muted); display: flex; gap: 6px; margin-bottom: 8px; }
-
-        .inv-card-progress-bar {
-          height: 5px; border-radius: 3px; background: var(--bg-elevated); overflow: hidden; margin-bottom: 5px;
-        }
-        .inv-card-progress-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
-        .inv-card-amounts { display: flex; gap: 12px; flex-wrap: wrap; }
-        .inv-card-committed { font-size: 12px; color: var(--text-muted); }
-        .inv-card-paid { font-size: 12px; color: var(--accent-coral); font-weight: 500; }
-        .inv-card-remaining-pay { font-size: 12px; color: #C2A24E; font-weight: 500; }
-        .inv-card-returned { font-size: 12px; color: var(--accent-teal); font-weight: 500; }
-
-        .inv-card-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; }
-        .inv-roi { display: flex; flex-direction: column; align-items: flex-end; }
-        .inv-roi-pct { font-size: 18px; font-weight: 800; }
-        .inv-roi-pos .inv-roi-pct { color: var(--accent-teal); }
-        .inv-roi-neg .inv-roi-pct { color: var(--accent-coral); }
-        .inv-roi-label { font-size: 10px; color: var(--text-muted); }
-
-        .inv-card-actions { display: flex; gap: 5px; flex-wrap: wrap; }
-        .inv-action-btn {
-          height: 28px; padding: 0 9px; border-radius: 7px; gap: 4px;
-          display: flex; align-items: center; font-size: 12px; font-weight: 600;
-          background: var(--bg-elevated); border: 1px solid var(--border);
-          cursor: pointer; transition: background 0.12s, color 0.12s;
-          text-decoration: none; white-space: nowrap;
-        }
-        .inv-action-pay { color: var(--accent-coral); }
-        .inv-action-pay:hover { background: rgba(201, 115, 110,0.12); border-color: rgba(201, 115, 110,0.3); }
-        .inv-action-return { color: var(--accent-teal); }
-        .inv-action-return:hover { background: rgba(79, 169, 129,0.12); border-color: rgba(79, 169, 129,0.3); }
-        .inv-action-edit { color: var(--text-secondary); }
-        .inv-action-edit:hover { background: rgba(79, 169, 129,0.12); color: var(--accent-primary); border-color: rgba(79, 169, 129,0.3); }
-        .inv-action-del { color: var(--text-muted); }
-        .inv-action-del:hover { background: rgba(194, 91, 85,0.1); color: var(--accent-red); border-color: rgba(194, 91, 85,0.3); }
-        .inv-action-doc { color: var(--accent-primary); }
-        .inv-action-doc:hover { background: rgba(79, 169, 129,0.12); }
-      `}</style>
     </motion.div>
   )
 }

@@ -10,6 +10,7 @@ import { useDemoStore } from '@/stores/demoStore'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { cn } from '@/lib/utils'
 import { CURRENCIES } from '@/lib/constants'
+import './ProfilePage.css'
 
 const TIMEZONES = [
   'Asia/Dhaka',
@@ -154,7 +155,7 @@ export default function ProfilePage() {
             )}
           </AnimatePresence>
 
-          <motion.div className="pf-field" variants={staggerItem}>
+          <motion.div className="profilepage-pf-field" variants={staggerItem}>
             <label className="pf-label">Full name</label>
             <input
               {...register('full_name')}
@@ -165,7 +166,7 @@ export default function ProfilePage() {
             {errors.full_name && <p className="pf-error">{errors.full_name.message}</p>}
           </motion.div>
 
-          <motion.div className="pf-field" variants={staggerItem}>
+          <motion.div className="profilepage-pf-field" variants={staggerItem}>
             <label className="pf-label">Avatar URL <span className="pf-optional">(optional — paste any image URL)</span></label>
             <input
               {...register('avatar_url')}
@@ -177,13 +178,13 @@ export default function ProfilePage() {
           </motion.div>
 
           <motion.div className="pf-row" variants={staggerItem}>
-            <div className="pf-field">
+            <div className="profilepage-pf-field">
               <label className="pf-label">Currency</label>
               <select {...register('currency')} className="pf-select" disabled={isDemo}>
                 {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
-            <div className="pf-field">
+            <div className="profilepage-pf-field">
               <label className="pf-label">Timezone</label>
               <select {...register('timezone')} className="pf-select" disabled={isDemo}>
                 {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz}</option>)}
@@ -192,7 +193,7 @@ export default function ProfilePage() {
           </motion.div>
 
           {!isDemo && (
-            <motion.div className="pf-actions" variants={staggerItem}>
+            <motion.div className="profilepage-pf-actions" variants={staggerItem}>
               <motion.button
                 type="submit"
                 className="btn-primary pf-save-btn"
@@ -202,7 +203,7 @@ export default function ProfilePage() {
               >
                 <AnimatePresence mode="wait">
                   {saving ? (
-                    <motion.span key="saving" className="auth-spinner" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
+                    <motion.span key="saving" className="profilepage-auth-spinner" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
                   ) : saved ? (
                     <motion.span key="saved" className="pf-saved" initial={{ scale: 0 }} animate={{ scale: 1 }}>
                       <Check size={15} /> Saved
@@ -219,86 +220,6 @@ export default function ProfilePage() {
         </motion.form>
       </div>
 
-      <style>{`
-        .profile-page { max-width: 820px; }
-        .profile-page-header { margin-bottom: 24px; }
-        .page-title { font-size: 28px; font-weight: 700; color: var(--text-primary); margin: 0 0 4px; }
-        .page-subtitle { font-size: 14px; color: var(--text-secondary); margin: 0; }
-
-        .demo-notice {
-          margin-bottom: 16px; padding: 10px 16px;
-          background: rgba(79, 169, 129,0.08); border: 1px solid rgba(79, 169, 129,0.2); border-radius: 10px;
-          font-size: 13px; color: var(--accent-primary);
-        }
-
-        .profile-layout { display: grid; grid-template-columns: 240px 1fr; gap: 20px; align-items: start; }
-        @media (max-width: 640px) { .profile-layout { grid-template-columns: 1fr; } }
-
-        .profile-avatar-card {
-          background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
-          padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center;
-        }
-        .profile-avatar-wrap {
-          position: relative; width: 80px; height: 80px; border-radius: 50%; overflow: hidden;
-          cursor: pointer;
-        }
-        .profile-avatar-img { width: 100%; height: 100%; object-fit: cover; }
-        .profile-avatar-fallback {
-          width: 100%; height: 100%;
-          background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E);
-          display: flex; align-items: center; justify-content: center;
-          font-size: 32px; font-weight: 700; color: #fff;
-        }
-        .profile-avatar-overlay {
-          position: absolute; inset: 0; background: rgba(0,0,0,0.4);
-          display: flex; align-items: center; justify-content: center;
-          opacity: 0; transition: opacity 0.15s;
-        }
-        .profile-avatar-wrap:hover .profile-avatar-overlay { opacity: 1; }
-        .profile-avatar-info { display: flex; flex-direction: column; gap: 3px; }
-        .profile-avatar-name { font-size: 16px; font-weight: 600; color: var(--text-primary); }
-        .profile-avatar-email { font-size: 12px; color: var(--text-muted); word-break: break-all; }
-        .profile-joined { font-size: 11px; color: var(--text-muted); }
-
-        .profile-form-card {
-          background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
-          padding: 24px; display: flex; flex-direction: column; gap: 16px;
-        }
-        .profile-error {
-          padding: 10px 14px; background: rgba(194, 91, 85,0.1); border: 1px solid rgba(194, 91, 85,0.25);
-          border-radius: 8px; font-size: 13px; color: #FCA5A5;
-        }
-
-        .pf-field { display: flex; flex-direction: column; gap: 6px; }
-        .pf-label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
-        .pf-optional { font-size: 11px; color: var(--text-muted); font-weight: 400; }
-        .pf-input {
-          background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px;
-          color: var(--text-primary); font-size: 14px; padding: 10px 14px;
-          transition: border-color 0.15s, box-shadow 0.15s; width: 100%;
-        }
-        .pf-input::placeholder { color: var(--text-muted); }
-        .pf-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(79, 169, 129,0.15); }
-        .pf-input:disabled { opacity: 0.5; cursor: not-allowed; }
-        .pf-input-error { border-color: var(--accent-red) !important; }
-        .pf-error { font-size: 12px; color: #FCA5A5; margin: 0; }
-        .pf-select {
-          background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px;
-          color: var(--text-primary); font-size: 14px; padding: 10px 14px;
-          width: 100%; cursor: pointer;
-        }
-        .pf-select:focus { outline: none; border-color: var(--border-focus); }
-        .pf-select:disabled { opacity: 0.5; cursor: not-allowed; }
-        .pf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        @media (max-width: 480px) { .pf-row { grid-template-columns: 1fr; } }
-
-        .pf-actions { display: flex; justify-content: flex-end; }
-        .pf-save-btn { min-width: 140px; min-height: 40px; display: flex; align-items: center; justify-content: center; }
-        .pf-save-label, .pf-saved { display: flex; align-items: center; gap: 7px; }
-        .pf-saved { color: #fff; }
-        .auth-spinner { display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
     </motion.div>
   )
 }

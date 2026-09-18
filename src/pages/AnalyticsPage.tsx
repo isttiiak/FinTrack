@@ -13,6 +13,7 @@ import { useNoSpendStreak } from '@/hooks/useNoSpendStreak'
 import AIHub from '@/components/ai/AIHub'
 import ErrorBanner from '@/components/common/ErrorBanner'
 import { useIsExpensesOnly } from '@/hooks/useTrackingMode'
+import './AnalyticsPage.css'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function fmtMonth(ym: string) {
@@ -423,100 +424,6 @@ export default function AnalyticsPage() {
         )
       )}
 
-      <style>{`
-        .analytics-page { max-width: 960px; }
-        .analytics-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; gap: 16px; flex-wrap: wrap; }
-        .page-title { font-size: 28px; font-weight: 700; color: var(--text-primary); margin: 0 0 4px; }
-        .page-subtitle { font-size: 14px; color: var(--text-secondary); margin: 0; }
-        .analytics-month-picker {
-          background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
-          color: var(--text-primary); font-size: 13px; padding: 8px 12px; cursor: pointer;
-        }
-        .analytics-month-picker:focus { outline: none; border-color: var(--border-focus); }
-
-        /* KPIs */
-        .analytics-kpis {
-          display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 16px;
-        }
-        @media (max-width: 900px) { .analytics-kpis { grid-template-columns: repeat(3, 1fr); } }
-        @media (max-width: 500px) { .analytics-kpis { grid-template-columns: 1fr 1fr; gap: 6px; } }
-        .analytics-kpi {
-          background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
-          padding: 10px 12px;
-        }
-        .analytics-kpi-label { font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
-        .analytics-kpi-value { font-size: 18px; font-weight: 700; }
-
-        /* Tabs */
-        .analytics-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-        .analytics-tab {
-          padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer;
-          background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary);
-          transition: background 0.15s, color 0.15s;
-        }
-        .analytics-tab:hover { background: var(--bg-hover); color: var(--text-primary); }
-        .analytics-tab-active {
-          background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E);
-          border-color: transparent; color: #fff;
-        }
-
-        /* Grid */
-        .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        @media (max-width: 700px) { .analytics-grid { grid-template-columns: 1fr; gap: 10px; } }
-        .analytics-card-wide { grid-column: 1 / -1; }
-
-        .analytics-card {
-          background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 18px;
-        }
-        .analytics-card-title {
-          font-size: 14px; font-weight: 600; color: var(--text-primary); margin: 0 0 14px;
-          display: flex; align-items: center; gap: 8px;
-        }
-        .analytics-streak-badge {
-          font-size: 12px; font-weight: 500; color: var(--accent-primary);
-          background: rgba(79, 169, 129,0.1); padding: 2px 8px; border-radius: 20px;
-        }
-        .analytics-empty { font-size: 13px; color: var(--text-muted); padding: 20px 0; text-align: center; }
-
-        /* Legend */
-        .analytics-legend { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
-        .analytics-legend-item { display: flex; align-items: center; gap: 8px; }
-        .analytics-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-        .analytics-legend-name { font-size: 12px; color: var(--text-secondary); flex: 1; }
-        .analytics-legend-value { font-size: 12px; font-weight: 600; color: var(--text-primary); }
-
-        /* Calendar */
-        .nsc-wrap { }
-        .nsc-dow-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-bottom: 3px; }
-        .nsc-dow { font-size: 9px; font-weight: 600; color: var(--text-muted); text-align: center; text-transform: uppercase; }
-        .nsc-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
-        .nsc-day {
-          aspect-ratio: 1; border-radius: 5px; display: flex; align-items: center; justify-content: center;
-          font-size: 11px; font-weight: 500; position: relative; cursor: default;
-        }
-        .nsc-day-num { color: var(--text-secondary); z-index: 1; position: relative; }
-        .nsc-no-spend { background: rgba(79, 169, 129,0.15); }
-        .nsc-no-spend .nsc-day-num { color: var(--accent-teal); }
-        .nsc-spend-low { background: rgba(201, 115, 110,0.1); }
-        .nsc-spend-med { background: rgba(201, 115, 110,0.25); }
-        .nsc-spend-high { background: rgba(194, 91, 85,0.35); }
-        .nsc-today { outline: 2px solid var(--accent-primary); outline-offset: -2px; }
-        .nsc-empty { }
-        .nsc-legend { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-        .nsc-legend-item { display: flex; align-items: center; gap: 4px; font-size: 10px; color: var(--text-muted); }
-        .nsc-legend-swatch { width: 10px; height: 10px; border-radius: 3px; }
-
-        /* Top days */
-        .analytics-top-days { display: flex; flex-direction: column; gap: 8px; }
-        .analytics-top-day-row { display: flex; align-items: center; gap: 8px; }
-        .analytics-top-day-rank { font-size: 11px; color: var(--text-muted); width: 22px; flex-shrink: 0; }
-        .analytics-top-day-date { font-size: 12px; color: var(--text-secondary); width: 100px; flex-shrink: 0; }
-        .analytics-top-day-bar-wrap { flex: 1; height: 6px; border-radius: 3px; background: var(--bg-elevated); overflow: hidden; }
-        .analytics-top-day-bar { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
-        .analytics-top-day-amount { font-size: 12px; font-weight: 600; color: var(--text-primary); flex-shrink: 0; width: 70px; text-align: right; }
-
-        .analytics-tab-ai { background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E) !important; }
-      `}</style>
     </motion.div>
   )
 }

@@ -1,0 +1,6 @@
+/* Styles for App.tsx — extracted from an inline <style> block (TODO.md §4.1). */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

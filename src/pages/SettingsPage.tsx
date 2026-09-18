@@ -30,6 +30,7 @@ import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { cn } from '@/lib/utils'
 import { getGroqModel, setGroqModel } from '@/lib/groq'
 import { GROQ_MODELS } from '@/lib/constants'
+import './SettingsPage.css'
 
 // ── Budget Limit Row ──────────────────────────────────────────────────────────
 
@@ -64,7 +65,7 @@ function BudgetSection() {
   }
 
   return (
-    <section className="settings-section">
+    <section className="settingspage-settings-section">
       <div className="settings-section-header">
         <div>
           <h2 className="settings-section-title"><DollarSign size={16} /> Budget Limits</h2>
@@ -87,10 +88,10 @@ function BudgetSection() {
             exit={{ opacity: 0, height: 0 }}
           >
             <div className="budget-add-inner">
-              <div className="pf-field" style={{ flex: 1 }}>
+              <div className="settingspage-pf-field" style={{ flex: 1 }}>
                 <label className="pf-label">Category</label>
                 <div style={{ position: 'relative' }}>
-                  <select {...register('category_id')} className="pf-select">
+                  <select {...register('category_id')} className="settingspage-pf-select">
                     <option value="">Select…</option>
                     {availableCategories.map((c) => (
                       <option key={c.id} value={c.id}>{c.main_group} › {c.name}</option>
@@ -101,7 +102,7 @@ function BudgetSection() {
                 {errors.category_id && <p className="pf-error">{errors.category_id.message}</p>}
               </div>
 
-              <div className="pf-field" style={{ width: 160 }}>
+              <div className="settingspage-pf-field" style={{ width: 160 }}>
                 <label className="pf-label">Monthly limit ({getActiveCurrencySymbol()})</label>
                 <input {...register('monthly_limit', { valueAsNumber: true })} type="number" placeholder="e.g. 5000" className={cn('pf-input', errors.monthly_limit && 'pf-input-error')} />
                 {errors.monthly_limit && <p className="pf-error">{errors.monthly_limit.message}</p>}
@@ -110,7 +111,7 @@ function BudgetSection() {
               <div style={{ display: 'flex', gap: 8, alignSelf: 'flex-end' }}>
                 <button type="button" className="btn-ghost" onClick={() => { reset(); setAddOpen(false) }}><X size={14} /></button>
                 <button type="submit" className="btn-primary" style={{ padding: '9px 16px', minWidth: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }} disabled={upserting}>
-                  {upserting ? <span className="auth-spinner" /> : <><Check size={14} /> Save</>}
+                  {upserting ? <span className="settingspage-auth-spinner" /> : <><Check size={14} /> Save</>}
                 </button>
               </div>
             </div>
@@ -187,7 +188,7 @@ function ExportSection() {
   const exportPayments = isDemo ? demoPayments : persons.flatMap((p) => p.payments ?? [])
 
   return (
-    <section className="settings-section">
+    <section className="settingspage-settings-section">
       <div className="settings-section-header">
         <div>
           <h2 className="settings-section-title"><Download size={16} /> Data Export</h2>
@@ -469,7 +470,7 @@ function ImportSection() {
   }
 
   return (
-    <section className="settings-section">
+    <section className="settingspage-settings-section">
       <div className="settings-section-header">
         <div>
           <h2 className="settings-section-title"><Upload size={16} /> Import Expenses</h2>
@@ -558,7 +559,7 @@ function ImportSection() {
                 disabled={importing}
               >
                 {importing
-                  ? <><span className="auth-spinner" /> {importProgress ? `${importProgress.done} / ${importProgress.total}` : null}</>
+                  ? <><span className="settingspage-auth-spinner" /> {importProgress ? `${importProgress.done} / ${importProgress.total}` : null}</>
                   : <><Upload size={14} /> Import transactions</>}
               </button>
             </div>
@@ -598,7 +599,7 @@ function AISection() {
   const configured = !!apiKey.trim()
 
   return (
-    <section className={`settings-section ai-section ${aiEnabled ? 'ai-section-on' : 'ai-section-off'}`}>
+    <section className={`settingspage-settings-section ai-section ${aiEnabled ? 'ai-section-on' : 'ai-section-off'}`}>
       <div className="settings-section-header">
         <div style={{ flex: 1 }}>
           <h2 className="settings-section-title"><Sparkles size={16} /> AI Insights</h2>
@@ -658,7 +659,7 @@ function AISection() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 4 }}>
               <label className="pf-label">AI model</label>
-              <select className="pf-select" value={model} onChange={(e) => handleModelChange(e.target.value)}>
+              <select className="settingspage-pf-select" value={model} onChange={(e) => handleModelChange(e.target.value)}>
                 {GROQ_MODELS.map((m) => (
                   <option key={m.id} value={m.id}>{m.label}</option>
                 ))}
@@ -720,7 +721,7 @@ function NotificationsSection() {
   }
 
   return (
-    <section className="settings-section">
+    <section className="settingspage-settings-section">
       <h2 className="settings-section-title"><Bell size={16} /> Notifications</h2>
       <p className="settings-section-desc">Email alerts sent to your account email.</p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 14 }}>
@@ -798,7 +799,7 @@ function TrackingModeSection() {
   }
 
   return (
-    <section className="settings-section">
+    <section className="settingspage-settings-section">
       <h2 className="settings-section-title">📊 Transaction tracking</h2>
       <p className="settings-section-desc">Students or anyone with no income to log can hide income entirely.</p>
 
@@ -838,7 +839,7 @@ function TrackingModeSection() {
                 onClick={() => applyMode('expenses_only')}
                 disabled={saving}
               >
-                {saving ? <span className="auth-spinner" /> : 'Switch anyway'}
+                {saving ? <span className="settingspage-auth-spinner" /> : 'Switch anyway'}
               </button>
             </div>
           </motion.div>
@@ -929,7 +930,7 @@ function DangerSection() {
   ] as const
 
   return (
-    <section className={`settings-section settings-danger-section ${unlocked ? 'danger-unlocked' : ''}`}>
+    <section className={`settingspage-settings-section settings-danger-section ${unlocked ? 'danger-unlocked' : ''}`}>
       {/* Header with unlock toggle */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
         <h2 className="settings-section-title" style={{ color: 'var(--accent-red)', margin: 0 }}>
@@ -959,7 +960,7 @@ function DangerSection() {
             onClick={() => handleDeleteLogs(key)}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {activeOp === key ? <span className="auth-spinner" style={{ borderTopColor: 'var(--accent-red)', borderColor: 'rgba(194, 91, 85,0.3)' }} /> : <Trash2 size={14} />}
+              {activeOp === key ? <span className="settingspage-auth-spinner" style={{ borderTopColor: 'var(--accent-red)', borderColor: 'rgba(194, 91, 85,0.3)' }} /> : <Trash2 size={14} />}
               <span style={{ fontWeight: 600, fontSize: 13 }}>{label}</span>
             </div>
             <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{desc}</span>
@@ -1033,7 +1034,7 @@ function DangerSection() {
                 onClick={handleDeleteAccount}
                 style={{ opacity: confirmText !== 'DELETE' ? 0.4 : 1 }}
               >
-                {deleting ? <span className="auth-spinner" /> : 'Delete account'}
+                {deleting ? <span className="settingspage-auth-spinner" /> : 'Delete account'}
               </button>
               <button className="btn-ghost" onClick={() => { setStep('idle'); setConfirmText('') }}>Cancel</button>
             </div>
@@ -1059,7 +1060,7 @@ export default function SettingsPage() {
     >
       <motion.div variants={staggerItem} style={{ marginBottom: 28 }}>
         <h1 className="page-title">Settings</h1>
-        <p className="page-subtitle">Budget limits, data export, and account management</p>
+        <p className="settingspage-page-subtitle">Budget limits, data export, and account management</p>
       </motion.div>
 
       {isDemo && (
@@ -1070,7 +1071,7 @@ export default function SettingsPage() {
 
       {/* Data Preferences card */}
       <motion.div variants={staggerItem}>
-        <section className="settings-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+        <section className="settingspage-settings-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
           <div>
             <h2 className="settings-section-title">⚙️ Data Preferences</h2>
             <p className="settings-section-desc">
@@ -1089,7 +1090,7 @@ export default function SettingsPage() {
 
       {/* Recurring transactions card */}
       <motion.div variants={staggerItem}>
-        <section className="settings-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+        <section className="settingspage-settings-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
           <div>
             <h2 className="settings-section-title">🔁 Recurring transactions</h2>
             <p className="settings-section-desc">
@@ -1121,278 +1122,7 @@ export default function SettingsPage() {
         </>
       )}
 
-      <style>{settingsStyles}</style>
     </motion.div>
   )
 }
 
-const settingsStyles = `
-  .settings-page { max-width: 820px; padding-bottom: 48px; }
-  .page-title { font-size: 28px; font-weight: 700; color: var(--text-primary); margin: 0 0 4px; }
-  .page-subtitle { font-size: 14px; color: var(--text-secondary); margin: 0; }
-
-  .demo-notice {
-    margin-bottom: 20px; padding: 10px 16px;
-    background: rgba(79, 169, 129,0.08); border: 1px solid rgba(79, 169, 129,0.2); border-radius: 10px;
-    font-size: 13px; color: var(--accent-primary);
-  }
-
-  .settings-section {
-    background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
-    padding: 24px; margin-bottom: 20px;
-  }
-  .settings-danger-section { border-color: rgba(194, 91, 85,0.2); }
-  .settings-section-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
-  .settings-section-title { font-size: 16px; font-weight: 600; color: var(--text-primary); margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
-  .settings-section-desc { font-size: 13px; color: var(--text-secondary); margin: 0; }
-  .settings-add-btn {
-    display: flex; align-items: center; gap: 6px;
-    padding: 7px 14px; border-radius: 8px; font-size: 13px;
-    background: rgba(79, 169, 129,0.1); border: 1px solid rgba(79, 169, 129,0.25); color: var(--accent-primary);
-    cursor: pointer; transition: background 0.15s; flex-shrink: 0;
-  }
-  .settings-add-btn:hover { background: rgba(79, 169, 129,0.18); }
-
-  .budget-add-form { overflow: hidden; }
-  .budget-add-inner {
-    display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap;
-    padding: 16px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px;
-    margin-bottom: 14px;
-  }
-
-  .budget-list { display: flex; flex-direction: column; gap: 8px; }
-  .budget-row {
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    padding: 10px 14px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px;
-  }
-  .budget-row-name { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-right: 8px; }
-  .budget-row-group { font-size: 11px; color: var(--text-muted); }
-  .budget-row-right { display: flex; align-items: center; gap: 10px; }
-  .budget-row-amount { font-size: 13px; font-weight: 600; color: var(--accent-primary); }
-  .budget-delete-btn {
-    width: 28px; height: 28px; border-radius: 7px;
-    background: none; border: 1px solid var(--border); color: var(--text-muted); cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: background 0.15s, color 0.15s;
-  }
-  .budget-delete-btn:hover { background: rgba(194, 91, 85,0.1); color: var(--accent-red); border-color: rgba(194, 91, 85,0.3); }
-
-  .export-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
-  .export-card {
-    padding: 16px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 12px;
-  }
-  .export-card-full { grid-column: 1 / -1; }
-  .export-card-title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
-  .export-card-sub { font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; }
-  .export-card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-  .export-btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 7px 16px; border-radius: 8px; font-size: 13px; font-weight: 500;
-    background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E); color: #fff;
-    border: none; cursor: pointer;
-    transition: opacity 0.15s, box-shadow 0.15s;
-  }
-  .export-btn:hover { opacity: 0.9; box-shadow: 0 4px 14px rgba(79, 169, 129,0.35); }
-  .export-btn-secondary {
-    background: var(--bg-card); color: var(--text-secondary);
-    border: 1px solid var(--border);
-  }
-  .export-btn-secondary:hover { background: var(--bg-hover); color: var(--text-primary); box-shadow: none; }
-
-  .danger-btn {
-    padding: 9px 20px; border-radius: 8px; font-size: 13px; font-weight: 600;
-    background: rgba(194, 91, 85,0.12); border: 1px solid rgba(194, 91, 85,0.35); color: var(--accent-red);
-    cursor: pointer; transition: background 0.15s; display: inline-flex; align-items: center; gap: 8px;
-    min-height: 38px; min-width: 120px; justify-content: center;
-  }
-  .danger-btn:hover:not(:disabled) { background: rgba(194, 91, 85,0.22); }
-  .danger-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  .danger-confirm-card {
-    padding: 16px; background: var(--bg-elevated);
-    border: 1px solid rgba(194, 91, 85,0.2); border-radius: 12px;
-  }
-
-  /* ── Tracking mode ── */
-  .tracking-mode-toggle { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
-  @media (min-width: 560px) { .tracking-mode-toggle { flex-direction: row; } }
-  .tracking-mode-btn {
-    flex: 1; text-align: left; padding: 14px 16px; border-radius: 12px; cursor: pointer;
-    background: var(--bg-elevated); border: 1px solid var(--border);
-    display: flex; flex-direction: column; gap: 4px;
-    transition: background 0.15s, border-color 0.15s;
-  }
-  .tracking-mode-btn:hover:not(:disabled) { background: var(--bg-hover); }
-  .tracking-mode-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-  .tracking-mode-btn-active { border-color: var(--accent-primary); background: rgba(79, 169, 129,0.1); }
-  .tracking-mode-label { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-  .tracking-mode-btn-active .tracking-mode-label { color: var(--accent-primary); }
-  .tracking-mode-desc { font-size: 12px; color: var(--text-secondary); }
-  .tracking-mode-warn {
-    overflow: hidden; margin-top: 12px; padding: 14px 16px;
-    background: rgba(194, 145, 63,0.08); border: 1px solid rgba(194, 145, 63,0.25); border-radius: 12px;
-  }
-  .tracking-mode-warn-text { font-size: 13px; color: var(--text-primary); margin: 0 0 10px; line-height: 1.5; }
-
-  /* ── AI section ── */
-  .ai-section { transition: border-color 0.3s, box-shadow 0.3s; }
-  .ai-section-on {
-    border-color: rgba(79, 169, 129,0.35);
-    box-shadow: 0 0 0 1px rgba(79, 169, 129,0.15), 0 4px 24px rgba(79, 169, 129,0.1);
-  }
-  .ai-power-btn {
-    display: flex; align-items: center; gap: 6px;
-    padding: 7px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
-    cursor: pointer; border: none; transition: all 0.2s; flex-shrink: 0;
-    letter-spacing: 0.04em;
-  }
-  .ai-power-on {
-    background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E);
-    color: #fff;
-    box-shadow: 0 0 16px rgba(79, 169, 129,0.5);
-    animation: ai-pulse 2.5s ease-in-out infinite;
-  }
-  .ai-power-off {
-    background: var(--bg-elevated); border: 1px solid var(--border);
-    color: var(--text-muted);
-  }
-  @keyframes ai-pulse {
-    0%, 100% { box-shadow: 0 0 12px rgba(79, 169, 129,0.4); }
-    50%       { box-shadow: 0 0 24px rgba(62, 155, 114,0.7); }
-  }
-
-  /* ── Danger zone ── */
-  .settings-divider {
-    border: none; border-top: 1px solid var(--border); margin: 8px 0;
-  }
-  .danger-unlock-btn {
-    display: flex; align-items: center; gap: 6px;
-    padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
-    cursor: pointer; transition: all 0.2s; letter-spacing: 0.03em; flex-shrink: 0;
-  }
-  .danger-unlock-off {
-    background: rgba(194, 91, 85,0.08); border: 1px solid rgba(194, 91, 85,0.2);
-    color: rgba(194, 91, 85,0.5);
-  }
-  .danger-unlock-on {
-    background: linear-gradient(135deg, rgba(194, 91, 85,0.25), rgba(201, 115, 110,0.25));
-    border: 1px solid rgba(194, 91, 85,0.5); color: #C25B55;
-    box-shadow: 0 0 14px rgba(194, 91, 85,0.3);
-    animation: danger-pulse 1.8s ease-in-out infinite;
-  }
-  @keyframes danger-pulse {
-    0%, 100% { box-shadow: 0 0 10px rgba(194, 91, 85,0.25); }
-    50%       { box-shadow: 0 0 22px rgba(194, 91, 85,0.5); }
-  }
-  .danger-unlocked {
-    border-color: rgba(194, 91, 85,0.4) !important;
-    box-shadow: 0 0 0 1px rgba(194, 91, 85,0.2), 0 8px 32px rgba(194, 91, 85,0.12);
-  }
-  .danger-actions-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px;
-    margin-bottom: 16px;
-  }
-  .danger-data-btn {
-    display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
-    padding: 12px 14px; border-radius: 10px; cursor: pointer; text-align: left;
-    background: rgba(194, 91, 85,0.05); border: 1px solid rgba(194, 91, 85,0.15);
-    color: var(--text-secondary); transition: all 0.15s;
-  }
-  .danger-data-btn:not(:disabled):hover {
-    background: rgba(194, 91, 85,0.12); border-color: rgba(194, 91, 85,0.35);
-    color: var(--text-primary);
-  }
-  .danger-data-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-  .danger-section-divider { height: 1px; background: rgba(194, 91, 85,0.15); margin: 16px 0; }
-
-  /* shared field styles referenced from sub-components */
-  .pf-field { display: flex; flex-direction: column; gap: 5px; }
-  .pf-label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
-  .pf-optional { font-size: 11px; color: var(--text-muted); font-weight: 400; }
-  .pf-input {
-    background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
-    color: var(--text-primary); font-size: 14px; padding: 10px 14px;
-    transition: border-color 0.15s, box-shadow 0.15s; width: 100%;
-  }
-  .pf-input::placeholder { color: var(--text-muted); }
-  .pf-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(79, 169, 129,0.15); }
-  .pf-input-error { border-color: var(--accent-red) !important; }
-  .pf-error { font-size: 12px; color: #FCA5A5; margin: 0; }
-  .pf-select {
-    background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
-    color: var(--text-primary); font-size: 14px; padding: 10px 36px 10px 14px;
-    width: 100%; cursor: pointer; appearance: none;
-  }
-  .pf-select:focus { outline: none; border-color: var(--border-focus); }
-  .auth-spinner { display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* Import */
-  .import-template-link {
-    background: none; border: none; padding: 0; cursor: pointer;
-    color: var(--accent-primary); font-size: inherit; text-decoration: underline;
-    text-underline-offset: 2px;
-  }
-  .import-template-link:hover { opacity: 0.8; }
-  .import-drop-zone {
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
-    padding: 28px 20px; border: 2px dashed var(--border); border-radius: 12px;
-    cursor: pointer; transition: border-color 0.15s, background 0.15s;
-    background: var(--bg-elevated);
-  }
-  .import-drop-zone:hover { border-color: var(--accent-primary); background: rgba(79, 169, 129,0.04); }
-  .import-drop-text { font-size: 13px; color: var(--text-muted); }
-  .import-error { font-size: 12px; color: #FCA5A5; margin: 8px 0 0; }
-  .import-success {
-    display: flex; align-items: center; gap: 6px; margin-top: 10px;
-    font-size: 13px; font-weight: 500; color: var(--accent-teal);
-  }
-  .import-preview { margin-top: 12px; }
-  .import-preview-title { font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: 8px; }
-  .import-preview-table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
-  .import-preview-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  .import-preview-table th {
-    background: var(--bg-elevated); color: var(--text-muted); font-weight: 600;
-    padding: 8px 12px; text-align: left; font-size: 10px; text-transform: uppercase;
-    letter-spacing: 0.05em; border-bottom: 1px solid var(--border);
-  }
-  .import-preview-table td {
-    padding: 8px 12px; color: var(--text-secondary); border-bottom: 1px solid rgba(33, 42, 36,0.4);
-  }
-  .import-preview-table tr:last-child td { border-bottom: none; }
-
-  /* AI toggle */
-  .ai-toggle {
-    width: 44px; height: 24px; border-radius: 12px; border: none; cursor: pointer;
-    background: var(--bg-elevated); border: 1px solid var(--border);
-    position: relative; transition: background 0.2s, border-color 0.2s; flex-shrink: 0;
-    padding: 0;
-  }
-  .ai-toggle-on { background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E); border-color: transparent; }
-  .ai-toggle-knob {
-    position: absolute; top: 3px; left: 3px;
-    width: 16px; height: 16px; border-radius: 50%; background: var(--text-muted);
-    transition: transform 0.2s, background 0.2s;
-  }
-  .ai-toggle-on .ai-toggle-knob { transform: translateX(20px); background: #fff; }
-  .ai-key-section { overflow: hidden; }
-
-  /* AI provider selector */
-  .ai-provider-row { display: flex; gap: 10px; flex-wrap: wrap; }
-  .ai-provider-btn {
-    flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 4px; align-items: flex-start;
-    padding: 12px 14px; border-radius: 12px; cursor: pointer; text-align: left;
-    background: var(--bg-elevated); border: 2px solid var(--border);
-    transition: border-color 0.15s, background 0.15s;
-  }
-  .ai-provider-btn:hover { border-color: rgba(79, 169, 129,0.3); background: rgba(79, 169, 129,0.04); }
-  .ai-provider-active { border-color: var(--accent-primary) !important; background: rgba(79, 169, 129,0.07) !important; }
-  .ai-provider-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
-  .ai-provider-badge {
-    font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px;
-    letter-spacing: 0.02em;
-  }
-  .ai-badge-groq { background: rgba(79, 169, 129,0.15); color: var(--accent-teal); }
-  .ai-badge-gemini { background: rgba(79, 169, 129,0.12); color: var(--accent-primary); }
-  .ai-provider-free { font-size: 11px; color: var(--text-muted); }
-`

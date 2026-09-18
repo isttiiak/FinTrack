@@ -1,0 +1,170 @@
+/* Styles for InvestmentForm.tsx — extracted from an inline <style> block (TODO.md §4.1). */
+.invf-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+@media (max-width: 640px) {
+  .invf-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .invf-panel {
+    border-radius: 20px 20px 0 0 !important;
+  }
+}
+.invf-panel {
+  width: 100%;
+  max-width: 500px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  max-height: 92vh;
+  overflow-y: auto;
+}
+.invf-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.invf-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+.invf-close {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.invf-close:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+.invf-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.invf-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 520px) {
+  .invf-row {
+    grid-template-columns: 1fr;
+  }
+}
+.invf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.invf-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.invf-optional {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+.invf-input {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 14px;
+  padding: 10px 14px;
+  width: 100%;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.invf-input::placeholder {
+  color: var(--text-muted);
+}
+.invf-input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(79, 169, 129, 0.15);
+}
+.invf-input-error {
+  border-color: var(--accent-red) !important;
+}
+.invf-amount-input {
+  font-size: 18px;
+  font-weight: 600;
+}
+.invf-textarea {
+  resize: none;
+  font-family: inherit;
+}
+.invf-select {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 14px;
+  padding: 10px 14px;
+  width: 100%;
+  cursor: pointer;
+  appearance: none;
+}
+.invf-select:focus {
+  outline: none;
+  border-color: var(--border-focus);
+}
+.invf-select option {
+  background: #18201a;
+}
+.invf-error {
+  font-size: 12px;
+  color: #fca5a5;
+  margin: 0;
+}
+.invf-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+.invf-submit {
+  min-width: 140px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.invf-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: invf-spin 0.7s linear infinite;
+}
+@keyframes invf-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

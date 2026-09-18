@@ -15,6 +15,7 @@ import LedgerSummaryTab from '@/components/ledger/LedgerSummaryTab'
 import ErrorBanner from '@/components/common/ErrorBanner'
 import SearchToggle from '@/components/common/SearchToggle'
 import type { LedgerType } from '@/lib/constants'
+import './LedgerPage.css'
 
 type Tab = 'lent' | 'debt' | 'all' | 'logs' | 'summary'
 
@@ -133,11 +134,11 @@ export default function LedgerPage() {
 
       {/* Tabs + sort controls */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-        <div className="ledger-tabs" style={{ marginBottom: 0, flex: '1 1 240px', minWidth: 0 }}>
+        <div className="ledgerpage-ledger-tabs" style={{ marginBottom: 0, flex: '1 1 240px', minWidth: 0 }}>
           {([['all', 'All'], ['lent', '💸 Lent'], ['debt', '🏦 Debt'], ['summary', '📊 Summary'], ['logs', '💳 Payment logs']] as [Tab, string][]).map(([t, label]) => (
             <button
               key={t}
-              className={`ledger-tab ${activeTab === t ? 'ledger-tab-active' : ''}`}
+              className={`ledgerpage-ledger-tab ${activeTab === t ? 'ledger-tab-active' : ''}`}
               onClick={() => setActiveTab(t)}
             >
               {label}
@@ -237,81 +238,6 @@ export default function LedgerPage() {
         )}
       </AnimatePresence>
 
-      <style>{`
-        .ledger-page { max-width: 900px; }
-        .ledger-header-row { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; gap: 16px; flex-wrap: wrap; }
-        .page-title { font-size: 28px; font-weight: 700; color: var(--text-primary); margin: 0 0 4px; }
-        .page-subtitle { font-size: 14px; color: var(--text-secondary); margin: 0; }
-
-        .ledger-summary-grid {
-          display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px;
-        }
-        @media (max-width: 640px) { .ledger-summary-grid { grid-template-columns: 1fr 1fr; } }
-        @media (max-width: 480px) { .ledger-summary-grid { grid-template-columns: 1fr; gap: 8px; } }
-
-        .ledger-sum-card {
-          border-radius: 14px; padding: 16px; border: 1px solid var(--border);
-          display: flex; flex-direction: column; gap: 6px;
-        }
-        .ledger-sum-icon { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 2px; }
-        .ledger-sum-label { font-size: 11px; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
-        .ledger-sum-value { font-size: 22px; font-weight: 700; }
-
-        .ledger-sum-lent { background: rgba(79, 169, 129,0.06); border-color: rgba(79, 169, 129,0.15); }
-        .ledger-sum-lent .ledger-sum-icon { background: rgba(79, 169, 129,0.15); color: var(--accent-teal); }
-        .ledger-sum-lent .ledger-sum-value { color: var(--accent-teal); }
-
-        .ledger-sum-debt { background: rgba(201, 115, 110,0.06); border-color: rgba(201, 115, 110,0.15); }
-        .ledger-sum-debt .ledger-sum-icon { background: rgba(201, 115, 110,0.15); color: var(--accent-coral); }
-        .ledger-sum-debt .ledger-sum-value { color: var(--accent-coral); }
-
-        .ledger-sum-net-inline { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; margin-top: 2px; }
-        .ledger-net-positive { color: var(--accent-teal); }
-        .ledger-net-negative { color: var(--accent-red); }
-
-        .ledger-sum-people {
-          background: rgba(79, 169, 129,0.04); border-color: rgba(79, 169, 129,0.12);
-          justify-content: center; gap: 0;
-        }
-        .ledger-sum-people-row { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
-        .ledger-sum-icon-sm { width: 26px; height: 26px; margin-bottom: 0; flex-shrink: 0; background: rgba(79, 169, 129,0.15); color: var(--accent-teal); }
-        .ledger-sum-icon-coral { background: rgba(201, 115, 110,0.15); color: var(--accent-coral); }
-        .ledger-sum-people-value { font-size: 18px; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
-        .ledger-sum-people-label { font-size: 11px; color: var(--text-muted); }
-        .ledger-sum-people-divider { height: 1px; background: var(--border); margin: 6px 0; }
-
-        .ledger-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
-        .ledger-sort-btn {
-          display: flex; align-items: center; gap: 4px;
-          padding: 6px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer;
-          background: var(--bg-card); border: 1px solid var(--border); color: var(--text-muted);
-          transition: all 0.15s; white-space: nowrap;
-        }
-        .ledger-sort-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
-        .ledger-sort-active { color: var(--accent-primary) !important; border-color: rgba(79, 169, 129,0.35) !important; background: rgba(79, 169, 129,0.08) !important; }
-        @media (max-width: 400px) { .ledger-tab { font-size: 12px; padding: 6px 10px; } }
-        .ledger-tab {
-          padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer;
-          background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary);
-          transition: background 0.15s, color 0.15s, border-color 0.15s;
-        }
-        .ledger-tab:hover { background: var(--bg-hover); color: var(--text-primary); }
-        .ledger-tab-active {
-          background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E);
-          border-color: transparent; color: #fff;
-        }
-
-        .ledger-list { display: flex; flex-direction: column; gap: 10px; }
-        .ledger-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center; }
-        .ledger-skeletons { display: flex; flex-direction: column; gap: 10px; }
-        .ledger-skeleton {
-          height: 74px; border-radius: 14px;
-          background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-elevated) 50%, var(--bg-card) 75%);
-          background-size: 200% 100%;
-          animation: shimmer 1.5s infinite;
-        }
-        @keyframes shimmer { to { background-position: -200% 0; } }
-      `}</style>
     </motion.div>
   )
 }

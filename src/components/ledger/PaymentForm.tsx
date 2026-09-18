@@ -10,6 +10,7 @@ import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
 import { useCreatePayment } from '@/hooks/useLedger'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import type { LedgerType } from '@/lib/constants'
+import './PaymentForm.css'
 
 const schema = z.object({
   amount:         z.number({ error: 'Enter a valid amount' }).positive(),
@@ -140,52 +141,6 @@ export default function PaymentForm({ personId, personName, ledgerType, remainin
         </form>
       </motion.div>
 
-      <style>{`
-        .payf-overlay {
-          position: fixed; inset: 0; z-index: 60;
-          background: rgba(0,0,0,0.65);
-          display: flex; align-items: center; justify-content: center; padding: 16px;
-        }
-        @media (max-width: 640px) {
-          .payf-overlay { align-items: flex-end; padding: 0; }
-          .payf-panel { border-radius: 20px 20px 0 0 !important; }
-        }
-        .payf-panel {
-          width: 100%; max-width: 420px;
-          background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 20px;
-          padding: 24px; box-shadow: 0 24px 60px rgba(0,0,0,0.5);
-          max-height: 92vh;
-          overflow-y: auto;
-        }
-        .payf-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; gap: 12px; }
-        .payf-title { font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0 0 3px; }
-        .payf-sub { font-size: 12px; color: var(--text-muted); margin: 0; }
-        .payf-remaining { color: var(--accent-teal); }
-        .payf-close {
-          width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
-          background: var(--bg-hover); border: 1px solid var(--border);
-          color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center;
-        }
-        .payf-close:hover { background: var(--bg-card); color: var(--text-primary); }
-        .payf-form { display: flex; flex-direction: column; gap: 14px; }
-        .payf-field { display: flex; flex-direction: column; gap: 5px; }
-        .payf-label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
-        .payf-optional { font-size: 11px; color: var(--text-muted); font-weight: 400; }
-        .payf-input {
-          background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
-          color: var(--text-primary); font-size: 14px; padding: 10px 14px; width: 100%;
-          transition: border-color 0.15s, box-shadow 0.15s;
-        }
-        .payf-input::placeholder { color: var(--text-muted); }
-        .payf-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(79, 169, 129,0.15); }
-        .payf-input-error { border-color: var(--accent-red) !important; }
-        .payf-amount-input { font-size: 22px; font-weight: 700; padding: 12px 14px; }
-        .payf-error { font-size: 12px; color: #FCA5A5; margin: 0; }
-        .payf-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
-        .payf-submit { min-width: 120px; min-height: 40px; display: flex; align-items: center; justify-content: center; }
-        .payf-spinner { display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:payf-spin 0.7s linear infinite; }
-        @keyframes payf-spin { to { transform: rotate(360deg); } }
-      `}</style>
     </div>
   )
 }

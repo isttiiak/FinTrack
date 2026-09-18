@@ -4,6 +4,7 @@ import { ChevronDown, Plus, Check, X } from 'lucide-react'
 import { getMethodGroup } from '@/lib/constants'
 import type { PaymentMethod, Account, PaymentMethodGroup } from '@/lib/constants'
 import { getMfsProviders, setMfsProviders, getBankAccounts, setBankAccounts } from '@/lib/paymentMethodPrefs'
+import './PaymentMethodPicker.css'
 
 interface PaymentMethodPickerProps {
   method: PaymentMethod | string | undefined
@@ -212,74 +213,6 @@ export default function PaymentMethodPicker({
         )}
       </AnimatePresence>
 
-      <style>{`
-        .pmp-label { display: block; font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 7px; }
-        .pmp-add-trigger {
-          display: inline-flex; align-items: center; gap: 4px;
-          padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 500; cursor: pointer;
-          background: rgba(79, 169, 129,0.08); border: 1px solid rgba(79, 169, 129,0.2); color: var(--accent-primary);
-          transition: background 0.12s;
-        }
-        .pmp-add-trigger:hover { background: rgba(79, 169, 129,0.15); }
-        .pmp-custom-account-btn { border-radius: 8px; padding: 0 12px; height: 40px; }
-
-        .pmp-group-row { display: flex; gap: 6px; flex-wrap: wrap; }
-        .pmp-group-chip {
-          display: inline-flex; align-items: center; gap: 5px;
-          padding: 7px 13px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer;
-          background: var(--bg-elevated); border: 2px solid var(--border); color: var(--text-secondary);
-          transition: all 0.12s;
-        }
-        .pmp-group-chip:hover { border-color: rgba(79, 169, 129,0.3); color: var(--text-primary); }
-        .pmp-group-active { background: rgba(79, 169, 129,0.12) !important; border-color: rgba(79, 169, 129,0.5) !important; color: var(--accent-primary) !important; font-weight: 600; }
-        .pmp-group-none { font-size: 12px; color: var(--text-muted); }
-        .pmp-group-none-active { font-size: 12px; color: var(--text-muted); border-color: var(--border) !important; }
-
-        .pmp-sub-chip {
-          padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer;
-          background: var(--bg-elevated); border: 2px solid var(--border); color: var(--text-secondary); transition: all 0.12s;
-        }
-        .pmp-sub-chip:hover { border-color: rgba(79, 169, 129,0.35); color: var(--text-primary); }
-        .pmp-sub-active { background: rgba(79, 169, 129,0.12) !important; border-color: rgba(79, 169, 129,0.5) !important; color: var(--accent-teal) !important; font-weight: 600; }
-
-        .pmp-add-form { }
-        .pmp-add-input {
-          flex: 1; background: var(--bg-card); border: 1px solid var(--border-focus); border-radius: 8px;
-          color: var(--text-primary); font-size: 13px; padding: 7px 10px; min-width: 120px;
-        }
-        .pmp-add-input:focus { outline: none; }
-        .pmp-add-save {
-          display: flex; align-items: center; gap: 4px; padding: 7px 12px; border-radius: 8px;
-          font-size: 13px; font-weight: 600; cursor: pointer;
-          background: rgba(79, 169, 129,0.15); border: 1px solid rgba(79, 169, 129,0.3); color: var(--accent-teal);
-          transition: background 0.1s; white-space: nowrap;
-        }
-        .pmp-add-save:disabled { opacity: 0.5; cursor: not-allowed; }
-        .pmp-add-save:not(:disabled):hover { background: rgba(79, 169, 129,0.25); }
-        .pmp-add-cancel {
-          display: flex; align-items: center; justify-content: center;
-          width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
-          background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-muted);
-        }
-        .pmp-add-cancel:hover { color: var(--text-primary); }
-
-        .pmp-select-wrap { position: relative; }
-        .pmp-select {
-          width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
-          color: var(--text-primary); font-size: 14px; padding: 10px 36px 10px 14px;
-          appearance: none; cursor: pointer; transition: border-color 0.15s;
-        }
-        .pmp-select-sm { font-size: 13px; padding: 7px 28px 7px 10px; }
-        .pmp-select:focus { outline: none; border-color: var(--border-focus); }
-        .pmp-select-icon { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
-
-        .pmp-auto-account {
-          display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 10px;
-          font-size: 14px; background: var(--bg-elevated); border: 1px solid var(--border);
-          color: var(--text-primary); font-weight: 500;
-        }
-        .pmp-auto-badge { font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 20px; background: rgba(79, 169, 129,0.1); color: var(--accent-primary); text-transform: uppercase; letter-spacing: 0.05em; }
-      `}</style>
     </div>
   )
 }

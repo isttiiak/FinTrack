@@ -10,6 +10,7 @@ import { useDemoStore } from '@/stores/demoStore'
 import { fadeUp, scaleIn, staggerContainer, staggerItem } from '@/lib/animations'
 import { cn } from '@/lib/utils'
 import { Logo } from '@/components/common/Logo'
+import './SignupPage.css'
 
 const signupSchema = z.object({
   full_name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -98,7 +99,7 @@ export default function SignupPage() {
             >
               <CheckCircle2 size={48} color="#4FA981" />
             </motion.div>
-            <h2 className="auth-title" style={{ marginTop: 16 }}>Check your inbox</h2>
+            <h2 className="signuppage-auth-title" style={{ marginTop: 16 }}>Check your inbox</h2>
             <p className="auth-subtitle" style={{ maxWidth: 300, margin: '8px auto 0' }}>
               We sent a confirmation link to your email. Click it to activate your FinTrack account.
             </p>
@@ -107,7 +108,6 @@ export default function SignupPage() {
             </Link>
           </motion.div>
         </motion.div>
-        <style>{authStyles}</style>
       </div>
     )
   }
@@ -141,11 +141,11 @@ export default function SignupPage() {
 
       <motion.div className="auth-card" variants={scaleIn} initial="initial" animate="animate">
         {/* Header */}
-        <motion.div className="auth-header" variants={fadeUp} initial="initial" animate="animate">
+        <motion.div className="signuppage-auth-header" variants={fadeUp} initial="initial" animate="animate">
           <div className="auth-logo-wrap">
             <Logo size={40} withWordmark />
           </div>
-          <h1 className="auth-title">Create your account</h1>
+          <h1 className="signuppage-auth-title">Create your account</h1>
           <p className="auth-subtitle">Free forever. Your data, your control.</p>
         </motion.div>
 
@@ -158,7 +158,7 @@ export default function SignupPage() {
           whileTap={{ scale: 0.98 }}
         >
           {googleLoading ? (
-            <span className="auth-spinner" />
+            <span className="signuppage-auth-spinner" />
           ) : (
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
               <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
@@ -170,11 +170,11 @@ export default function SignupPage() {
           <span>Continue with Google</span>
         </motion.button>
 
-        <div className="auth-divider"><span>or create with email</span></div>
+        <div className="signuppage-auth-divider"><span>or create with email</span></div>
 
         <AnimatePresence>
           {error && (
-            <motion.div className="auth-error" variants={fadeUp} initial="initial" animate="animate" exit="exit">
+            <motion.div className="signuppage-auth-error" variants={fadeUp} initial="initial" animate="animate" exit="exit">
               {error}
             </motion.div>
           )}
@@ -277,7 +277,7 @@ export default function SignupPage() {
           >
             <AnimatePresence mode="wait">
               {loading ? (
-                <motion.span key="loading" className="auth-spinner" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
+                <motion.span key="loading" className="signuppage-auth-spinner" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
               ) : (
                 <motion.span key="label" className="flex items-center gap-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                   Create account <ArrowRight size={15} />
@@ -292,7 +292,7 @@ export default function SignupPage() {
           <Link to="/login" className="auth-switch-link">Sign in</Link>
         </p>
 
-        <div className="auth-demo-separator" />
+        <div className="signuppage-auth-demo-separator" />
         <motion.button
           className="auth-demo-btn"
           onClick={() => { enterDemo(); navigate({ to: '/dashboard' }) }}
@@ -311,127 +311,7 @@ export default function SignupPage() {
         </p>
       </motion.div>
 
-      <style>{authStyles}</style>
     </div>
   )
 }
 
-const authStyles = `
-.auth-shell {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg-page);
-  position: relative;
-  overflow: hidden;
-  padding: 24px 16px;
-}
-.auth-watermark {
-  position: absolute; inset: 0;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(4, 1fr);
-  pointer-events: none; z-index: 0;
-}
-.auth-watermark-word {
-  display: flex; align-items: center; justify-content: center;
-  font-size: 22px; font-weight: 700; color: var(--accent-primary);
-  letter-spacing: 0.02em; user-select: none; white-space: nowrap;
-}
-.auth-orb { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 0; }
-.auth-orb-1 { width: 380px; height: 380px; background: rgba(79, 169, 129,0.12); top: -80px; left: -80px; }
-.auth-orb-2 { width: 300px; height: 300px; background: rgba(62, 155, 114,0.09); bottom: -60px; right: -60px; }
-.auth-orb-3 { width: 200px; height: 200px; background: rgba(79, 169, 129,0.06); top: 50%; left: 50%; transform: translate(-50%,-50%); }
-.auth-card {
-  position: relative; z-index: 1;
-  width: 100%; max-width: 420px;
-  background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px;
-  padding: 32px 32px 24px;
-  box-shadow: 0 24px 80px rgba(0,0,0,0.4), 0 0 0 1px rgba(79, 169, 129,0.08);
-}
-@media (max-width: 480px) { .auth-card { padding: 24px 18px 18px; } }
-.auth-header { text-align: center; margin-bottom: 22px; }
-.auth-logo-wrap { display: flex; justify-content: center; margin: 0 auto 14px; }
-.auth-title { font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 0 0 5px; }
-.auth-subtitle { font-size: 13px; color: var(--text-secondary); margin: 0; }
-.auth-google-btn {
-  width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
-  padding: 11px 16px;
-  background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px;
-  color: var(--text-primary); font-size: 14px; font-weight: 500; cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
-}
-.auth-google-btn:hover { background: var(--bg-hover); border-color: var(--text-muted); }
-.auth-divider {
-  display: flex; align-items: center; gap: 12px;
-  margin: 14px 0; color: var(--text-muted); font-size: 12px;
-}
-.auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-.auth-error {
-  background: rgba(194, 91, 85,0.1); border: 1px solid rgba(194, 91, 85,0.3); border-radius: 8px;
-  padding: 10px 14px; color: #FCA5A5; font-size: 13px; margin-bottom: 12px;
-}
-.auth-form { display: flex; flex-direction: column; gap: 12px; }
-.auth-field { display: flex; flex-direction: column; gap: 5px; }
-.auth-label-row { display: flex; align-items: center; justify-content: space-between; }
-.auth-label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
-.auth-forgot-link { font-size: 12px; color: var(--accent-primary); text-decoration: none; }
-.auth-forgot-link:hover { text-decoration: underline; }
-.auth-input-wrapper { position: relative; }
-.auth-input-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
-.auth-input {
-  width: 100%; padding: 10px 14px 10px 36px;
-  background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px;
-  color: var(--text-primary); font-size: 14px;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-.auth-input::placeholder { color: var(--text-muted); }
-.auth-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(79, 169, 129,0.15); }
-.auth-input-error { border-color: var(--accent-red) !important; }
-.auth-input-padded-right { padding-right: 40px; }
-.auth-field-error { font-size: 12px; color: #FCA5A5; margin: 0; }
-.auth-toggle-password {
-  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-  background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 2px;
-}
-.auth-toggle-password:hover { color: var(--text-secondary); }
-.auth-pw-rules { display: flex; gap: 10px; flex-wrap: wrap; padding: 4px 0; }
-.auth-pw-rule { font-size: 11px; color: var(--text-muted); transition: color 0.15s; }
-.auth-pw-rule-ok { color: var(--accent-teal); }
-.auth-submit-btn {
-  width: 100%; padding: 12px;
-  background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E);
-  border: none; border-radius: 10px;
-  color: #fff; font-size: 14px; font-weight: 600;
-  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
-  min-height: 44px;
-  box-shadow: 0 4px 16px rgba(79, 169, 129,0.3);
-  transition: box-shadow 0.15s, opacity 0.15s;
-}
-.auth-submit-btn:hover:not(:disabled) { box-shadow: 0 6px 24px rgba(79, 169, 129,0.45); }
-.auth-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-.auth-switch { font-size: 13px; color: var(--text-secondary); text-align: center; margin: 12px 0 0; }
-.auth-switch-link { color: var(--accent-primary); font-weight: 500; text-decoration: none; }
-.auth-switch-link:hover { text-decoration: underline; }
-.auth-demo-separator { height: 1px; background: var(--border); margin: 16px 0 12px; }
-.auth-demo-btn {
-  width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 10px;
-  background: rgba(79, 169, 129,0.08); border: 1px dashed rgba(79, 169, 129,0.35); border-radius: 10px;
-  color: var(--accent-primary); font-size: 13px; font-weight: 500;
-  cursor: pointer; transition: background 0.15s, border-color 0.15s;
-}
-.auth-demo-btn:hover { background: rgba(79, 169, 129,0.14); border-color: rgba(79, 169, 129,0.6); }
-.auth-terms { font-size: 11px; color: var(--text-muted); text-align: center; margin: 12px 0 0; line-height: 1.5; }
-.auth-terms-link { color: var(--accent-primary); cursor: pointer; }
-.auth-terms-link:hover { text-decoration: underline; }
-.auth-confirm-screen { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 16px 0 8px; }
-.auth-confirm-icon { display: flex; align-items: center; justify-content: center; }
-.auth-spinner {
-  display: inline-block; width: 18px; height: 18px;
-  border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
-  border-radius: 50%; animation: spin 0.7s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-`

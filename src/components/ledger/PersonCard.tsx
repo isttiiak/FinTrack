@@ -8,6 +8,7 @@ import { useUIStore } from '@/stores/uiStore'
 import { useDemoStore } from '@/stores/demoStore'
 import type { PersonWithLedgers } from '@/types/ledger.types'
 import type { LedgerType } from '@/lib/constants'
+import './PersonCard.css'
 
 // Literal hex (not CSS vars) — these get a hex-alpha suffix appended below
 // (e.g. `${relColor}33`), which only works with plain hex strings.
@@ -99,7 +100,7 @@ export default function PersonCard({ person, onLogPayment }: PersonCardProps) {
               <span className="pc-net-dir">{netPosition >= 0 ? '↑ owed to you' : '↓ you owe'}</span>
             </div>
           )}
-          <div className="pc-actions">
+          <div className="personcard-pc-actions">
             {onLogPayment && person.total_outstanding_lent > 0 && (
               <button
                 className="pc-action-btn pc-collect"
@@ -125,60 +126,6 @@ export default function PersonCard({ person, onLogPayment }: PersonCardProps) {
         />
       </div>
 
-      <style>{`
-        .pc-card {
-          background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
-          transition: border-color 0.15s, box-shadow 0.15s;
-        }
-        .pc-card:hover { border-color: rgba(79, 169, 129,0.25); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
-        .pc-inner { display: flex; align-items: center; gap: 0; }
-        .pc-main {
-          display: flex; align-items: center; gap: 14px; padding: 14px 12px 14px 16px;
-          flex: 1; min-width: 0; background: none; border: none; cursor: pointer; text-align: left;
-        }
-        .pc-right {
-          display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
-          padding: 12px 8px 12px 0; flex-shrink: 0;
-        }
-        .pc-avatar {
-          width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
-          display: flex; align-items: center; justify-content: center;
-          font-size: 18px; font-weight: 700;
-        }
-        .pc-info { flex: 1; min-width: 0; }
-        .pc-name-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
-        .pc-name { font-size: 15px; font-weight: 600; color: var(--text-primary); }
-        .pc-rel-badge {
-          font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 20px; border: 1px solid;
-          white-space: nowrap;
-        }
-        .pc-amounts { display: flex; gap: 10px; flex-wrap: wrap; }
-        .pc-lent { font-size: 12px; color: var(--accent-teal); font-weight: 500; }
-        .pc-debt { font-size: 12px; color: var(--accent-coral); font-weight: 500; }
-        .pc-overpaid { font-size: 12px; color: var(--accent-amber); font-weight: 500; }
-        .pc-no-entries { font-size: 12px; color: var(--text-muted); }
-        .pc-settled-label { font-size: 12px; color: var(--accent-teal); }
-        .pc-net { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
-        .pc-net-amount { font-size: 16px; font-weight: 700; }
-        .pc-net-positive .pc-net-amount { color: var(--accent-teal); }
-        .pc-net-negative .pc-net-amount { color: var(--accent-coral); }
-        .pc-net-dir { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
-        .pc-chevron { color: var(--text-muted); margin-left: 4px; flex-shrink: 0; }
-        .pc-actions { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; }
-        .pc-chevron { color: var(--text-muted); margin: 0 10px 0 4px; flex-shrink: 0; cursor: pointer; }
-        .pc-action-btn {
-          height: 30px; padding: 0 10px; border-radius: 8px; gap: 5px;
-          display: flex; align-items: center; font-size: 12px; font-weight: 600;
-          border: 1px solid var(--border); cursor: pointer; backdrop-filter: blur(8px);
-          background: var(--bg-elevated); transition: background 0.12s, color 0.12s; white-space: nowrap;
-        }
-        .pc-collect { color: var(--accent-teal); }
-        .pc-collect:hover { background: rgba(79, 169, 129,0.12); border-color: rgba(79, 169, 129,0.3); }
-        .pc-pay { color: var(--accent-coral); }
-        .pc-pay:hover { background: rgba(201, 115, 110,0.12); border-color: rgba(201, 115, 110,0.3); }
-        .pc-delete { color: var(--text-muted); padding: 0 8px; }
-        .pc-delete:hover { background: rgba(194, 91, 85,0.12); color: var(--accent-red); border-color: rgba(194, 91, 85,0.3); }
-      `}</style>
     </motion.div>
   )
 }

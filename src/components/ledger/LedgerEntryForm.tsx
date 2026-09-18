@@ -11,6 +11,7 @@ import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
 import { useCreateLedgerEntry, useUpdateLedgerEntry } from '@/hooks/useLedger'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import type { PersonLedger } from '@/types/ledger.types'
+import './LedgerEntryForm.css'
 
 const schema = z.object({
   ledger_type:    z.enum(LEDGER_TYPES),
@@ -190,69 +191,6 @@ export default function LedgerEntryForm({ personId, editing, defaultType = 'Lent
         </form>
       </motion.div>
 
-      <style>{`
-        .lef-overlay {
-          position: fixed; inset: 0; z-index: 50;
-          background: rgba(0,0,0,0.6);
-          display: flex; align-items: center; justify-content: center; padding: 16px;
-        }
-        @media (max-width: 640px) {
-          .lef-overlay { align-items: flex-end; padding: 0; }
-          .lef-panel { border-radius: 20px 20px 0 0 !important; max-height: 92vh; overflow-y: auto; }
-        }
-        .lef-panel {
-          width: 100%; max-width: 460px;
-          background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 20px;
-          box-shadow: 0 24px 60px rgba(0,0,0,0.5);
-          display: flex; flex-direction: column; max-height: min(90vh, 720px); overflow: hidden;
-        }
-        .lef-header {
-          display: flex; align-items: center; justify-content: space-between;
-          padding: 24px 24px 0; flex-shrink: 0; margin-bottom: 20px;
-        }
-        .lef-title { font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0; }
-        .lef-close {
-          width: 30px; height: 30px; border-radius: 8px;
-          background: var(--bg-hover); border: 1px solid var(--border);
-          color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center;
-        }
-        .lef-close:hover { background: var(--bg-card); color: var(--text-primary); }
-        .lef-form { display: flex; flex-direction: column; gap: 14px; overflow-y: auto; flex: 1; padding: 0 24px 0; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
-        .lef-type-toggle { display: flex; gap: 8px; }
-        .lef-type-btn {
-          flex: 1; padding: 9px 12px; border-radius: 10px; text-align: center;
-          font-size: 13px; font-weight: 600; cursor: pointer;
-          background: var(--bg-card); border: 1px solid var(--border);
-          color: var(--text-secondary); transition: background 0.15s, color 0.15s;
-          display: flex; align-items: center; justify-content: center; gap: 6px;
-        }
-        .lef-type-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
-        .lef-type-btn-active { color: #fff !important; border-color: transparent !important; }
-        .lef-type-lent { background: linear-gradient(135deg, #4FA981, #3E9B72) !important; }
-        .lef-type-debt { background: linear-gradient(135deg, #C9736E, #C25B55) !important; }
-        .lef-type-hint { font-size: 12px; color: var(--text-muted); margin: -8px 0 0; }
-        .lef-field { display: flex; flex-direction: column; gap: 5px; }
-        .lef-label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
-        .lef-optional { font-size: 11px; color: var(--text-muted); font-weight: 400; }
-        .lef-input {
-          background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
-          color: var(--text-primary); font-size: 14px; padding: 10px 14px; width: 100%;
-          transition: border-color 0.15s, box-shadow 0.15s;
-        }
-        .lef-input::placeholder { color: var(--text-muted); }
-        .lef-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(79, 169, 129,0.15); }
-        .lef-input-error { border-color: var(--accent-red) !important; }
-        .lef-amount-input { font-size: 22px; font-weight: 700; padding: 12px 14px; }
-        .lef-error { font-size: 12px; color: #FCA5A5; margin: 0; }
-        .lef-actions {
-          display: flex; justify-content: flex-end; gap: 10px;
-          position: sticky; bottom: 0; background: var(--bg-elevated);
-          border-top: 1px solid var(--border); padding: 14px 24px 24px; flex-shrink: 0;
-        }
-        .lef-submit { min-width: 110px; min-height: 40px; display: flex; align-items: center; justify-content: center; }
-        .lef-spinner { display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:lef-spin 0.7s linear infinite; }
-        @keyframes lef-spin { to { transform: rotate(360deg); } }
-      `}</style>
     </div>
   )
 }

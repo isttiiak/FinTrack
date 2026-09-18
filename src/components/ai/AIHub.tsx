@@ -11,6 +11,7 @@ import { formatCurrency, getActiveCurrencySymbol, toISODateString } from '@/lib/
 import { fadeUp } from '@/lib/animations'
 import ErrorBanner from '@/components/common/ErrorBanner'
 import { useIsExpensesOnly } from '@/hooks/useTrackingMode'
+import './AIHub.css'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function groqModelLabel(id: string): string {
@@ -579,113 +580,7 @@ Be realistic and encouraging. Use bullet points and show before/after amounts, n
         </div>
       </div>
 
-      <style>{STYLES}</style>
     </motion.div>
   )
 }
 
-const STYLES = `
-  .aih-root { display: flex; flex-direction: column; gap: 14px; }
-
-  /* Setup state */
-  .aih-setup { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 48px 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; gap: 10px; }
-  .aih-setup-icon { font-size: 40px; }
-  .aih-setup-title { font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0; }
-  .aih-setup-desc { font-size: 13px; color: var(--text-secondary); margin: 0; line-height: 1.6; }
-  .aih-setup-link { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E); color: #fff; text-decoration: none; margin-top: 4px; }
-
-  /* Header */
-  .aih-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
-  .aih-header-left { display: flex; align-items: center; gap: 8px; }
-  .aih-header-title { font-size: 16px; font-weight: 700; color: var(--text-primary); }
-  .aih-provider-badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 20px; background: rgba(79, 169, 129,0.12); color: var(--accent-teal); }
-  .aih-header-sub { font-size: 12px; color: var(--text-muted); }
-
-  /* Sections */
-  .aih-section { display: flex; flex-direction: column; gap: 8px; }
-  .aih-section-title { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
-  .aih-row-list { display: flex; flex-direction: column; gap: 6px; }
-
-  /* Feature card (used by Goal Planner + Chat) */
-  .aih-card {
-    background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
-    padding: 16px; display: flex; flex-direction: column; gap: 10px;
-    transition: border-color 0.15s;
-  }
-  .aih-card:hover { border-color: rgba(79, 169, 129,0.2); }
-  .aih-card-header { display: flex; align-items: flex-start; gap: 10px; }
-  .aih-card-icon { width: 36px; height: 36px; border-radius: 10px; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .aih-card-title { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
-  .aih-card-desc { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
-
-  /* Collapsed-by-default feature row (Spending Analysis / Planning lists) */
-  .aih-row {
-    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
-    padding: 10px 12px; transition: border-color 0.15s;
-  }
-  .aih-row:hover { border-color: rgba(79, 169, 129,0.2); }
-  .aih-row-expanded { padding-bottom: 12px; }
-  .aih-row-header { display: flex; align-items: center; gap: 10px; cursor: default; }
-  .aih-row-icon { width: 30px; height: 30px; border-radius: 9px; font-size: 15px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .aih-row-title { flex: 1; font-size: 13px; font-weight: 600; color: var(--text-primary); }
-
-  .aih-run-btn {
-    display: flex; align-items: center; gap: 5px; flex-shrink: 0;
-    padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer;
-    background: none; border: 1px solid; transition: background 0.12s; white-space: nowrap;
-  }
-  .aih-run-btn:hover { background: rgba(79, 169, 129,0.06); }
-  .aih-run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  .aih-error { display: flex; align-items: flex-start; gap: 7px; padding: 10px 12px; margin-top: 10px; background: rgba(194, 91, 85,0.08); border: 1px solid rgba(194, 91, 85,0.2); border-radius: 8px; font-size: 12px; color: var(--accent-red); }
-  .aih-result { padding: 10px 0 0; margin-top: 4px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 2px; }
-  .aih-model-footer { font-size: 10px; color: var(--text-muted); margin: 6px 0 0; }
-  .aih-inline-code { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 12px; font-family: ui-monospace, monospace; color: var(--accent-gold); }
-  .aih-result-hr { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
-
-  /* Goal planner */
-  .aih-goal-inputs { display: flex; gap: 10px; flex-wrap: wrap; }
-  .aih-goal-field { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 120px; }
-  .aih-goal-label { font-size: 11px; font-weight: 500; color: var(--text-muted); }
-  .aih-input {
-    background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px;
-    color: var(--text-primary); font-size: 14px; padding: 8px 12px;
-    transition: border-color 0.15s;
-  }
-  .aih-input:focus { outline: none; border-color: var(--border-focus); }
-  .aih-input::placeholder { color: var(--text-muted); }
-
-  /* Chat */
-  .aih-chat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-  .aih-chat-header { display: flex; align-items: flex-start; gap: 10px; }
-  .aih-messages { display: flex; flex-direction: column; gap: 8px; max-height: 360px; overflow-y: auto; padding: 4px 0; }
-  .aih-msg { padding: 10px 12px; border-radius: 10px; font-size: 13px; line-height: 1.5; }
-  .aih-msg-user { background: rgba(79, 169, 129,0.1); color: var(--text-primary); font-weight: 500; align-self: flex-end; max-width: 85%; border-radius: 10px 10px 2px 10px; }
-  .aih-msg-ai { background: var(--bg-elevated); color: var(--text-secondary); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 2px; }
-
-  .aih-chat-hints { display: flex; flex-wrap: wrap; gap: 6px; }
-  .aih-hint-chip { padding: 5px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-secondary); transition: all 0.12s; text-align: left; }
-  .aih-hint-chip:hover { background: rgba(79, 169, 129,0.08); border-color: rgba(79, 169, 129,0.3); color: var(--accent-primary); }
-
-  .aih-chat-input-row { display: flex; gap: 8px; }
-  .aih-chat-input {
-    flex: 1; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px;
-    color: var(--text-primary); font-size: 14px; padding: 10px 14px;
-    transition: border-color 0.15s;
-  }
-  .aih-chat-input:focus { outline: none; border-color: var(--border-focus); }
-  .aih-chat-input::placeholder { color: var(--text-muted); }
-  .aih-chat-input:disabled { opacity: 0.6; }
-  .aih-chat-send {
-    width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
-    background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E); border: none; color: #fff; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: opacity 0.15s;
-  }
-  .aih-chat-send:disabled { opacity: 0.5; cursor: not-allowed; }
-  .aih-chat-send:not(:disabled):hover { opacity: 0.85; }
-
-  /* Spinner */
-  .aih-spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(79, 169, 129,0.2); border-top-color: var(--accent-primary); border-radius: 50%; animation: aih-spin 0.7s linear infinite; }
-  @keyframes aih-spin { to { transform: rotate(360deg); } }
-`

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import './SearchToggle.css'
 
 interface SearchToggleProps {
   value: string
@@ -89,36 +90,6 @@ export default function SearchToggle({ value, onChange, placeholder = 'Search…
         )}
       </AnimatePresence>
 
-      <style>{`
-        .stg-wrap { display: inline-flex; align-items: center; }
-
-        .stg-icon-btn {
-          width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
-          background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary);
-          cursor: pointer; display: flex; align-items: center; justify-content: center;
-          transition: background 0.15s, color 0.15s, border-color 0.15s;
-        }
-        .stg-icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
-        .stg-icon-btn-active { border-color: var(--accent-primary); color: var(--accent-primary); }
-
-        .stg-input-row {
-          display: flex; align-items: center; gap: 7px; overflow: hidden;
-          height: 34px; padding: 0 10px; border-radius: 8px;
-          background: var(--bg-card); border: 1px solid var(--border-focus);
-          box-shadow: 0 0 0 3px rgba(79, 169, 129,0.15);
-        }
-        .stg-icon { color: var(--text-muted); flex-shrink: 0; }
-        .stg-input {
-          flex: 1; min-width: 0; background: none; border: none; outline: none;
-          color: var(--text-primary); font-size: 13px;
-        }
-        .stg-input::placeholder { color: var(--text-muted); }
-        .stg-clear, .stg-close {
-          background: none; border: none; color: var(--text-muted); cursor: pointer;
-          display: flex; align-items: center; padding: 0; flex-shrink: 0;
-        }
-        .stg-clear:hover, .stg-close:hover { color: var(--text-primary); }
-      `}</style>
     </div>
   )
 }

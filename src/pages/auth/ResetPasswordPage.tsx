@@ -10,6 +10,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { fadeUp, scaleIn } from '@/lib/animations'
 import { cn } from '@/lib/utils'
 import { Logo } from '@/components/common/Logo'
+import './ResetPasswordPage.css'
 
 const schema = z.object({
   password: z.string()
@@ -170,7 +171,7 @@ export default function ResetPasswordPage() {
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.97 }}
                 >
-                  {loading ? <span className="auth-spinner" /> : 'Update password'}
+                  {loading ? <span className="resetpasswordpage-auth-spinner" /> : 'Update password'}
                 </motion.button>
               </form>
             </motion.div>
@@ -178,72 +179,6 @@ export default function ResetPasswordPage() {
         </AnimatePresence>
       </motion.div>
 
-      <style>{`
-        .auth-shell {
-          min-height: 100vh; display: flex; align-items: center; justify-content: center;
-          background: var(--bg-page); position: relative; overflow: hidden; padding: 24px 16px;
-        }
-        .auth-orb { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 0; }
-        .auth-orb-1 { width: 380px; height: 380px; background: rgba(79, 169, 129,0.12); top: -80px; left: -80px; }
-        .auth-orb-2 { width: 300px; height: 300px; background: rgba(62, 155, 114,0.09); bottom: -60px; right: -60px; }
-        .auth-card {
-          position: relative; z-index: 1; width: 100%; max-width: 400px;
-          background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px;
-          padding: 36px 32px 28px;
-          box-shadow: 0 24px 80px rgba(0,0,0,0.4), 0 0 0 1px rgba(79, 169, 129,0.08);
-        }
-        .auth-header { text-align: center; margin-bottom: 24px; }
-        .auth-logo-wrap { display: flex; justify-content: center; margin: 0 auto 16px; }
-        .auth-title { font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 0 0 6px; }
-        .auth-subtitle { font-size: 13px; color: var(--text-secondary); margin: 0; }
-        .auth-error {
-          background: rgba(194, 91, 85,0.1); border: 1px solid rgba(194, 91, 85,0.3); border-radius: 8px;
-          padding: 10px 14px; color: #FCA5A5; font-size: 13px; margin-bottom: 14px;
-        }
-        .auth-form { display: flex; flex-direction: column; gap: 14px; }
-        .auth-field { display: flex; flex-direction: column; gap: 5px; }
-        .auth-label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
-        .auth-input-wrapper { position: relative; }
-        .auth-input-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
-        .auth-input {
-          width: 100%; padding: 10px 14px 10px 36px;
-          background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px;
-          color: var(--text-primary); font-size: 14px;
-          transition: border-color 0.15s, box-shadow 0.15s;
-        }
-        .auth-input::placeholder { color: var(--text-muted); }
-        .auth-input:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(79, 169, 129,0.15); }
-        .auth-input-error { border-color: var(--accent-red) !important; }
-        .auth-input-padded-right { padding-right: 40px; }
-        .auth-toggle-password {
-          position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-          background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 2px;
-        }
-        .auth-toggle-password:hover { color: var(--text-secondary); }
-        .auth-pw-rules { display: flex; gap: 10px; flex-wrap: wrap; padding: 4px 0; }
-        .auth-pw-rule { font-size: 11px; color: var(--text-muted); transition: color 0.15s; }
-        .auth-pw-rule-ok { color: var(--accent-teal); }
-        .auth-field-error { font-size: 12px; color: #FCA5A5; margin: 0; }
-        .auth-submit-btn {
-          width: 100%; padding: 12px;
-          background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E);
-          border: none; border-radius: 10px;
-          color: #fff; font-size: 14px; font-weight: 600;
-          cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
-          min-height: 44px;
-          box-shadow: 0 4px 16px rgba(79, 169, 129,0.3);
-          transition: box-shadow 0.15s, opacity 0.15s;
-        }
-        .auth-submit-btn:hover:not(:disabled) { box-shadow: 0 6px 24px rgba(79, 169, 129,0.45); }
-        .auth-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .auth-confirm-screen { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 16px 0 8px; }
-        .auth-spinner {
-          display: inline-block; width: 18px; height: 18px;
-          border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
-          border-radius: 50%; animation: spin 0.7s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
     </div>
   )
 }

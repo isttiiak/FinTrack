@@ -1,0 +1,180 @@
+/* Styles for InvestmentPaymentForm.tsx — extracted from an inline <style> block (TODO.md §4.1). */
+.ipf-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+@media (max-width: 640px) {
+  .ipf-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .ipf-panel {
+    border-radius: 20px 20px 0 0 !important;
+  }
+}
+.ipf-panel {
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  max-height: 92vh;
+  overflow-y: auto;
+}
+.ipf-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.ipf-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 3px;
+}
+.ipf-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+}
+.ipf-close {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ipf-close:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+.ipf-progress-wrap {
+  padding: 12px 14px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  background: rgba(201, 115, 110, 0.06);
+  border: 1px solid rgba(201, 115, 110, 0.15);
+}
+.ipf-progress-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.ipf-progress-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.ipf-progress-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg-elevated);
+  overflow: hidden;
+  margin-bottom: 5px;
+}
+.ipf-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #c9736e, #c25b55);
+  transition: width 0.4s ease;
+}
+.ipf-remaining {
+  font-size: 11px;
+  color: var(--accent-coral);
+  margin: 0;
+}
+.ipf-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.ipf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.ipf-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.ipf-optional {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+.ipf-input {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 14px;
+  padding: 10px 14px;
+  width: 100%;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.ipf-input::placeholder {
+  color: var(--text-muted);
+}
+.ipf-input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(79, 169, 129, 0.15);
+}
+.ipf-input-error {
+  border-color: var(--accent-red) !important;
+}
+.ipf-amount {
+  font-size: 22px;
+  font-weight: 700;
+  padding: 12px 14px;
+}
+.ipf-error {
+  font-size: 12px;
+  color: #fca5a5;
+  margin: 0;
+}
+.ipf-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+.ipf-submit {
+  min-width: 120px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ipf-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: ipf-spin 0.7s linear infinite;
+}
+@keyframes ipf-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

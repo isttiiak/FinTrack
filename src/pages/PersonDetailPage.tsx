@@ -19,6 +19,7 @@ import LedgerPaymentLogs from '@/components/ledger/LedgerPaymentLogs'
 import ErrorBanner from '@/components/common/ErrorBanner'
 import type { PersonLedger, PersonWithLedgers } from '@/types/ledger.types'
 import type { LedgerType } from '@/lib/constants'
+import './PersonDetailPage.css'
 
 const STATUS_STYLE = {
   Pending: { bg: 'rgba(201, 115, 110,0.12)', color: '#C9736E', label: '⏳ Pending' },
@@ -58,7 +59,6 @@ export default function PersonDetailPage() {
         <div className="pd-skeleton-list">
           {[1, 2].map((i) => <div key={i} className="pd-skeleton-card" />)}
         </div>
-        <style>{skeletonStyles}</style>
       </div>
     )
   }
@@ -70,7 +70,6 @@ export default function PersonDetailPage() {
           <ArrowLeft size={16} /> Back
         </button>
         <ErrorBanner message="Couldn't load this person — your connection or session may have hiccuped." onRetry={refetch} />
-        <style>{skeletonStyles}</style>
       </div>
     )
   }
@@ -82,7 +81,6 @@ export default function PersonDetailPage() {
           <ArrowLeft size={16} /> Back
         </button>
         <p style={{ color: 'var(--text-muted)', marginTop: 32, textAlign: 'center' }}>Person not found.</p>
-        <style>{skeletonStyles}</style>
       </div>
     )
   }
@@ -317,144 +315,7 @@ export default function PersonDetailPage() {
         )}
       </AnimatePresence>
 
-      <style>{`
-        .pd-page { max-width: 900px; }
-        .pd-back {
-          display: inline-flex; align-items: center; gap: 7px;
-          font-size: 13px; color: var(--text-secondary); background: none; border: none;
-          cursor: pointer; padding: 0 0 20px; transition: color 0.15s;
-        }
-        .pd-back:hover { color: var(--text-primary); }
-
-        /* Hero */
-        .pd-hero {
-          background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
-          padding: 16px; display: flex; align-items: center; justify-content: space-between;
-          gap: 12px; margin-bottom: 12px; flex-wrap: wrap;
-        }
-        .pd-hero-left { display: flex; align-items: center; gap: 16px; }
-        .pd-hero-avatar {
-          width: 60px; height: 60px; border-radius: 16px; flex-shrink: 0;
-          background: linear-gradient(135deg, rgba(79, 169, 129,0.25), rgba(62, 155, 114,0.25));
-          color: var(--accent-primary); font-size: 26px; font-weight: 700;
-          display: flex; align-items: center; justify-content: center;
-        }
-        .pd-hero-name { font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 0 0 4px; }
-        .pd-hero-rel {
-          display: inline-block; font-size: 12px; font-weight: 500; padding: 2px 10px; border-radius: 20px;
-          background: rgba(79, 169, 129,0.12); color: var(--accent-primary);
-        }
-        .pd-hero-phone { font-size: 12px; color: var(--text-muted); margin: 4px 0 0; }
-        .pd-hero-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
-        .pd-hero-net { font-size: 28px; font-weight: 800; line-height: 1.1; }
-        .pd-hero-net-label { font-size: 12px; color: var(--text-muted); }
-        .pd-hero-all-settled { font-size: 16px; font-weight: 600; color: var(--accent-teal); }
-        .pd-hero-btns { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
-
-        .pd-stats-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
-        .pd-stat-card {
-          flex: 1; min-width: 180px; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border);
-          display: flex; flex-direction: column; gap: 2px;
-        }
-        .pd-stat-lent { background: rgba(79, 169, 129,0.05); border-color: rgba(79, 169, 129,0.15); }
-        .pd-stat-debt { background: rgba(201, 115, 110,0.05); border-color: rgba(201, 115, 110,0.15); }
-        .pd-stat-label { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
-        .pd-stat-amount { font-size: 20px; font-weight: 700; color: var(--text-primary); }
-        .pd-stat-sub { font-size: 12px; color: var(--text-secondary); }
-        .pd-stat-sub strong { color: var(--text-primary); }
-        .pd-overpaid-badge {
-          font-size: 11px; font-weight: 600; color: var(--accent-amber);
-          margin-top: 4px; display: inline-block;
-        }
-
-        .pd-tabs { display: flex; gap: 6px; }
-        .pd-tab {
-          padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer;
-          background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary);
-          transition: all 0.15s;
-        }
-        .pd-tab:hover { background: var(--bg-hover); color: var(--text-primary); }
-        .pd-tab-active { background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E); border-color: transparent; color: #fff; }
-
-        .pd-sub-chip {
-          padding: 5px 12px; border-radius: 20px; font-size: 13px; font-weight: 500;
-          border: 1px solid;
-        }
-        .pd-sub-lent { background: rgba(79, 169, 129,0.1); color: var(--accent-teal); border-color: rgba(79, 169, 129,0.2); }
-        .pd-sub-debt { background: rgba(201, 115, 110,0.1); color: var(--accent-coral); border-color: rgba(201, 115, 110,0.2); }
-
-        .pd-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-        .pd-section-title { font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0; }
-        .pd-add-btn { display: flex; align-items: center; gap: 6px; font-size: 13px; padding: 8px 16px; }
-
-        .pd-timeline { display: flex; flex-direction: column; gap: 10px; }
-        .pd-empty { display: flex; flex-direction: column; align-items: center; padding: 48px 20px; text-align: center; }
-
-        /* Entry card */
-        .pd-entry {
-          background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
-          overflow: hidden;
-        }
-        .pd-entry-header {
-          display: flex; align-items: flex-start; gap: 12px; padding: 16px;
-        }
-        .pd-entry-type-dot {
-          width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 5px;
-        }
-        .pd-entry-info { flex: 1; min-width: 0; }
-        .pd-entry-top-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
-        .pd-entry-type { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
-        .pd-entry-amount { font-size: 17px; font-weight: 700; }
-        .pd-entry-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
-        .pd-entry-bottom-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .pd-status-badge { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; }
-        .pd-remaining { font-size: 11px; color: var(--text-muted); }
-        .pd-doc-link {
-          display: inline-flex; align-items: center; gap: 4px;
-          font-size: 11px; color: var(--accent-primary); text-decoration: none;
-        }
-        .pd-doc-link:hover { text-decoration: underline; }
-
-        /* Entry action buttons */
-        .pd-entry-actions { display: flex; gap: 4px; flex-shrink: 0; flex-wrap: wrap; }
-        @media (max-width: 400px) { .pd-entry-top-row { flex-direction: column; gap: 4px; } }
-        .pd-action-btn {
-          height: 28px; border-radius: 7px;
-          display: flex; align-items: center; justify-content: center; gap: 4px;
-          background: var(--bg-elevated); border: 1px solid var(--border);
-          font-size: 12px; cursor: pointer; padding: 0 8px;
-          transition: background 0.12s, color 0.12s;
-        }
-        .pd-collect-btn { color: var(--accent-teal); }
-        .pd-collect-btn:hover { background: rgba(79, 169, 129,0.12); border-color: rgba(79, 169, 129,0.3); }
-        .pd-pay-btn { color: var(--accent-coral); }
-        .pd-pay-btn:hover { background: rgba(201, 115, 110,0.12); border-color: rgba(201, 115, 110,0.3); }
-        .pd-edit-btn { color: var(--text-secondary); }
-        .pd-edit-btn:hover { background: rgba(79, 169, 129,0.12); color: var(--accent-primary); border-color: rgba(79, 169, 129,0.3); }
-
-        ${skeletonStyles}
-      `}</style>
     </motion.div>
   )
 }
 
-const skeletonStyles = `
-  .pd-page { max-width: 900px; }
-  .pd-back {
-    display: inline-flex; align-items: center; gap: 7px;
-    font-size: 13px; color: var(--text-secondary); background: none; border: none;
-    cursor: pointer; padding: 0 0 20px;
-  }
-  .pd-skeleton-hero {
-    height: 120px; border-radius: 18px; margin-bottom: 12px;
-    background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-elevated) 50%, var(--bg-card) 75%);
-    background-size: 200% 100%; animation: shimmer 1.5s infinite;
-  }
-  .pd-skeleton-list { display: flex; flex-direction: column; gap: 10px; }
-  .pd-skeleton-card {
-    height: 80px; border-radius: 14px;
-    background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-elevated) 50%, var(--bg-card) 75%);
-    background-size: 200% 100%; animation: shimmer 1.5s infinite;
-  }
-  @keyframes shimmer { to { background-position: -200% 0; } }
-`

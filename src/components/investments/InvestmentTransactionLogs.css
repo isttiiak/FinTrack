@@ -1,0 +1,321 @@
+/* Styles for InvestmentTransactionLogs.tsx — extracted from an inline <style> block (TODO.md §4.1). */
+.itl-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.itl-empty {
+  text-align: center;
+  padding: 40px 16px;
+}
+
+.itl-filters {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.itl-pill {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  transition: background 0.12s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.itl-pill:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.itl-pill-active {
+  background: linear-gradient(135deg, #c2a24e, #c9736e);
+  border-color: transparent;
+  color: #fff;
+}
+.itl-pill-count {
+  background: var(--bg-elevated);
+  border-radius: 20px;
+  padding: 0 6px;
+  font-size: 10px;
+}
+.itl-pill-active .itl-pill-count {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.itl-filter-banner {
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: rgba(194, 162, 78, 0.08);
+  border: 1px solid rgba(194, 162, 78, 0.2);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.itl-filter-banner strong {
+  color: var(--text-primary);
+}
+.itl-filter-clear {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.itl-summary {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+.itl-sum-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.itl-sum-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.itl-sum-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.itl-table {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  overflow-x: auto;
+}
+.itl-edit-input {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-focus);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 12px;
+  padding: 3px 6px;
+  width: 100%;
+  outline: none;
+}
+.itl-edit-btn,
+.itl-save-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.itl-edit-btn {
+  color: var(--text-muted);
+}
+.itl-edit-btn:hover {
+  background: rgba(79, 169, 129, 0.1);
+  color: var(--accent-primary);
+}
+.itl-save-btn {
+  color: var(--accent-teal);
+}
+.itl-save-btn:hover {
+  background: rgba(79, 169, 129, 0.1);
+}
+.itl-header-row,
+.itl-row {
+  display: grid;
+  grid-template-columns: 140px 110px 100px 90px 110px 100px 1fr 58px;
+  gap: 0;
+  padding: 10px 14px;
+  min-width: 820px;
+  align-items: center;
+}
+.itl-header-row {
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.itl-row {
+  border-bottom: 1px solid rgba(33, 42, 36, 0.5);
+  transition: background 0.1s;
+}
+.itl-row:last-child {
+  border-bottom: none;
+}
+.itl-row:hover {
+  background: var(--bg-elevated);
+}
+
+.itl-cell {
+  padding: 0 6px 0 0;
+}
+.itl-cell-muted {
+  font-size: 12px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itl-inv-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+.itl-inv-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.itl-inv-btn:hover .itl-inv-name {
+  color: #c2a24e;
+}
+
+.itl-type-out {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--accent-coral);
+  background: rgba(201, 115, 110, 0.1);
+  padding: 2px 8px;
+  border-radius: 20px;
+  width: fit-content;
+}
+.itl-type-in {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--accent-teal);
+  background: rgba(79, 169, 129, 0.1);
+  padding: 2px 8px;
+  border-radius: 20px;
+  width: fit-content;
+}
+
+.itl-amount-out {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-coral);
+}
+.itl-amount-in {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-teal);
+}
+.itl-remaining {
+  font-size: 13px;
+  font-weight: 600;
+  color: #c2a24e;
+}
+.itl-remaining-zero {
+  font-size: 11px;
+  color: var(--accent-teal);
+}
+.itl-pl-pos {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-teal);
+}
+.itl-pl-neg {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-coral);
+}
+
+.itl-del-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.itl-del-btn:hover {
+  background: rgba(194, 91, 85, 0.1);
+  color: var(--accent-red);
+}
+
+/* Phone: each table row becomes a stacked card — investment name on
+   top, then labelled Type/Date/Amount/... pairs in two columns. */
+@media (max-width: 720px) {
+  .itl-table {
+    overflow-x: visible;
+    background: none;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .itl-header-row {
+    display: none;
+  }
+  .itl-row {
+    min-width: 0;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 12px;
+    padding: 12px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .itl-row:last-child {
+    border: 1px solid var(--border);
+  }
+  .itl-row > .itl-cell:first-child,
+  .itl-row > .itl-cell:nth-child(7),
+  .itl-row > .itl-cell:last-child {
+    grid-column: 1 / -1;
+  }
+  .itl-cell {
+    padding: 0;
+    min-width: 0;
+  }
+  .itl-cell[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 3px;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .itl-cell-muted {
+    white-space: normal;
+  }
+}

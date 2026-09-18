@@ -12,6 +12,7 @@ import { formatCurrency } from '@/lib/utils'
 import { RELATIONSHIPS } from '@/lib/constants'
 import type { PersonWithLedgers } from '@/types/ledger.types'
 import type { Relationship } from '@/lib/constants'
+import './PeoplePage.css'
 
 // Literal hex (not CSS vars) — these get a hex-alpha suffix appended below
 // (e.g. `${relColor}33`), which only works with plain hex strings.
@@ -124,7 +125,7 @@ function PersonRow({ person, isExpanded, onToggleEdit, onSave, onDelete, isSavin
               <div className="pmp-field-group">
                 <label className="pmp-label">Relationship</label>
                 <select
-                  className="pmp-select"
+                  className="peoplepage-pmp-select"
                   value={editRel}
                   onChange={(e) => setEditRel(e.target.value as Relationship | '')}
                 >
@@ -224,7 +225,7 @@ function AddPersonForm({ onSave, onCancel, isSaving }: AddPersonFormProps) {
           <div className="pmp-field-group" style={{ flex: 1 }}>
             <label className="pmp-label">Relationship</label>
             <select
-              className="pmp-select"
+              className="peoplepage-pmp-select"
               value={relationship}
               onChange={(e) => setRelationship(e.target.value as Relationship | '')}
             >
@@ -429,163 +430,8 @@ export default function PeoplePage() {
         </div>
       </div>
 
-      <style>{STYLES}</style>
     </motion.div>
   )
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
-const STYLES = `
-  .pmp-page { max-width: 900px; }
-  .pd-back {
-    display: inline-flex; align-items: center; gap: 6px; background: none; border: none;
-    color: var(--text-muted); font-size: 13px; cursor: pointer; padding: 0; margin-bottom: 16px;
-    transition: color 0.12s;
-  }
-  .pd-back:hover { color: var(--text-primary); }
-
-  .pmp-header-row { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; gap: 16px; flex-wrap: wrap; }
-  .page-title { font-size: 28px; font-weight: 700; color: var(--text-primary); margin: 0 0 4px; }
-  .page-subtitle { font-size: 14px; color: var(--text-secondary); margin: 0; }
-
-  /* Stats strip */
-  .pmp-stats-strip {
-    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-    padding: 12px 16px; border-radius: 12px; margin-bottom: 16px;
-    background: var(--bg-card); border: 1px solid var(--border);
-    font-size: 13px; color: var(--text-secondary);
-  }
-  .pmp-stat strong { color: var(--text-primary); font-size: 15px; margin-right: 4px; }
-  .pmp-stat-teal strong { color: var(--accent-teal); }
-  .pmp-stat-coral strong { color: var(--accent-coral); }
-  .pmp-stat-sep { width: 1px; height: 14px; background: var(--border); }
-
-  /* Controls row */
-  .pmp-controls-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
-  .pmp-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
-  .pmp-tab {
-    padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer;
-    background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary);
-    transition: background 0.15s, color 0.15s, border-color 0.15s;
-  }
-  .pmp-tab:hover { background: var(--bg-hover); color: var(--text-primary); }
-  .pmp-tab-active { background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E); border-color: transparent; color: #fff; }
-
-  .pmp-rel-filter-wrap { position: relative; }
-  .pmp-rel-filter {
-    appearance: none; cursor: pointer; padding: 7px 30px 7px 14px; border-radius: 20px;
-    background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary);
-    font-size: 13px; font-weight: 500;
-  }
-  .pmp-rel-filter:focus { outline: none; border-color: var(--border-focus); }
-  .pmp-rel-filter-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
-
-  /* Content + list */
-  .pmp-content { display: flex; flex-direction: column; gap: 10px; }
-  .pmp-list { display: flex; flex-direction: column; gap: 8px; }
-  .pmp-empty {
-    text-align: center; padding: 48px 16px; color: var(--text-muted);
-    font-size: 14px; display: flex; flex-direction: column; align-items: center;
-  }
-  .pmp-empty p { margin: 0 0 4px; }
-
-  /* Person row */
-  .pmp-person-row-wrap {
-    background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
-    overflow: hidden; transition: border-color 0.15s, box-shadow 0.15s;
-  }
-  .pmp-person-row-wrap:hover { border-color: rgba(79, 169, 129,0.25); box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
-  .pmp-person-row {
-    display: flex; align-items: center; gap: 12px; padding: 14px 14px 14px 16px;
-  }
-  .pmp-avatar {
-    width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 17px; font-weight: 700;
-  }
-  .pmp-person-info { flex: 1; min-width: 0; }
-  .pmp-person-name-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 3px; }
-  .pmp-person-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
-  .pmp-rel-badge {
-    font-size: 11px; font-weight: 500; padding: 2px 8px;
-    border-radius: 20px; border: 1px solid; white-space: nowrap;
-  }
-  .pmp-person-amounts { display: flex; gap: 8px; flex-wrap: wrap; }
-  .pmp-lent-amt { font-size: 12px; color: var(--accent-teal); font-weight: 500; }
-  .pmp-debt-amt { font-size: 12px; color: var(--accent-coral); font-weight: 500; }
-  .pmp-settled-label { font-size: 12px; color: var(--text-muted); }
-  .pmp-edit-btn {
-    height: 30px; padding: 0 10px; border-radius: 8px; flex-shrink: 0; gap: 5px;
-    display: flex; align-items: center; font-size: 12px; font-weight: 600;
-    border: 1px solid var(--border); background: none;
-    color: var(--text-muted); cursor: pointer; transition: background 0.12s, color 0.12s, border-color 0.12s;
-    white-space: nowrap;
-  }
-  .pmp-edit-btn:hover { background: rgba(79, 169, 129,0.12); color: var(--accent-primary); border-color: rgba(79, 169, 129,0.3); }
-  .pmp-edit-btn-active { background: rgba(79, 169, 129,0.12); color: var(--accent-primary); border-color: rgba(79, 169, 129,0.3); }
-  .pmp-delete-btn {
-    height: 30px; padding: 0 10px; border-radius: 8px; flex-shrink: 0; gap: 5px;
-    display: flex; align-items: center; font-size: 12px; font-weight: 600;
-    background: rgba(194, 91, 85,0.08); border: 1px solid rgba(194, 91, 85,0.25);
-    color: var(--accent-red); cursor: pointer; transition: background 0.12s;
-  }
-  .pmp-delete-btn:hover { background: rgba(194, 91, 85,0.16); }
-
-  /* Inline edit form */
-  .pmp-edit-form { border-top: 1px solid var(--border); }
-  .pmp-edit-form-inner {
-    display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px;
-    padding: 12px 16px 14px; background: rgba(79, 169, 129,0.04);
-  }
-  .pmp-field-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 130px; }
-  .pmp-field-row { display: flex; gap: 10px; flex-wrap: wrap; width: 100%; }
-  .pmp-label { font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-  .pmp-input {
-    background: var(--bg-elevated); border: 1px solid var(--border);
-    border-radius: 8px; color: var(--text-primary); font-size: 13px;
-    padding: 7px 10px; width: 100%;
-  }
-  .pmp-input:focus { outline: none; border-color: var(--border-focus); }
-  .pmp-select {
-    background: var(--bg-elevated); border: 1px solid var(--border);
-    border-radius: 8px; color: var(--text-primary); font-size: 13px;
-    padding: 7px 10px; width: 100%; cursor: pointer;
-  }
-  .pmp-select:focus { outline: none; border-color: var(--border-focus); }
-  .pmp-edit-actions { display: flex; gap: 8px; align-items: center; margin-top: 2px; }
-
-  /* Shared save/cancel buttons */
-  .pmp-save-btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 7px 14px; border-radius: 8px; border: none; cursor: pointer;
-    font-size: 13px; font-weight: 600;
-    background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E); color: #fff;
-    transition: opacity 0.12s; white-space: nowrap;
-  }
-  .pmp-save-btn:hover:not(:disabled) { opacity: 0.88; }
-  .pmp-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .pmp-cancel-btn {
-    padding: 7px 12px; border-radius: 8px; font-size: 13px; font-weight: 500;
-    background: none; border: 1px solid var(--border); color: var(--text-muted);
-    cursor: pointer; transition: color 0.12s, border-color 0.12s;
-  }
-  .pmp-cancel-btn:hover { color: var(--text-primary); border-color: var(--text-muted); }
-  .pmp-saving-dot {
-    width: 10px; height: 10px; border-radius: 50%;
-    border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff;
-    animation: pmp-spin 0.6s linear infinite; display: inline-block;
-  }
-  @keyframes pmp-spin { to { transform: rotate(360deg); } }
-
-  /* Add person form */
-  .pmp-add-form {
-    background: var(--bg-card); border: 1px solid rgba(79, 169, 129,0.3);
-    border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px;
-  }
-  .pmp-add-form-title {
-    display: flex; align-items: center; gap: 7px;
-    font-size: 13px; font-weight: 600; color: var(--text-primary);
-  }
-  .pmp-add-form-fields { display: flex; flex-direction: column; gap: 10px; }
-  .pmp-add-form-actions { display: flex; gap: 8px; align-items: center; }
-`

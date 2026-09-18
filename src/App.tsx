@@ -45,6 +45,7 @@ const LandingPage          = lazyRouteComponent(() => import('@/pages/LandingPag
 // route, so lazy-loading it would only add a waterfall hop with no payoff.
 import AppShell from '@/components/layout/AppShell'
 import RoutePendingFallback from '@/components/common/RoutePendingFallback'
+import './App.css'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -154,7 +155,6 @@ function Root() {
             borderRadius: '50%',
             animation: 'spin 0.7s linear infinite',
           }} />
-          <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
         </motion.div>
       </div>
     )

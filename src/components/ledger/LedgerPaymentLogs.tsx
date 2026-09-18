@@ -10,6 +10,7 @@ import { useUIStore } from '@/stores/uiStore'
 import type { PersonWithLedgers } from '@/types/ledger.types'
 import type { LedgerType } from '@/lib/constants'
 import { fadeUp } from '@/lib/animations'
+import './LedgerPaymentLogs.css'
 
 interface EditingState {
   id: string
@@ -318,118 +319,6 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
         )}
       </div>
 
-      <style>{`
-        .lpl-wrap { display: flex; flex-direction: column; gap: 12px; }
-        .lpl-empty { text-align: center; padding: 40px 16px; }
-
-        /* Filters */
-        .lpl-filters { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-        .lpl-pill {
-          padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer;
-          background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary);
-          transition: background 0.12s, color 0.12s; display: flex; align-items: center; gap: 5px;
-        }
-        .lpl-pill:hover { background: var(--bg-hover); color: var(--text-primary); }
-        .lpl-pill-active { background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E); border-color: transparent; color: #fff; }
-
-        /* Person dropdown */
-        .lpl-person-select-wrap { position: relative; flex: 1; min-width: 160px; max-width: 260px; }
-        .lpl-person-select {
-          width: 100%; appearance: none; cursor: pointer;
-          background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px;
-          color: var(--text-primary); font-size: 12px; font-weight: 500;
-          padding: 5px 30px 5px 14px;
-          transition: border-color 0.12s;
-        }
-        .lpl-person-select:hover { border-color: rgba(79, 169, 129,0.35); }
-        .lpl-person-select:focus { outline: none; border-color: var(--border-focus); }
-        .lpl-person-select option { background: #18201A; color: var(--text-primary); }
-        .lpl-select-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
-
-        /* Filter banner + summary strip — deliberately styled apart from the
-           neutral history rows below, so this "you're looking at a filtered
-           view" context is visually distinct at a glance. */
-        .lpl-filter-banner {
-          overflow: hidden; display: flex; align-items: center; justify-content: space-between;
-          padding: 10px 14px; border-radius: 10px;
-          background: linear-gradient(135deg, rgba(79, 169, 129,0.16), rgba(62, 155, 114,0.12));
-          border: 1px solid rgba(79, 169, 129,0.35);
-          font-size: 13px; color: var(--text-secondary);
-        }
-        .lpl-filter-banner strong { color: var(--text-primary); }
-        .lpl-filter-clear {
-          background: none; border: none; color: var(--text-muted); cursor: pointer;
-          display: flex; align-items: center;
-        }
-        .lpl-filter-clear:hover { color: var(--text-primary); }
-
-        /* Summary strip */
-        .lpl-summary-strip {
-          display: flex; gap: 20px; flex-wrap: wrap;
-          padding: 10px 14px; border-radius: 10px;
-          background: linear-gradient(135deg, rgba(79, 169, 129,0.10), rgba(62, 155, 114,0.07));
-          border: 1px solid rgba(79, 169, 129,0.25);
-        }
-        .lpl-summary-item { display: flex; flex-direction: column; gap: 2px; }
-        .lpl-summary-label { font-size: 10px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-        .lpl-summary-value { font-size: 15px; font-weight: 700; color: var(--text-primary); }
-
-        /* Unified history — card list, no fixed grid, wraps naturally */
-        .lpl-list { display: flex; flex-direction: column; gap: 8px; }
-        .lpl-no-match {
-          padding: 20px 14px; font-size: 13px; color: var(--text-muted); text-align: center;
-          background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
-        }
-        .lpl-row {
-          display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-          padding: 12px 14px; border-radius: 12px;
-          background: var(--bg-card); border: 1px solid var(--border);
-          transition: background 0.1s;
-        }
-        .lpl-row:hover { background: var(--bg-elevated); }
-        .lpl-row-icon { flex-shrink: 0; display: flex; align-items: center; }
-        .lpl-row-info { flex: 1; min-width: 160px; display: flex; flex-direction: column; gap: 3px; }
-        .lpl-row-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .lpl-person-btn {
-          background: none; border: none; cursor: pointer; padding: 0;
-          font-size: 13px; font-weight: 600; color: var(--text-primary);
-        }
-        .lpl-person-btn:hover { color: var(--accent-primary); }
-        .lpl-row-action { font-size: 13px; font-weight: 600; }
-        .lpl-row-meta { font-size: 11px; color: var(--text-muted); display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-
-        .lpl-type-chip { font-size: 10px; font-weight: 500; padding: 1px 7px; border-radius: 20px; white-space: nowrap; }
-        .lpl-type-lent { background: rgba(79, 169, 129,0.12); color: var(--accent-teal); }
-        .lpl-type-debt { background: rgba(201, 115, 110,0.12); color: var(--accent-coral); }
-
-        .lpl-row-balance { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; }
-        .lpl-balance-label { font-size: 9px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-        .lpl-balance-value { font-size: 13px; font-weight: 700; color: var(--text-primary); }
-
-        .lpl-edit-input {
-          background: var(--bg-elevated); border: 1px solid var(--border-focus); border-radius: 6px;
-          color: var(--text-primary); font-size: 12px; padding: 3px 6px; width: 90px;
-          outline: none; text-align: right;
-        }
-        .lpl-row-actions { display: flex; gap: 4px; flex-shrink: 0; }
-        .lpl-edit-btn {
-          height: 26px; padding: 0 8px; border-radius: 6px;
-          display: flex; align-items: center; font-size: 11px; font-weight: 600;
-          border: 1px solid var(--border); cursor: pointer; white-space: nowrap;
-          transition: background 0.1s, color 0.1s; flex-shrink: 0;
-          background: var(--bg-elevated); color: var(--text-secondary);
-        }
-        .lpl-save-btn, .lpl-cancel-btn {
-          width: 24px; height: 24px; border-radius: 6px;
-          display: flex; align-items: center; justify-content: center;
-          background: none; border: 1px solid var(--border); cursor: pointer;
-          transition: background 0.1s; flex-shrink: 0;
-        }
-        .lpl-save-btn { color: var(--accent-teal); }
-        .lpl-save-btn:hover { background: rgba(79, 169, 129,0.1); }
-        .lpl-cancel-btn { color: var(--text-muted); }
-        .lpl-cancel-btn:hover { background: var(--bg-hover); }
-      `}</style>
     </motion.div>
   )
 }

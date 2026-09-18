@@ -5,6 +5,7 @@ import { useUIStore } from '@/stores/uiStore'
 import { evaluate } from '@/lib/calculator'
 import { cn, round2 } from '@/lib/utils'
 import { scaleIn } from '@/lib/animations'
+import './FloatingCalculatorPanel.css'
 
 const KEYS: { label: string; kind: 'digit' | 'op' | 'clear' | 'equals'; value: string }[][] = [
   [
@@ -182,82 +183,6 @@ export default function FloatingCalculatorPanel() {
         </div>
       </motion.div>
 
-      <style>{`
-        .fcp-constraints {
-          position: fixed; inset: 0; z-index: 300; pointer-events: none;
-        }
-        .fcp-panel {
-          position: absolute; top: 0; left: 0; pointer-events: auto;
-          width: 280px;
-          background: var(--bg-elevated);
-          border: 1px solid var(--border);
-          border-radius: 20px;
-          box-shadow: 0 24px 60px rgba(0,0,0,0.5);
-          padding: 14px;
-        }
-        @media (max-width: 400px) { .fcp-panel { width: 250px; padding: 10px; } }
-
-        .fcp-header {
-          display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
-          cursor: grab; user-select: none;
-        }
-        .fcp-header:active { cursor: grabbing; }
-        .fcp-grip { color: var(--text-muted); }
-        .fcp-title { flex: 1; font-size: 14px; font-weight: 700; color: var(--text-primary); }
-        .fcp-close {
-          width: 26px; height: 26px; border-radius: 7px;
-          background: var(--bg-hover); border: 1px solid var(--border);
-          color: var(--text-secondary); cursor: pointer;
-          display: flex; align-items: center; justify-content: center;
-        }
-        .fcp-close:hover { background: var(--bg-card); color: var(--text-primary); }
-
-        .fcp-screen {
-          position: relative;
-          background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
-          padding: 12px 14px; margin-bottom: 12px;
-        }
-        .fcp-copy {
-          position: absolute; top: 8px; right: 8px;
-          width: 26px; height: 26px; border-radius: 7px;
-          background: rgba(79, 169, 129,0.1); border: 1px solid rgba(79, 169, 129,0.3);
-          color: var(--accent-primary); cursor: pointer;
-          display: flex; align-items: center; justify-content: center;
-        }
-        .fcp-copy:hover { background: rgba(79, 169, 129,0.2); }
-        .fcp-expression {
-          font-size: 12px; color: var(--text-muted);
-          white-space: nowrap; overflow-x: auto; margin-bottom: 2px;
-        }
-        .fcp-result {
-          font-size: 26px; font-weight: 700; color: var(--text-primary);
-          white-space: nowrap; overflow-x: auto;
-        }
-
-        .fcp-grid {
-          display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
-        }
-        .fcp-key {
-          height: 44px; border-radius: 10px;
-          background: var(--bg-card); border: 1px solid var(--border);
-          color: var(--text-primary); font-size: 15px; font-weight: 600; cursor: pointer;
-          transition: background 0.12s;
-        }
-        .fcp-key:hover { background: var(--bg-hover); }
-        .fcp-key-op {
-          background: rgba(79, 169, 129,0.1); border-color: rgba(79, 169, 129,0.3); color: var(--accent-primary);
-        }
-        .fcp-key-op:hover { background: rgba(79, 169, 129,0.2); }
-        .fcp-key-clear {
-          background: rgba(201, 115, 110,0.12); border-color: rgba(201, 115, 110,0.3); color: var(--accent-coral);
-        }
-        .fcp-key-clear:hover { background: rgba(201, 115, 110,0.2); }
-        .fcp-key-equals {
-          grid-column: span 4;
-          background: linear-gradient(135deg, #3E9B72, #4FA981 60%, #C2A24E);
-          border: none; color: #fff;
-        }
-      `}</style>
     </div>
   )
 }

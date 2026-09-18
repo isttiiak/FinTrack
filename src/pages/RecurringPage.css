@@ -1,0 +1,334 @@
+/* Styles for RecurringPage.tsx — extracted from an inline <style> block (TODO.md §4.1). */
+.rp-page {
+  max-width: 720px;
+}
+.rp-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  margin-bottom: 16px;
+  padding: 0;
+  transition: color 0.12s;
+}
+.rp-back-btn:hover {
+  color: var(--text-primary);
+}
+.rp-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.rp-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+}
+.rp-sub {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+  max-width: 480px;
+}
+.rp-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.rp-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  background: var(--bg-card);
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+}
+
+.rp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.rp-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.rp-row-paused {
+  opacity: 0.55;
+}
+.rp-row-main {
+  min-width: 0;
+  flex: 1;
+}
+.rp-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 3px;
+}
+.rp-row-desc {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rp-row-amount {
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.rp-amount-income {
+  color: var(--accent-teal);
+}
+.rp-amount-expense {
+  color: var(--accent-coral);
+}
+.rp-row-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.rp-dot {
+  opacity: 0.5;
+}
+
+.rp-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.rp-icon-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+.rp-icon-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* Form (mirrors ExpenseForm's ef- classes) */
+.rf-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+@media (max-width: 640px) {
+  .rf-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .rf-panel {
+    border-radius: 20px 20px 0 0 !important;
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+}
+.rf-panel {
+  width: 100%;
+  max-width: 460px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+.rf-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.rf-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+.rf-close {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rf-close:hover {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+.rf-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.rf-type-toggle {
+  display: flex;
+  gap: 8px;
+}
+.rf-type-btn {
+  flex: 1;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  transition:
+    background 0.15s,
+    color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.rf-type-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.rf-type-btn-active {
+  color: #fff !important;
+  border-color: transparent !important;
+}
+.rf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.rf-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.rf-optional {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+.rf-input {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 14px;
+  padding: 10px 14px;
+  width: 100%;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.rf-input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(79, 169, 129, 0.15);
+}
+.rf-input-error {
+  border-color: var(--accent-red) !important;
+}
+.rf-amount-input {
+  font-size: 20px;
+  font-weight: 700;
+  padding: 12px 14px;
+}
+.rf-error {
+  font-size: 12px;
+  color: #fca5a5;
+  margin: 0;
+}
+.rf-cadence-row {
+  display: flex;
+  gap: 8px;
+}
+.rf-cadence-btn {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+}
+.rf-cadence-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.rf-cadence-btn-active {
+  background: rgba(79, 169, 129, 0.14);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+.rf-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 400px) {
+  .rf-row {
+    grid-template-columns: 1fr;
+  }
+}
+.rf-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+.rf-submit {
+  min-width: 110px;
+  min-height: 40px;
+}
