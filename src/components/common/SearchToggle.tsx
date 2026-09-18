@@ -23,6 +23,12 @@ export default function SearchToggle({ value, onChange, placeholder = 'Search…
     if (open) inputRef.current?.focus()
   }, [open])
 
+  // A value set from outside (e.g. the command palette jumping to a transaction)
+  // must not sit behind a collapsed icon with no sign a filter is active.
+  useEffect(() => {
+    if (value) setOpen(true)
+  }, [value])
+
   function handleBlur() {
     if (!value) setOpen(false)
   }

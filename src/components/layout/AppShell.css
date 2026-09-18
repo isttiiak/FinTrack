@@ -80,6 +80,12 @@
   background: var(--bg-hover);
 }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .topbar-calc-btn {
   width: 36px;
   height: 36px;

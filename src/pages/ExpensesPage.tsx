@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Receipt, Filter, X, CalendarRange } from 'lucide-react'
 import { useExpenses } from '@/hooks/useExpenses'
@@ -21,6 +21,7 @@ import { formatCurrency, toISODateString } from '@/lib/utils'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { cn } from '@/lib/utils'
 import { useIsExpensesOnly } from '@/hooks/useTrackingMode'
+import { useUIStore } from '@/stores/uiStore'
 import './ExpensesPage.css'
 
 const SORT_OPTIONS = [
@@ -55,6 +56,23 @@ export default function ExpensesPage() {
   const [sort, setSort] = useState<ExpenseSort>('newest')
   const [editingTxn, setEditingTxn] = useState<Transaction | null>(null)
   const [addOpen, setAddOpen] = useState(false)
+
+  // Command palette hand-offs: "Add expense" opens the form; picking a
+  // transaction jumps to its month with its description as the search.
+  const quickAddOpen = useUIStore((s) => s.quickAddOpen)
+  const setQuickAddOpen = useUIStore((s) => s.setQuickAddOpen)
+  const expenseJump = useUIStore((s) => s.expenseJump)
+  const setExpenseJump = useUIStore((s) => s.setExpenseJump)
+  useEffect(() => {
+    if (quickAddOpen) { setAddOpen(true); setQuickAddOpen(false) }
+  }, [quickAddOpen, setQuickAddOpen])
+  useEffect(() => {
+    if (!expenseJump) return
+    setRangeMode(false)
+    setMonth(expenseJump.month)
+    setSearch(expenseJump.search)
+    setExpenseJump(null)
+  }, [expenseJump, setExpenseJump])
 
   const [year, mon] = month.split('-').map(Number)
   const monthFrom = `${year}-${String(mon).padStart(2, '0')}-01`

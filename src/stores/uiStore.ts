@@ -4,6 +4,9 @@ import { getCalculatorPosition, setCalculatorPosition as persistCalculatorPositi
 interface UIState {
   sidebarOpen: boolean
   quickAddOpen: boolean
+  paletteOpen: boolean
+  // Set by the command palette; ExpensesPage consumes it to jump to a month + search.
+  expenseJump: { month: string; search: string } | null
   editingTransactionId: string | null
   editingLedgerId: string | null
   toasts: Toast[]
@@ -12,6 +15,8 @@ interface UIState {
   setSidebarOpen: (open: boolean) => void
   toggleSidebar: () => void
   setQuickAddOpen: (open: boolean) => void
+  setPaletteOpen: (open: boolean) => void
+  setExpenseJump: (jump: { month: string; search: string } | null) => void
   setEditingTransaction: (id: string | null) => void
   setEditingLedger: (id: string | null) => void
   addToast: (toast: Omit<Toast, 'id'>) => void
@@ -38,6 +43,8 @@ export const useUIStore = create<UIState>((set) => ({
   // page load until the user tapped a nav link.
   sidebarOpen: false,
   quickAddOpen: false,
+  paletteOpen: false,
+  expenseJump: null,
   editingTransactionId: null,
   editingLedgerId: null,
   toasts: [],
@@ -47,6 +54,8 @@ export const useUIStore = create<UIState>((set) => ({
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
   setQuickAddOpen: (open) => set({ quickAddOpen: open }),
+  setPaletteOpen: (open) => set({ paletteOpen: open }),
+  setExpenseJump: (jump) => set({ expenseJump: jump }),
   setEditingTransaction: (id) => set({ editingTransactionId: id }),
   setEditingLedger: (id) => set({ editingLedgerId: id }),
   setCalculatorOpen: (open) => set({ calculatorOpen: open }),

@@ -1,9 +1,10 @@
 import { Outlet } from '@tanstack/react-router'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu } from 'lucide-react'
+import { Menu, Search } from 'lucide-react'
 import Sidebar from './Sidebar'
 import MobileNav from './MobileNav'
 import ConfirmDialog from '@/components/common/ConfirmDialog'
+import CommandPalette from '@/components/common/CommandPalette'
 import CalculatorToggleButton from '@/components/common/CalculatorToggleButton'
 import FloatingCalculatorPanel from '@/components/common/FloatingCalculatorPanel'
 import { Logo } from '@/components/common/Logo'
@@ -13,7 +14,7 @@ import './AppShell.css'
 
 export default function AppShell() {
   const isDemo = useDemoStore((s) => s.isDemo)
-  const { toggleSidebar, calculatorOpen } = useUIStore()
+  const { toggleSidebar, calculatorOpen, setPaletteOpen } = useUIStore()
 
   return (
     <div className="app-shell">
@@ -44,7 +45,12 @@ export default function AppShell() {
             <Logo size={24} />
             <span>FinTrack</span>
           </div>
-          <CalculatorToggleButton className="topbar-calc-btn" />
+          <div className="topbar-actions">
+            <button className="topbar-calc-btn" onClick={() => setPaletteOpen(true)} aria-label="Search" title="Search">
+              <Search size={20} />
+            </button>
+            <CalculatorToggleButton className="topbar-calc-btn" />
+          </div>
         </header>
 
         {/* Page content — each page handles its own entrance animation */}
@@ -55,6 +61,7 @@ export default function AppShell() {
 
       <MobileNav />
       <ConfirmDialog />
+      <CommandPalette />
       <AnimatePresence>
         {calculatorOpen && <FloatingCalculatorPanel />}
       </AnimatePresence>

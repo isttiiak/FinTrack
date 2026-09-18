@@ -10,6 +10,7 @@ import {
   LogOut,
   X,
   TrendingUp,
+  Search,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
@@ -37,7 +38,7 @@ export default function Sidebar() {
   const location = useRouterState({ select: (s) => s.location.pathname })
   const { profile } = useAuthStore()
   const { isDemo, exitDemo } = useDemoStore()
-  const { sidebarOpen, setSidebarOpen } = useUIStore()
+  const { sidebarOpen, setSidebarOpen, setPaletteOpen } = useUIStore()
 
   async function handleSignOut() {
     if (isDemo) {
@@ -91,6 +92,16 @@ export default function Sidebar() {
             <span>Demo mode</span>
           </motion.div>
         )}
+
+        {/* Global search / command palette (also Ctrl/Cmd+K) */}
+        <button
+          className="sidebar-search-btn"
+          onClick={() => { setSidebarOpen(false); setPaletteOpen(true) }}
+        >
+          <Search size={15} />
+          <span>Search…</span>
+          <kbd>Ctrl K</kbd>
+        </button>
 
         {/* Main nav */}
         <nav className="sidebar-nav">
