@@ -12,6 +12,7 @@ import { useBudgets } from '@/hooks/useBudgets'
 import { useNoSpendStreak } from '@/hooks/useNoSpendStreak'
 import AIHub from '@/components/ai/AIHub'
 import ErrorBanner from '@/components/common/ErrorBanner'
+import { useIsExpensesOnly } from '@/hooks/useTrackingMode'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function fmtMonth(ym: string) {
@@ -48,6 +49,7 @@ const TOOLTIP_STYLE = {
 type Tab = 'overview' | 'habits' | 'ai'
 
 export default function AnalyticsPage() {
+  const isExpensesOnly = useIsExpensesOnly()
   const [tab, setTab] = useState<Tab>('overview')
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const n = new Date()
@@ -193,8 +195,10 @@ export default function AnalyticsPage() {
           const net = thisIncome - thisExpense
           return [
             { label: 'Spent this month',   value: formatCurrency(thisExpense),       color: 'var(--accent-coral)' },
-            { label: 'Income this month',  value: formatCurrency(thisIncome),        color: 'var(--accent-teal)' },
-            { label: 'Net (income−spent)', value: `${net >= 0 ? '+' : ''}${formatCurrency(net)}`, color: net >= 0 ? 'var(--accent-teal)' : 'var(--accent-red)' },
+            ...(isExpensesOnly ? [] : [
+              { label: 'Income this month',  value: formatCurrency(thisIncome),        color: 'var(--accent-teal)' },
+              { label: 'Net (income−spent)', value: `${net >= 0 ? '+' : ''}${formatCurrency(net)}`, color: net >= 0 ? 'var(--accent-teal)' : 'var(--accent-red)' },
+            ]),
             { label: 'Daily avg (month)',  value: formatCurrency(Math.round(avgDaily)), color: '#C2A24E' },
             { label: `${selectedMonth.slice(0,4)} total spent`, value: formatCurrency(yearlyExpense), color: '#3E9B72' },
             { label: 'No-spend streak',   value: `${streak} day${streak !== 1 ? 's' : ''}`, color: 'var(--accent-primary)' },
@@ -237,7 +241,9 @@ export default function AnalyticsPage() {
                   <Tooltip {...TOOLTIP_STYLE} formatter={(v) => formatCurrency(Number(v ?? 0))} />
                   <Legend wrapperStyle={{ fontSize: 12, color: '#8A968C' }} />
                   <Line type="monotone" dataKey="Expense" stroke="#C9736E" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="Income"  stroke="#4FA981" strokeWidth={2} dot={false} />
+                  {!isExpensesOnly && (
+                    <Line type="monotone" dataKey="Income" stroke="#4FA981" strokeWidth={2} dot={false} />
+                  )}
                 </LineChart>
               </ResponsiveContainer>
             )}

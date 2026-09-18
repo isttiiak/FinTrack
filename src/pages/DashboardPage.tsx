@@ -14,6 +14,7 @@ import { useRecurringRules, useMaterializeRecurring } from '@/hooks/useRecurring
 import { generateOccurrences } from '@/lib/recurring'
 import { useAuthStore } from '@/stores/authStore'
 import { useUIStore } from '@/stores/uiStore'
+import { useIsExpensesOnly } from '@/hooks/useTrackingMode'
 import MonthPicker from '@/components/common/MonthPicker'
 import ErrorBanner from '@/components/common/ErrorBanner'
 
@@ -26,6 +27,7 @@ function getMonthRange(year: number, month0: number, offset = 0) {
 export default function DashboardPage() {
   const profile = useAuthStore((s) => s.profile)
   const firstName = profile?.full_name?.split(' ')[0] ?? null
+  const isExpensesOnly = useIsExpensesOnly()
 
   // Stable per mount (not recreated every render) so the upcoming-bills
   // memo below doesn't get a new Date identity — and an unnecessary
@@ -177,20 +179,22 @@ export default function DashboardPage() {
           )}
         </motion.div>
 
-        {/* Income this month */}
-        <motion.div className="dash-kpi dash-kpi-teal" variants={staggerItem} whileHover={{ scale: 1.02 }}>
-          <div className="dash-kpi-icon"><TrendingUp size={17} /></div>
-          <div className="dash-kpi-label">{isCurrentMonth ? 'Income this month' : `Income in ${monthLabel.split(' ')[0]}`}</div>
-          <div className="dash-kpi-value">
-            {loadingThis ? <span className="dash-kpi-skeleton" /> : formatCurrency(thisIncome)}
-          </div>
-          {incomeDelta !== null && (
-            <div className={`dash-kpi-delta ${incomeDelta >= 0 ? 'dash-delta-good' : 'dash-delta-bad'}`}>
-              {incomeDelta >= 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-              {Math.abs(incomeDelta).toFixed(1)}% vs last month
+        {/* Income this month — hidden in Expenses-only mode */}
+        {!isExpensesOnly && (
+          <motion.div className="dash-kpi dash-kpi-teal" variants={staggerItem} whileHover={{ scale: 1.02 }}>
+            <div className="dash-kpi-icon"><TrendingUp size={17} /></div>
+            <div className="dash-kpi-label">{isCurrentMonth ? 'Income this month' : `Income in ${monthLabel.split(' ')[0]}`}</div>
+            <div className="dash-kpi-value">
+              {loadingThis ? <span className="dash-kpi-skeleton" /> : formatCurrency(thisIncome)}
             </div>
-          )}
-        </motion.div>
+            {incomeDelta !== null && (
+              <div className={`dash-kpi-delta ${incomeDelta >= 0 ? 'dash-delta-good' : 'dash-delta-bad'}`}>
+                {incomeDelta >= 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+                {Math.abs(incomeDelta).toFixed(1)}% vs last month
+              </div>
+            )}
+          </motion.div>
+        )}
 
         {/* No-spend streak */}
         <motion.div className="dash-kpi dash-kpi-purple" variants={staggerItem} whileHover={{ scale: 1.02 }}>

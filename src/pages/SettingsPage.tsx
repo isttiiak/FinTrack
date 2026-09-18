@@ -748,6 +748,106 @@ function NotificationsSection() {
   )
 }
 
+// ── Transaction Tracking Mode ───────────────────────────────────────────────
+const TRACKING_MODES: { value: 'both' | 'expenses_only'; label: string; desc: string }[] = [
+  { value: 'both',          label: 'Both income & expenses', desc: 'Track money coming in and going out — the default.' },
+  { value: 'expenses_only', label: 'Expenses only',          desc: 'No income to track? Hide income entry, summaries and charts app-wide.' },
+]
+
+function TrackingModeSection() {
+  const { profile, setProfile } = useAuthStore()
+  const isDemo = useDemoStore((s) => s.isDemo)
+  const addToast = useUIStore((s) => s.addToast)
+  const [saving, setSaving] = useState(false)
+  const [pendingSwitch, setPendingSwitch] = useState(false)
+  // All-time, not the filtered/current-month view — this is checking whether
+  // *any* income exists anywhere in the account, not just this month's.
+  const { data: transactions = [] } = useExpenses({ from: '2000-01-01', to: toISODateString(new Date()) })
+
+  const currentMode = profile?.transaction_mode ?? 'both'
+  const incomeCount = transactions.filter((t) => t.type === 'Income').length
+
+  async function applyMode(mode: 'both' | 'expenses_only') {
+    if (isDemo || !profile) return
+    setSaving(true)
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ transaction_mode: mode })
+      .eq('id', profile.id)
+      .select()
+      .single()
+    setSaving(false)
+    setPendingSwitch(false)
+    if (error) {
+      addToast({ type: 'error', message: error.message })
+    } else {
+      setProfile(data)
+      addToast({ type: 'success', message: mode === 'expenses_only' ? 'Now tracking expenses only.' : 'Now tracking income & expenses.' })
+    }
+  }
+
+  function handlePick(mode: 'both' | 'expenses_only') {
+    if (mode === currentMode || saving) return
+    // Existing income data is never hidden or deleted by switching — just
+    // warn, since summaries/charts will stop showing it going forward.
+    if (mode === 'expenses_only' && incomeCount > 0) {
+      setPendingSwitch(true)
+      return
+    }
+    applyMode(mode)
+  }
+
+  return (
+    <section className="settings-section">
+      <h2 className="settings-section-title">📊 Transaction tracking</h2>
+      <p className="settings-section-desc">Students or anyone with no income to log can hide income entirely.</p>
+
+      <div className="tracking-mode-toggle">
+        {TRACKING_MODES.map((m) => (
+          <button
+            key={m.value}
+            type="button"
+            className={cn('tracking-mode-btn', currentMode === m.value && 'tracking-mode-btn-active')}
+            onClick={() => handlePick(m.value)}
+            disabled={saving || isDemo}
+          >
+            <span className="tracking-mode-label">{m.label}</span>
+            <span className="tracking-mode-desc">{m.desc}</span>
+          </button>
+        ))}
+      </div>
+
+      <AnimatePresence>
+        {pendingSwitch && (
+          <motion.div
+            className="tracking-mode-warn"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+          >
+            <p className="tracking-mode-warn-text">
+              You have <strong>{incomeCount}</strong> income transaction{incomeCount !== 1 ? 's' : ''} —
+              they&apos;ll stay in your data but won&apos;t appear in summaries or charts. Switch anyway?
+            </p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button type="button" className="btn-ghost" onClick={() => setPendingSwitch(false)}>Never mind</button>
+              <button
+                type="button"
+                className="btn-primary"
+                style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 110, justifyContent: 'center' }}
+                onClick={() => applyMode('expenses_only')}
+                disabled={saving}
+              >
+                {saving ? <span className="auth-spinner" /> : 'Switch anyway'}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
+  )
+}
+
 // ── Danger Zone ───────────────────────────────────────────────────────────────
 
 function DangerSection() {
@@ -1006,6 +1106,7 @@ export default function SettingsPage() {
         </section>
       </motion.div>
 
+      <motion.div variants={staggerItem}><TrackingModeSection /></motion.div>
       <motion.div variants={staggerItem}><BudgetSection /></motion.div>
       <motion.div variants={staggerItem}><AISection /></motion.div>
       <motion.div variants={staggerItem}><NotificationsSection /></motion.div>
@@ -1111,6 +1212,27 @@ const settingsStyles = `
     padding: 16px; background: var(--bg-elevated);
     border: 1px solid rgba(194, 91, 85,0.2); border-radius: 12px;
   }
+
+  /* ── Tracking mode ── */
+  .tracking-mode-toggle { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+  @media (min-width: 560px) { .tracking-mode-toggle { flex-direction: row; } }
+  .tracking-mode-btn {
+    flex: 1; text-align: left; padding: 14px 16px; border-radius: 12px; cursor: pointer;
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 4px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .tracking-mode-btn:hover:not(:disabled) { background: var(--bg-hover); }
+  .tracking-mode-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .tracking-mode-btn-active { border-color: var(--accent-primary); background: rgba(79, 169, 129,0.1); }
+  .tracking-mode-label { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  .tracking-mode-btn-active .tracking-mode-label { color: var(--accent-primary); }
+  .tracking-mode-desc { font-size: 12px; color: var(--text-secondary); }
+  .tracking-mode-warn {
+    overflow: hidden; margin-top: 12px; padding: 14px 16px;
+    background: rgba(194, 145, 63,0.08); border: 1px solid rgba(194, 145, 63,0.25); border-radius: 12px;
+  }
+  .tracking-mode-warn-text { font-size: 13px; color: var(--text-primary); margin: 0 0 10px; line-height: 1.5; }
 
   /* ── AI section ── */
   .ai-section { transition: border-color 0.3s, box-shadow 0.3s; }

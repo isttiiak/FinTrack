@@ -21,6 +21,7 @@ import { formatCurrency, getActiveCurrencySymbol, toISODateString } from '@/lib/
 import { fadeUp, staggerContainer, staggerItem, modalIn } from '@/lib/animations'
 import { cn } from '@/lib/utils'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
+import { useIsExpensesOnly } from '@/hooks/useTrackingMode'
 import type { RecurringRule } from '@/types/recurring.types'
 
 const schema = z.object({
@@ -69,6 +70,11 @@ function RecurringRuleForm({ editing, onClose }: { editing?: RecurringRule | nul
   const selectedType = watch('type')
   const filteredCategories = categories.filter((c) => c.type === selectedType)
 
+  // Same rule as ExpenseForm: don't offer switching to Income in
+  // Expenses-only mode, except an already-Income rule being edited.
+  const isExpensesOnly = useIsExpensesOnly()
+  const showTypeToggle = !isExpensesOnly || editing?.type === 'Income'
+
   async function onSubmit(values: FormValues) {
     const payload = {
       ...values,
@@ -98,29 +104,31 @@ function RecurringRuleForm({ editing, onClose }: { editing?: RecurringRule | nul
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="rf-form">
-          <div className="rf-type-toggle">
-            {(['Expense', 'Income'] as const).map((t) => (
-              <Controller
-                key={t}
-                control={control}
-                name="type"
-                render={({ field }) => (
-                  <button
-                    type="button"
-                    className={cn('rf-type-btn', field.value === t && 'rf-type-btn-active')}
-                    onClick={() => field.onChange(t)}
-                    style={field.value === t ? {
-                      background: t === 'Expense'
-                        ? 'linear-gradient(135deg, #C9736E, #C25B55)'
-                        : 'linear-gradient(135deg, #4FA981, #3E9B72)',
-                    } : undefined}
-                  >
-                    {t === 'Expense' ? '📉' : '📈'} {t}
-                  </button>
-                )}
-              />
-            ))}
-          </div>
+          {showTypeToggle && (
+            <div className="rf-type-toggle">
+              {(['Expense', 'Income'] as const).map((t) => (
+                <Controller
+                  key={t}
+                  control={control}
+                  name="type"
+                  render={({ field }) => (
+                    <button
+                      type="button"
+                      className={cn('rf-type-btn', field.value === t && 'rf-type-btn-active')}
+                      onClick={() => field.onChange(t)}
+                      style={field.value === t ? {
+                        background: t === 'Expense'
+                          ? 'linear-gradient(135deg, #C9736E, #C25B55)'
+                          : 'linear-gradient(135deg, #4FA981, #3E9B72)',
+                      } : undefined}
+                    >
+                      {t === 'Expense' ? '📉' : '📈'} {t}
+                    </button>
+                  )}
+                />
+              ))}
+            </div>
+          )}
 
           <div className="rf-field">
             <label className="rf-label">Amount ({getActiveCurrencySymbol()}) <span className="req">*</span></label>

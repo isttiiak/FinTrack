@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils'
 import type { Transaction } from '@/types/expense.types'
 import CategoryCombobox from '@/components/expenses/CategoryCombobox'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
+import { useIsExpensesOnly } from '@/hooks/useTrackingMode'
 
 const schema = z.object({
   type:           z.enum(['Expense', 'Income']),
@@ -45,6 +46,13 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
   const { mutateAsync: update, isPending: updating } = useUpdateExpense()
   const { mutateAsync: createRule } = useCreateRecurringRule()
   const isPending = creating || updating
+
+  // In Expenses-only mode, don't offer switching a transaction to Income —
+  // except an already-Income transaction being edited, so it stays visible
+  // and editable rather than silently stuck. New transactions and existing
+  // Expense ones simply never see the toggle.
+  const isExpensesOnly = useIsExpensesOnly()
+  const showTypeToggle = !isExpensesOnly || editing?.type === 'Income'
 
   // Only offered when adding a new transaction — editing an existing one
   // doesn't retroactively make sense as "the start of a recurring rule".
@@ -145,30 +153,32 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="ef-form">
-          {/* Type toggle */}
-          <div className="ef-type-toggle">
-            {TXN_TYPES.map((t) => (
-              <Controller
-                key={t}
-                control={control}
-                name="type"
-                render={({ field }) => (
-                  <button
-                    type="button"
-                    className={cn('ef-type-btn', field.value === t && 'ef-type-btn-active')}
-                    onClick={() => field.onChange(t)}
-                    style={field.value === t ? {
-                      background: t === 'Expense'
-                        ? 'linear-gradient(135deg, #C9736E, #C25B55)'
-                        : 'linear-gradient(135deg, #4FA981, #3E9B72)',
-                    } : undefined}
-                  >
-                    {t === 'Expense' ? '📉' : '📈'} {t}
-                  </button>
-                )}
-              />
-            ))}
-          </div>
+          {/* Type toggle — hidden in Expenses-only mode, see showTypeToggle above */}
+          {showTypeToggle && (
+            <div className="ef-type-toggle">
+              {TXN_TYPES.map((t) => (
+                <Controller
+                  key={t}
+                  control={control}
+                  name="type"
+                  render={({ field }) => (
+                    <button
+                      type="button"
+                      className={cn('ef-type-btn', field.value === t && 'ef-type-btn-active')}
+                      onClick={() => field.onChange(t)}
+                      style={field.value === t ? {
+                        background: t === 'Expense'
+                          ? 'linear-gradient(135deg, #C9736E, #C25B55)'
+                          : 'linear-gradient(135deg, #4FA981, #3E9B72)',
+                      } : undefined}
+                    >
+                      {t === 'Expense' ? '📉' : '📈'} {t}
+                    </button>
+                  )}
+                />
+              ))}
+            </div>
+          )}
 
           {/* Amount */}
           <div className="ef-field">
@@ -345,7 +355,7 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
         }
         @media (max-width: 640px) {
           .expense-form-overlay { align-items: flex-end; padding: 0; }
-          .expense-form-panel { border-radius: 20px 20px 0 0 !important; max-height: 92vh; overflow-y: auto; }
+          .expense-form-panel { border-radius: 20px 20px 0 0 !important; }
         }
 
         .expense-form-panel {
@@ -355,6 +365,8 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
           border-radius: 20px;
           padding: 20px;
           box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+          max-height: 92vh;
+          overflow-y: auto;
         }
         @media (max-width: 400px) { .expense-form-panel { padding: 14px; } }
 

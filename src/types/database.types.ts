@@ -13,4 +13,5 @@ export interface UserProfile {
   notify_budget_alerts: boolean
   notify_weekly_digest: boolean
   notify_monthly_digest: boolean
+  transaction_mode: 'expenses_only' | 'both'
 }

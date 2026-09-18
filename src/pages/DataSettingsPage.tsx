@@ -17,6 +17,7 @@ import { supabase } from '@/lib/supabase'
 import ErrorBanner from '@/components/common/ErrorBanner'
 import { fadeUp } from '@/lib/animations'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
+import { useIsExpensesOnly } from '@/hooks/useTrackingMode'
 import type { Category } from '@/types/expense.types'
 
 type DSTab = 'categories' | 'methods'
@@ -24,6 +25,7 @@ type TypeFilter = 'All' | 'Expense' | 'Income'
 
 // ── Categories tab — unified tree view ───────────────────────────────────────
 function CategoriesTab({ categories }: { categories: Category[] }) {
+  const isExpensesOnly = useIsExpensesOnly()
   const { mutateAsync: updateCat }  = useUpdateCategory()
   const { mutateAsync: deleteCat }  = useDeleteCategory()
   const { mutateAsync: createCat }  = useCreateCategory()
@@ -156,7 +158,7 @@ function CategoriesTab({ categories }: { categories: Category[] }) {
               <select className="dsc-type-select" value={newGroupType}
                 onChange={(e) => setNewGroupType(e.target.value as 'Expense' | 'Income')}>
                 <option value="Expense">Expense</option>
-                <option value="Income">Income</option>
+                {!isExpensesOnly && <option value="Income">Income</option>}
               </select>
               <button className="dsc-icon-btn dsc-ok" onClick={saveNewGroup} disabled={!newGroupName.trim()}><Check size={13} /></button>
               <button className="dsc-icon-btn" onClick={() => setAddingGroup(false)}><X size={13} /></button>
@@ -172,7 +174,7 @@ function CategoriesTab({ categories }: { categories: Category[] }) {
           <select className="dsc-type-filter" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}>
             <option value="All">All types</option>
             <option value="Expense">Expense only</option>
-            <option value="Income">Income only</option>
+            {!isExpensesOnly && <option value="Income">Income only</option>}
           </select>
           <ChevronDown size={13} className="dsc-type-filter-icon" />
         </div>

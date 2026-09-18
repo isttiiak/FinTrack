@@ -10,6 +10,7 @@ import { usePersons } from '@/hooks/useLedger'
 import { formatCurrency, getActiveCurrencySymbol, toISODateString } from '@/lib/utils'
 import { fadeUp } from '@/lib/animations'
 import ErrorBanner from '@/components/common/ErrorBanner'
+import { useIsExpensesOnly } from '@/hooks/useTrackingMode'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function groqModelLabel(id: string): string {
@@ -138,6 +139,9 @@ interface Msg { role: 'user' | 'ai'; text: string; model?: string }
 // ── Main hub ──────────────────────────────────────────────────────────────────
 export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
   const configured = isGroqConfigured()
+  // Goal Planner's math is income-minus-expenses — meaningless with no
+  // income tracked, so it's disabled rather than reworked. See TODO.md.
+  const isExpensesOnly = useIsExpensesOnly()
 
   // Data — both queries anchored to selectedMonth (not "today"), since every
   // AI feature below builds context relative to whichever month the user is
@@ -477,7 +481,7 @@ Be realistic and encouraging. Use bullet points and show before/after amounts, n
         </div>
       </div>
 
-      {/* Goal Planner — needs user input */}
+      {/* Goal Planner — needs user input, and needs income tracked */}
       <div className="aih-card">
         <div className="aih-card-header">
           <div className="aih-card-icon" style={{ background: '#4FA98118', color: '#4FA981' }}>🎯</div>
@@ -486,26 +490,35 @@ Be realistic and encouraging. Use bullet points and show before/after amounts, n
             <div className="aih-card-desc">Enter a savings goal and get a personalized month-by-month spending plan.</div>
           </div>
         </div>
-        <div className="aih-goal-inputs">
-          <div className="aih-goal-field">
-            <label className="aih-goal-label">Save amount ({getActiveCurrencySymbol()})</label>
-            <input className="aih-input" type="number" placeholder="e.g. 50000"
-              value={goalAmount} onChange={(e) => setGoalAmount(e.target.value)} />
-          </div>
-          <div className="aih-goal-field">
-            <label className="aih-goal-label">In how many months?</label>
-            <input className="aih-input" type="number" placeholder="e.g. 6"
-              value={goalMonths} onChange={(e) => setGoalMonths(e.target.value)} min="1" max="60" />
-          </div>
-          <button className="aih-run-btn" style={{ alignSelf: 'flex-end', borderColor: '#4FA98144', color: '#4FA981' }}
-            onClick={handleRunGoal} disabled={goalLoading || !goalAmount}>
-            {goalLoading ? <span className="aih-spinner" /> : <><RefreshCw size={12} /> Plan</>}
-          </button>
-        </div>
-        <AnimatePresence>
-          {goalError && <motion.div className="aih-error" initial={{ opacity: 0 }} animate={{ opacity: 1 }}><AlertCircle size={13} /> {goalError}</motion.div>}
-          {goalResult && <motion.div className="aih-result" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>{formatResult(goalResult)}{goalModel && <ModelFooter model={goalModel} />}</motion.div>}
-        </AnimatePresence>
+        {isExpensesOnly ? (
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+            This plan is built from income minus spending, so it needs income tracking on —
+            switch back to "Both income & expenses" in Settings to use it.
+          </p>
+        ) : (
+          <>
+            <div className="aih-goal-inputs">
+              <div className="aih-goal-field">
+                <label className="aih-goal-label">Save amount ({getActiveCurrencySymbol()})</label>
+                <input className="aih-input" type="number" placeholder="e.g. 50000"
+                  value={goalAmount} onChange={(e) => setGoalAmount(e.target.value)} />
+              </div>
+              <div className="aih-goal-field">
+                <label className="aih-goal-label">In how many months?</label>
+                <input className="aih-input" type="number" placeholder="e.g. 6"
+                  value={goalMonths} onChange={(e) => setGoalMonths(e.target.value)} min="1" max="60" />
+              </div>
+              <button className="aih-run-btn" style={{ alignSelf: 'flex-end', borderColor: '#4FA98144', color: '#4FA981' }}
+                onClick={handleRunGoal} disabled={goalLoading || !goalAmount}>
+                {goalLoading ? <span className="aih-spinner" /> : <><RefreshCw size={12} /> Plan</>}
+              </button>
+            </div>
+            <AnimatePresence>
+              {goalError && <motion.div className="aih-error" initial={{ opacity: 0 }} animate={{ opacity: 1 }}><AlertCircle size={13} /> {goalError}</motion.div>}
+              {goalResult && <motion.div className="aih-result" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>{formatResult(goalResult)}{goalModel && <ModelFooter model={goalModel} />}</motion.div>}
+            </AnimatePresence>
+          </>
+        )}
       </div>
 
       {/* Natural Language Chat */}
