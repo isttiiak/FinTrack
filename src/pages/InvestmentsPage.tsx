@@ -11,6 +11,7 @@ import { useInvestments } from '@/hooks/useInvestments'
 import InvestmentForm from '@/components/investments/InvestmentForm'
 import InvestmentTransactionLogs from '@/components/investments/InvestmentTransactionLogs'
 import ErrorBanner from '@/components/common/ErrorBanner'
+import SearchToggle from '@/components/common/SearchToggle'
 
 type InvTab = 'portfolio' | 'logs'
 
@@ -30,6 +31,11 @@ export default function InvestmentsPage() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<InvTab>('portfolio')
   const [showForm, setShowForm] = useState(false)
+  const [search, setSearch] = useState('')
+
+  const visibleInvestments = search.trim()
+    ? investments.filter((i) => i.name.toLowerCase().includes(search.trim().toLowerCase()))
+    : investments
 
   // Portfolio summary
   const totalCommitted  = investments.reduce((s, i) => s + (i.committed_amount ?? 0), 0)
@@ -110,13 +116,18 @@ export default function InvestmentsPage() {
       )}
 
       {/* Tabs */}
-      <div className="inv-tabs">
-        <button className={`inv-tab ${activeTab === 'portfolio' ? 'inv-tab-active' : ''}`} onClick={() => setActiveTab('portfolio')}>
-          💼 Portfolio
-        </button>
-        <button className={`inv-tab ${activeTab === 'logs' ? 'inv-tab-active' : ''}`} onClick={() => setActiveTab('logs')}>
-          📋 Transaction logs
-        </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+        <div className="inv-tabs" style={{ marginBottom: 0, flex: '1 1 auto' }}>
+          <button className={`inv-tab ${activeTab === 'portfolio' ? 'inv-tab-active' : ''}`} onClick={() => setActiveTab('portfolio')}>
+            💼 Portfolio
+          </button>
+          <button className={`inv-tab ${activeTab === 'logs' ? 'inv-tab-active' : ''}`} onClick={() => setActiveTab('logs')}>
+            📋 Transaction logs
+          </button>
+        </div>
+        {activeTab === 'portfolio' && (
+          <SearchToggle value={search} onChange={setSearch} placeholder="Search investments…" />
+        )}
       </div>
 
       {/* Transaction logs tab */}
@@ -146,9 +157,17 @@ export default function InvestmentsPage() {
             <Plus size={15} /> Add first investment
           </motion.button>
         </motion.div>
+      ) : activeTab === 'portfolio' && visibleInvestments.length === 0 ? (
+        <motion.div className="inv-empty" variants={fadeUp} initial="initial" animate="animate">
+          <div className="inv-empty-icon">🔍</div>
+          <p style={{ color: 'var(--text-secondary)', margin: 0, fontWeight: 600, fontSize: 16 }}>No matches</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '4px 0 0' }}>
+            No investments match "{search}".
+          </p>
+        </motion.div>
       ) : activeTab === 'portfolio' ? (
         <motion.div className="inv-list" variants={staggerContainer} initial="initial" animate="animate">
-          {investments.map((inv) => {
+          {visibleInvestments.map((inv) => {
             const remainingToPay = inv.committed_amount != null && inv.total_paid != null
               ? Math.max(0, inv.committed_amount - inv.total_paid)
               : null

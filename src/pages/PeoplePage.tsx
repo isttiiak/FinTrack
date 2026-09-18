@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Plus, Edit2, Check, X, Users, Trash2, ChevronDown } from 'lucide-react'
 import { fadeUp } from '@/lib/animations'
 import ErrorBanner from '@/components/common/ErrorBanner'
+import SearchToggle from '@/components/common/SearchToggle'
 import { usePersons, useCreatePerson, useUpdatePerson, useDeletePerson } from '@/hooks/useLedger'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import { useConfirmStore } from '@/stores/confirmStore'
@@ -278,6 +279,7 @@ export default function PeoplePage() {
   const [expandedEditId, setExpandedEditId] = useState<string | null>(null)
   const [tab, setTab] = useState<PeopleTab>('all')
   const [relFilter, setRelFilter] = useState<Relationship | ''>('')
+  const [search, setSearch] = useState('')
 
   // ── Stats
   const stats = useMemo(() => ({
@@ -287,13 +289,15 @@ export default function PeoplePage() {
   }), [persons])
 
   const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
     return persons.filter((p) => {
       if (tab === 'lent' && p.total_outstanding_lent <= 0) return false
       if (tab === 'debt' && p.total_outstanding_debt <= 0) return false
       if (relFilter && p.relationship !== relFilter) return false
+      if (q && !p.name.toLowerCase().includes(q)) return false
       return true
     })
-  }, [persons, tab, relFilter])
+  }, [persons, tab, relFilter, search])
 
   async function handleCreatePerson(data: { name: string; relationship: Relationship | null; phone: string }) {
     try {
@@ -384,6 +388,7 @@ export default function PeoplePage() {
           </select>
           <ChevronDown size={13} className="pmp-rel-filter-icon" />
         </div>
+        <SearchToggle value={search} onChange={setSearch} placeholder="Search people…" />
       </div>
 
       {/* Person list */}

@@ -13,13 +13,16 @@ import ErrorBanner from '@/components/common/ErrorBanner'
 import { SkeletonList } from '@/components/common/SkeletonCard'
 import AnimatedNumber from '@/components/common/AnimatedNumber'
 import MonthPicker from '@/components/common/MonthPicker'
+import SearchToggle from '@/components/common/SearchToggle'
 import type { Transaction, TransactionFilters } from '@/types/expense.types'
 import { PAYMENT_METHODS } from '@/lib/constants'
 import { formatCurrency, toISODateString } from '@/lib/utils'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { cn } from '@/lib/utils'
+import { useIsExpensesOnly } from '@/hooks/useTrackingMode'
 
 export default function ExpensesPage() {
+  const isExpensesOnly = useIsExpensesOnly()
   const now = new Date()
   const [month, setMonth] = useState(() => `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`)
   const [filterOpen, setFilterOpen] = useState(false)
@@ -29,6 +32,7 @@ export default function ExpensesPage() {
   const [rangeMode, setRangeMode] = useState(false)
   const [rangeFrom, setRangeFrom] = useState('')
   const [rangeTo, setRangeTo] = useState('')
+  const [search, setSearch] = useState('')
   const [editingTxn, setEditingTxn] = useState<Transaction | null>(null)
   const [addOpen, setAddOpen] = useState(false)
 
@@ -43,6 +47,7 @@ export default function ExpensesPage() {
     from, to,
     type: typeFilter === 'All' ? undefined : typeFilter,
     payment_method: methodFilter === 'All' ? undefined : (methodFilter as TransactionFilters['payment_method']),
+    search: search.trim() || undefined,
   }
 
   const transactionsQ = useExpenses(filters)
@@ -128,6 +133,7 @@ export default function ExpensesPage() {
       {/* Summary cards */}
       <motion.div
         className="expenses-summary"
+        style={isExpensesOnly ? { gridTemplateColumns: '1fr' } : undefined}
         variants={staggerContainer}
         initial="initial"
         animate="animate"
@@ -140,11 +146,13 @@ export default function ExpensesPage() {
           )}
         </motion.div>
 
-        <motion.div className="summary-card summary-card-income" variants={staggerItem}>
-          <div className="summary-label">Total income</div>
-          <AnimatedNumber value={totalIncome} className="summary-value summary-value-income" />
-          <div className="summary-sub">Net: {formatCurrency(totalIncome - totalExpense)}</div>
-        </motion.div>
+        {!isExpensesOnly && (
+          <motion.div className="summary-card summary-card-income" variants={staggerItem}>
+            <div className="summary-label">Total income</div>
+            <AnimatedNumber value={totalIncome} className="summary-value summary-value-income" />
+            <div className="summary-sub">Net: {formatCurrency(totalIncome - totalExpense)}</div>
+          </motion.div>
+        )}
       </motion.div>
 
       {/* Budget indicators */}
@@ -205,6 +213,7 @@ export default function ExpensesPage() {
             <span className="filter-active-dot" />
           )}
         </button>
+        <SearchToggle value={search} onChange={setSearch} placeholder="Search description…" className="expenses-search" />
       </div>
 
       <AnimatePresence>
@@ -218,9 +227,14 @@ export default function ExpensesPage() {
             <div className="filters-inner">
               {/* Type filter */}
               <div className="filter-group">
-                <label className="filter-label">Type</label>
+                <div className="filter-group-header">
+                  <label className="filter-label">Type</label>
+                  {typeFilter !== 'All' && (
+                    <button className="filter-group-clear" onClick={() => setTypeFilter('All')}>Clear</button>
+                  )}
+                </div>
                 <div className="filter-chips">
-                  {(['All', 'Expense', 'Income'] as const).map((t) => (
+                  {(isExpensesOnly ? (['All', 'Expense'] as const) : (['All', 'Expense', 'Income'] as const)).map((t) => (
                     <button
                       key={t}
                       className={cn('filter-chip', typeFilter === t && 'filter-chip-active')}
@@ -235,7 +249,12 @@ export default function ExpensesPage() {
               {/* Main group filter */}
               {mainGroups.length > 0 && (
                 <div className="filter-group">
-                  <label className="filter-label">Category group</label>
+                  <div className="filter-group-header">
+                    <label className="filter-label">Category group</label>
+                    {groupFilter !== 'All' && (
+                      <button className="filter-group-clear" onClick={() => setGroupFilter('All')}>Clear</button>
+                    )}
+                  </div>
                   <div className="filter-chips filter-chips-scroll">
                     <button
                       className={cn('filter-chip', groupFilter === 'All' && 'filter-chip-active')}
@@ -258,7 +277,12 @@ export default function ExpensesPage() {
 
               {/* Payment method filter */}
               <div className="filter-group">
-                <label className="filter-label">Payment method</label>
+                <div className="filter-group-header">
+                  <label className="filter-label">Payment method</label>
+                  {methodFilter !== 'All' && (
+                    <button className="filter-group-clear" onClick={() => setMethodFilter('All')}>Clear</button>
+                  )}
+                </div>
                 <div className="filter-chips">
                   {(['All', ...PAYMENT_METHODS] as const).map((m) => (
                     <button
@@ -360,7 +384,14 @@ export default function ExpensesPage() {
           display: flex; flex-direction: column; gap: 12px;
         }
         .filter-group { display: flex; flex-direction: column; gap: 6px; }
+        .filter-group-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .filter-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .filter-group-clear {
+          background: none; border: none; font-size: 11px; color: var(--text-muted); cursor: pointer;
+          padding: 0; text-decoration: underline;
+        }
+        .filter-group-clear:hover { color: var(--accent-primary); }
+        .expenses-search { flex-shrink: 0; }
         .filter-chips { display: flex; flex-wrap: wrap; gap: 6px; }
         .filter-chips-scroll { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
         .filter-chips-scroll::-webkit-scrollbar { display: none; }

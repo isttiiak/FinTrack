@@ -52,4 +52,5 @@ export interface TransactionFilters {
   category_ids?: string[]
   type?: TxnType | 'All'
   payment_method?: PaymentMethod | 'All'
+  search?: string   // free-text match against description
 }

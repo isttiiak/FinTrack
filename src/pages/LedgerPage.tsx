@@ -13,6 +13,7 @@ import QuickLedgerEntry from '@/components/ledger/QuickLedgerEntry'
 import LedgerPaymentLogs from '@/components/ledger/LedgerPaymentLogs'
 import LedgerSummaryTab from '@/components/ledger/LedgerSummaryTab'
 import ErrorBanner from '@/components/common/ErrorBanner'
+import SearchToggle from '@/components/common/SearchToggle'
 import type { LedgerType } from '@/lib/constants'
 
 type Tab = 'lent' | 'debt' | 'all' | 'logs' | 'summary'
@@ -26,6 +27,7 @@ export default function LedgerPage() {
 
   const [activeTab, setActiveTab] = useState<Tab>('all')
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
+  const [search, setSearch] = useState('')
   const [showAddEntry, setShowAddEntry] = useState(false)
   const [quickPay, setQuickPay] = useState<{ personId: string; personName: string; ledgerType: LedgerType; remaining: number } | null>(null)
 
@@ -43,6 +45,7 @@ export default function LedgerPage() {
       if (activeTab === 'debt') return p.total_outstanding_debt > 0 || p.ledgers.some((l) => l.ledger_type === 'Debt')
       return true
     })
+    .filter((p) => !search.trim() || p.name.toLowerCase().includes(search.trim().toLowerCase()))
     .slice()
     .sort((a, b) => {
       const latestDate = (p: typeof a) =>
@@ -142,21 +145,24 @@ export default function LedgerPage() {
           ))}
         </div>
         {activeTab !== 'summary' && activeTab !== 'logs' && (
-          <div style={{ display: 'flex', gap: 4, flexShrink: 0, marginLeft: 'auto' }}>
-            <button
-              className={`ledger-sort-btn ${sortOrder === 'newest' ? 'ledger-sort-active' : ''}`}
-              onClick={() => setSortOrder('newest')}
-              title="Newest first"
-            >
-              <ArrowDown size={13} /> Newest
-            </button>
-            <button
-              className={`ledger-sort-btn ${sortOrder === 'oldest' ? 'ledger-sort-active' : ''}`}
-              onClick={() => setSortOrder('oldest')}
-              title="Oldest first"
-            >
-              <ArrowUp size={13} /> Oldest
-            </button>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0, marginLeft: 'auto' }}>
+            <SearchToggle value={search} onChange={setSearch} placeholder="Search people…" />
+            <div style={{ display: 'flex', gap: 4 }}>
+              <button
+                className={`ledger-sort-btn ${sortOrder === 'newest' ? 'ledger-sort-active' : ''}`}
+                onClick={() => setSortOrder('newest')}
+                title="Newest first"
+              >
+                <ArrowDown size={13} /> Newest
+              </button>
+              <button
+                className={`ledger-sort-btn ${sortOrder === 'oldest' ? 'ledger-sort-active' : ''}`}
+                onClick={() => setSortOrder('oldest')}
+                title="Oldest first"
+              >
+                <ArrowUp size={13} /> Oldest
+              </button>
+            </div>
           </div>
         )}
       </div>
