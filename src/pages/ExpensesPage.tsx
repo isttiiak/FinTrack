@@ -40,8 +40,8 @@ export default function ExpensesPage() {
   const monthFrom = `${year}-${String(mon).padStart(2, '0')}-01`
   const monthTo   = toISODateString(new Date(year, mon, 0))
 
-  const from = rangeMode ? (rangeFrom || undefined) : monthFrom
-  const to   = rangeMode ? (rangeTo   || undefined) : monthTo
+  const from = rangeMode ? (rangeFrom || null) : monthFrom
+  const to   = rangeMode ? (rangeTo   || null) : monthTo
 
   const filters: TransactionFilters = {
     from, to,

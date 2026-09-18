@@ -47,8 +47,10 @@ export interface TransactionFormData {
 }
 
 export interface TransactionFilters {
-  from?: string
-  to?: string
+  // Tri-state date bounds: omitted (undefined) = default to the current month;
+  // null = deliberately unbounded on that side; string = that bound.
+  from?: string | null
+  to?: string | null
   category_ids?: string[]
   type?: TxnType | 'All'
   payment_method?: PaymentMethod | 'All'

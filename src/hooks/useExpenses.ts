@@ -3,7 +3,7 @@ import { supabase, fetchAllRows } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
 import type { Transaction, TransactionFilters } from '@/types/expense.types'
-import { getCurrentMonthRange } from '@/lib/utils'
+import { resolveDateRange } from '@/lib/utils'
 import { useUIStore } from '@/stores/uiStore'
 import { useDemoGuard, DemoBlockedError } from '@/hooks/useDemoGuard'
 
@@ -12,10 +12,10 @@ export function useExpenses(filters?: TransactionFilters) {
   const isDemo = useDemoStore((s) => s.isDemo)
   const demoTransactions = useDemoStore((s) => s.transactions)
 
-  const { from, to } = filters ?? getCurrentMonthRange()
+  const { from, to } = resolveDateRange(filters)
 
   return useQuery({
-    queryKey: ['expenses', userId, filters],
+    queryKey: ['expenses', userId, filters, from, to],
     enabled: isDemo || !!userId,
     queryFn: async (): Promise<Transaction[]> => {
       if (isDemo) {

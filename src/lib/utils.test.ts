@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { round2, parseDate, getCurrentMonthRange, toISODateString } from '@/lib/utils'
+import { round2, parseDate, getCurrentMonthRange, toISODateString, resolveDateRange } from '@/lib/utils'
 
 describe('round2', () => {
   it('rounds to 2 decimals', () => {
@@ -56,5 +56,25 @@ describe('toISODateString', () => {
   it('formats a Date as YYYY-MM-DD using local components', () => {
     expect(toISODateString(new Date(2026, 0, 5))).toBe('2026-01-05')
     expect(toISODateString(new Date(2026, 11, 31))).toBe('2026-12-31')
+  })
+})
+
+describe('resolveDateRange', () => {
+  it('defaults to the current month when no filters or omitted bounds are given', () => {
+    const month = getCurrentMonthRange()
+    expect(resolveDateRange()).toEqual(month)
+    expect(resolveDateRange({})).toEqual(month)
+  })
+
+  it('treats an explicit null as an intentionally unbounded side', () => {
+    const month = getCurrentMonthRange()
+    expect(resolveDateRange({ from: null, to: null })).toEqual({ from: null, to: null })
+    expect(resolveDateRange({ from: '2026-01-01', to: null })).toEqual({ from: '2026-01-01', to: null })
+    expect(resolveDateRange({ from: null })).toEqual({ from: null, to: month.to })
+  })
+
+  it('defaults each side independently', () => {
+    const month = getCurrentMonthRange()
+    expect(resolveDateRange({ from: '2026-02-01' })).toEqual({ from: '2026-02-01', to: month.to })
   })
 })

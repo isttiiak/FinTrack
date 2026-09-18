@@ -119,6 +119,21 @@ export function getCurrentMonthRange(): { from: string; to: string } {
   return { from: toISODateString(from), to: toISODateString(to) }
 }
 
+// Resolves a filter's date bounds. A bound that is omitted (undefined) falls
+// back to the current month; an explicit null means "no bound on this side"
+// (e.g. a blank Start/End field in the Expenses page's Range mode). Keeping
+// the two apart is what stops a filter with only `type`/`search` set from
+// silently turning into an all-time query.
+export function resolveDateRange(
+  filters?: { from?: string | null; to?: string | null },
+): { from: string | null; to: string | null } {
+  const month = getCurrentMonthRange()
+  return {
+    from: filters?.from === undefined ? month.from : filters.from,
+    to:   filters?.to   === undefined ? month.to   : filters.to,
+  }
+}
+
 // Rounds to 2 decimals, guarding against float drift when summing many
 // money values (e.g. across a person's lend/debt entries and payments).
 export function round2(n: number): number {
