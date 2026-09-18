@@ -157,26 +157,26 @@ export default function LedgerSummaryTab({ persons }: { persons: PersonWithLedge
               </div>
 
               {/* Type */}
-              <div className="lst-cell">
+              <div className="lst-cell" data-label="Type">
                 <span className={`lst-type-chip ${isLent ? 'lst-chip-lent' : 'lst-chip-debt'}`}>
                   {isLent ? '💸 Lent' : '🏦 Debt'}
                 </span>
               </div>
 
               {/* Total */}
-              <div className="lst-cell">
+              <div className="lst-cell" data-label="Total">
                 <span className="lst-amt-total">{formatCurrency(row.total)}</span>
               </div>
 
               {/* Paid */}
-              <div className="lst-cell">
+              <div className="lst-cell" data-label="Paid back">
                 {row.paid > 0
                   ? <span className="lst-amt-paid">{formatCurrency(row.paid)}</span>
                   : <span className="lst-cell-muted">—</span>}
               </div>
 
               {/* Remaining */}
-              <div className="lst-cell">
+              <div className="lst-cell" data-label="Remaining">
                 {row.remaining === 0 ? (
                   <span className="lst-remaining-zero">Fully settled</span>
                 ) : (
@@ -187,14 +187,14 @@ export default function LedgerSummaryTab({ persons }: { persons: PersonWithLedge
               </div>
 
               {/* Status */}
-              <div className="lst-cell">
+              <div className="lst-cell" data-label="Status">
                 <span className="lst-status-badge" style={{ background: st.bg, color: st.color }}>
                   {st.label}
                 </span>
               </div>
 
               {/* Last activity */}
-              <div className="lst-cell lst-cell-muted">
+              <div className="lst-cell lst-cell-muted" data-label="Last activity">
                 {row.lastDate ? formatDate(row.lastDate) : '—'}
               </div>
             </div>
@@ -265,6 +265,25 @@ export default function LedgerSummaryTab({ persons }: { persons: PersonWithLedge
         .lst-remaining-zero { font-size: 11px; color: var(--accent-teal); }
 
         .lst-status-badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
+
+        /* Phone: each table row becomes a stacked card — person on top, then
+           labelled Type/Total/Paid/... pairs in two columns. */
+        @media (max-width: 720px) {
+          .lst-table { overflow-x: visible; background: none; border: none; display: flex; flex-direction: column; gap: 10px; }
+          .lst-header { display: none; }
+          .lst-row {
+            min-width: 0; grid-template-columns: 1fr 1fr; gap: 10px 12px; padding: 12px 14px;
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+          }
+          .lst-row:last-child { border: 1px solid var(--border); }
+          .lst-person-cell { grid-column: 1 / -1; }
+          .lst-cell { padding: 0; min-width: 0; }
+          .lst-cell[data-label]::before {
+            content: attr(data-label); display: block; margin-bottom: 3px;
+            font-size: 10px; font-weight: 500; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.05em;
+          }
+        }
       `}</style>
     </motion.div>
   )

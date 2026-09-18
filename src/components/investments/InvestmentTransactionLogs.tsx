@@ -192,7 +192,7 @@ export default function InvestmentTransactionLogs({ investments }: { investments
             </div>
 
             {/* Type */}
-            <div className="itl-cell">
+            <div className="itl-cell" data-label="Type">
               {row.txType === 'Payment Out' ? (
                 <span className="itl-type-out"><ArrowUpRight size={11} /> {row.returnType ?? 'Payment'}</span>
               ) : (
@@ -201,10 +201,10 @@ export default function InvestmentTransactionLogs({ investments }: { investments
             </div>
 
             {/* Date */}
-            <div className="itl-cell itl-cell-muted">{formatDate(row.date)}</div>
+            <div className="itl-cell itl-cell-muted" data-label="Date">{formatDate(row.date)}</div>
 
             {/* Amount — inline edit */}
-            <div className="itl-cell">
+            <div className="itl-cell" data-label="Amount">
               {editState?.id === row.id ? (
                 <input className="itl-edit-input" type="number" step="0.01" value={editState.amount}
                   onChange={(e) => setEditState({ ...editState, amount: e.target.value })} autoFocus />
@@ -216,7 +216,7 @@ export default function InvestmentTransactionLogs({ investments }: { investments
             </div>
 
             {/* Remaining to pay */}
-            <div className="itl-cell">
+            <div className="itl-cell" data-label="Remaining due">
               {row.remainingToPay > 0 ? (
                 <span className="itl-remaining">{formatCurrency(row.remainingToPay)}</span>
               ) : (
@@ -225,14 +225,14 @@ export default function InvestmentTransactionLogs({ investments }: { investments
             </div>
 
             {/* Running P&L */}
-            <div className="itl-cell">
+            <div className="itl-cell" data-label="Running P&amp;L">
               <span className={row.cumulativePL >= 0 ? 'itl-pl-pos' : 'itl-pl-neg'}>
                 {row.cumulativePL >= 0 ? '+' : ''}{formatCurrency(row.cumulativePL)}
               </span>
             </div>
 
             {/* Notes — inline edit */}
-            <div className="itl-cell">
+            <div className="itl-cell" data-label="Notes">
               {editState?.id === row.id ? (
                 <input className="itl-edit-input" type="text" placeholder="Notes…" value={editState.notes}
                   onChange={(e) => setEditState({ ...editState, notes: e.target.value })} />
@@ -354,6 +354,28 @@ export default function InvestmentTransactionLogs({ investments }: { investments
           background: none; border: none; color: var(--text-muted); cursor: pointer;
         }
         .itl-del-btn:hover { background: rgba(194, 91, 85,0.1); color: var(--accent-red); }
+
+        /* Phone: each table row becomes a stacked card — investment name on
+           top, then labelled Type/Date/Amount/... pairs in two columns. */
+        @media (max-width: 720px) {
+          .itl-table { overflow-x: visible; background: none; border: none; display: flex; flex-direction: column; gap: 10px; }
+          .itl-header-row { display: none; }
+          .itl-row {
+            min-width: 0; grid-template-columns: 1fr 1fr; gap: 10px 12px; padding: 12px 14px;
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+          }
+          .itl-row:last-child { border: 1px solid var(--border); }
+          .itl-row > .itl-cell:first-child,
+          .itl-row > .itl-cell:nth-child(7),
+          .itl-row > .itl-cell:last-child { grid-column: 1 / -1; }
+          .itl-cell { padding: 0; min-width: 0; }
+          .itl-cell[data-label]::before {
+            content: attr(data-label); display: block; margin-bottom: 3px;
+            font-size: 10px; font-weight: 500; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.05em;
+          }
+          .itl-cell-muted { white-space: normal; }
+        }
       `}</style>
     </motion.div>
   )
