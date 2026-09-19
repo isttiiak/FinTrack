@@ -34,6 +34,8 @@ export default function DeleteButton({
   return (
     <button
       type="button"
+      aria-label="Delete"
+      title="Delete"
       className={className}
       style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',

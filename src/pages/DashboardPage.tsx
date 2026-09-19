@@ -1,3 +1,4 @@
+import TrendArrow from '@/components/common/TrendArrow'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
@@ -212,7 +213,7 @@ export default function DashboardPage() {
           <div className="dash-kpi-icon"><ArrowRightLeft size={17} /></div>
           <div className="dash-kpi-label">Net ledger position</div>
           <div className="dash-kpi-value" style={{ color: netLedger >= 0 ? 'var(--accent-teal)' : 'var(--accent-coral)' }}>
-            {netLedger >= 0 ? '+' : '−'}{formatCurrency(Math.abs(netLedger))}
+            <TrendArrow positive={netLedger >= 0} />{netLedger >= 0 ? '+' : '−'}{formatCurrency(Math.abs(netLedger))}
           </div>
           <div className="dash-kpi-delta dash-delta-neutral">
             {totalLent > 0 && `↑ ${formatCurrency(totalLent)} owed to you`}
@@ -238,7 +239,7 @@ export default function DashboardPage() {
         {/* Top category */}
         <motion.div className="dash-card" variants={staggerItem}>
           <div className="dash-card-header">
-            <h3 className="dash-card-title">Top category</h3>
+            <h2 className="dash-card-title">Top category</h2>
             <Link to="/expenses" className="dash-card-link">View all <ChevronRight size={13} /></Link>
           </div>
           {topCategory ? (
@@ -265,7 +266,7 @@ export default function DashboardPage() {
         {/* Ledger snapshot */}
         <motion.div className="dash-card" variants={staggerItem}>
           <div className="dash-card-header">
-            <h3 className="dash-card-title">Ledger snapshot</h3>
+            <h2 className="dash-card-title">Ledger snapshot</h2>
             <Link to="/ledger" className="dash-card-link">View all <ChevronRight size={13} /></Link>
           </div>
           {persons.length === 0 ? (
@@ -302,7 +303,7 @@ export default function DashboardPage() {
         {/* Recent transactions */}
         <motion.div className="dash-card dash-card-wide" variants={staggerItem}>
           <div className="dash-card-header">
-            <h3 className="dash-card-title">Recent transactions</h3>
+            <h2 className="dash-card-title">Recent transactions</h2>
             <Link to="/expenses" className="dash-card-link">View all <ChevronRight size={13} /></Link>
           </div>
           {recentTxns.length === 0 ? (
@@ -333,7 +334,7 @@ export default function DashboardPage() {
         {(totalLent > 0 || totalDebt > 0) && (
           <motion.div className="dash-card" variants={staggerItem}>
             <div className="dash-card-header">
-              <h3 className="dash-card-title">Lent vs Debt</h3>
+              <h2 className="dash-card-title">Lent vs Debt</h2>
               <Link to="/ledger" className="dash-card-link"><Users size={13} /> {persons.length} people</Link>
             </div>
             <div className="dash-lv-bars">
@@ -363,7 +364,7 @@ export default function DashboardPage() {
         {isCurrentMonth && upcomingRecurring.items.length > 0 && (
           <motion.div className="dash-card" variants={staggerItem}>
             <div className="dash-card-header">
-              <h3 className="dash-card-title">Upcoming this month</h3>
+              <h2 className="dash-card-title">Upcoming this month</h2>
               <Link to="/settings/recurring" className="dash-card-link"><Repeat size={13} /> Manage</Link>
             </div>
             <div className="dash-upcoming-total">{formatCurrency(upcomingRecurring.total)}</div>

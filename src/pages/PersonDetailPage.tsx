@@ -1,3 +1,4 @@
+import TrendArrow from '@/components/common/TrendArrow'
 import { useState } from 'react'
 import { useParams, useNavigate } from '@tanstack/react-router'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -127,7 +128,7 @@ export default function PersonDetailPage() {
           {totalOutstanding > 0 ? (
             <>
               <div className="pd-hero-net" style={{ color: netPosition >= 0 ? 'var(--accent-teal)' : 'var(--accent-coral)' }}>
-                {netPosition >= 0 ? '+' : '−'}{formatCurrency(Math.abs(netPosition))}
+                <TrendArrow positive={netPosition >= 0} />{netPosition >= 0 ? '+' : '−'}{formatCurrency(Math.abs(netPosition))}
               </div>
               <div className="pd-hero-net-label">
                 {netPosition >= 0 ? 'they owe you' : 'you owe them'}

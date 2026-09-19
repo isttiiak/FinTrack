@@ -36,9 +36,9 @@ export default function SpendingForecast({ transactions, budgets }: SpendingFore
 
   return (
     <motion.div className="analytics-card analytics-card-wide sf-card" variants={staggerItem}>
-      <h3 className="analytics-card-title">
+      <h2 className="analytics-card-title">
         <TrendingUp size={14} className="sf-title-icon" /> Month-end forecast
-      </h3>
+      </h2>
 
       <p className="sf-headline">
         At this pace you&apos;ll spend <strong>{formatCurrency(Math.round(forecast.projected))}</strong> by the{' '}

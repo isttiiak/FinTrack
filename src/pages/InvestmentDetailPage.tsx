@@ -1,3 +1,4 @@
+import TrendArrow from '@/components/common/TrendArrow'
 import { useState } from 'react'
 import { useParams, useNavigate } from '@tanstack/react-router'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -182,7 +183,7 @@ export default function InvestmentDetailPage() {
           <div className="idp-kpi-icon"><BarChart3 size={16} /></div>
           <div className="idp-kpi-label">Net P&amp;L</div>
           <div className="idp-kpi-value" style={{ color: (profitLoss ?? 0) >= 0 ? 'var(--accent-teal)' : 'var(--accent-coral)' }}>
-            {profitLoss !== undefined ? `${profitLoss >= 0 ? '+' : ''}${formatCurrency(profitLoss)}` : '—'}
+            {profitLoss !== undefined ? <><TrendArrow positive={profitLoss >= 0} />{`${profitLoss >= 0 ? '+' : ''}${formatCurrency(profitLoss)}`}</> : '—'}
           </div>
           <div className="idp-kpi-sub">
             {roi !== undefined ? `${roi >= 0 ? '+' : ''}${roi.toFixed(1)}% ROI` : '—'}

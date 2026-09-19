@@ -17,7 +17,7 @@ export default function MobileNav() {
   const { toggleSidebar } = useUIStore()
 
   return (
-    <nav className="mobile-nav">
+    <nav className="mobile-nav" aria-label="Mobile">
       {NAV_ITEMS.map(({ to, label, icon: Icon }) => {
         const active = location === to || location.startsWith(to + '/')
         return (

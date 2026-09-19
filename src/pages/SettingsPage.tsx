@@ -91,7 +91,7 @@ function BudgetSection() {
               <div className="settingspage-pf-field" style={{ flex: 1 }}>
                 <label className="pf-label">Category</label>
                 <div style={{ position: 'relative' }}>
-                  <select {...register('category_id')} className="settingspage-pf-select">
+                  <select {...register('category_id')} aria-label="Category" className="settingspage-pf-select">
                     <option value="">Select…</option>
                     {availableCategories.map((c) => (
                       <option key={c.id} value={c.id}>{c.main_group} › {c.name}</option>
@@ -642,7 +642,7 @@ function AISection() {
                   onChange={(e) => setApiKey(e.target.value)}
                   style={{ paddingRight: 40 }}
                 />
-                <button type="button" onClick={() => setShowKey((v) => !v)}
+                <button type="button" aria-label={showKey ? 'Hide API key' : 'Show API key'} onClick={() => setShowKey((v) => !v)}
                   style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', padding: 0 }}>
                   {showKey ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
@@ -659,7 +659,7 @@ function AISection() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 4 }}>
               <label className="pf-label">AI model</label>
-              <select className="settingspage-pf-select" value={model} onChange={(e) => handleModelChange(e.target.value)}>
+              <select aria-label="AI model" className="settingspage-pf-select" value={model} onChange={(e) => handleModelChange(e.target.value)}>
                 {GROQ_MODELS.map((m) => (
                   <option key={m.id} value={m.id}>{m.label}</option>
                 ))}

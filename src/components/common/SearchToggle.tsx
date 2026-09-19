@@ -64,6 +64,7 @@ export default function SearchToggle({ value, onChange, placeholder = 'Search…
               <button
                 type="button"
                 className="stg-clear"
+                aria-label="Clear search"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => onChange('')}
               >
@@ -83,6 +84,7 @@ export default function SearchToggle({ value, onChange, placeholder = 'Search…
           <motion.button
             key="closed"
             type="button"
+            aria-label="Search"
             className={cn('stg-icon-btn', value && 'stg-icon-btn-active')}
             onClick={() => setOpen(true)}
             initial={{ opacity: 0, scale: 0.9 }}

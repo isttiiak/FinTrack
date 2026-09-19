@@ -12,6 +12,7 @@ import { useBudgets } from '@/hooks/useBudgets'
 import { useNoSpendStreak } from '@/hooks/useNoSpendStreak'
 import AIHub from '@/components/ai/AIHub'
 import SpendingForecast from '@/components/analytics/SpendingForecast'
+import TrendArrow from '@/components/common/TrendArrow'
 import ErrorBanner from '@/components/common/ErrorBanner'
 import { useIsExpensesOnly } from '@/hooks/useTrackingMode'
 import './AnalyticsPage.css'
@@ -185,6 +186,7 @@ export default function AnalyticsPage() {
         <input
           type="month"
           className="analytics-month-picker"
+          aria-label="Month"
           value={selectedMonth}
           onChange={(e) => setSelectedMonth(e.target.value)}
         />
@@ -197,10 +199,10 @@ export default function AnalyticsPage() {
         {(() => {
           const net = thisIncome - thisExpense
           return [
-            { label: 'Spent this month',   value: formatCurrency(thisExpense),       color: 'var(--accent-coral)' },
+            { label: 'Spent this month',   value: formatCurrency(thisExpense),       color: 'var(--accent-coral)', arrow: undefined as boolean | undefined },
             ...(isExpensesOnly ? [] : [
               { label: 'Income this month',  value: formatCurrency(thisIncome),        color: 'var(--accent-teal)' },
-              { label: 'Net (income−spent)', value: `${net >= 0 ? '+' : ''}${formatCurrency(net)}`, color: net >= 0 ? 'var(--accent-teal)' : 'var(--accent-red)' },
+              { label: 'Net (income−spent)', value: `${net >= 0 ? '+' : ''}${formatCurrency(net)}`, color: net >= 0 ? 'var(--accent-teal)' : 'var(--accent-red)', arrow: net >= 0 },
             ]),
             { label: 'Daily avg (month)',  value: formatCurrency(Math.round(avgDaily)), color: '#C2A24E' },
             { label: `${selectedMonth.slice(0,4)} total spent`, value: formatCurrency(yearlyExpense), color: '#3E9B72' },
@@ -209,7 +211,7 @@ export default function AnalyticsPage() {
         })().map((k) => (
           <div key={k.label} className="analytics-kpi">
             <div className="analytics-kpi-label">{k.label}</div>
-            <div className="analytics-kpi-value" style={{ color: k.color }}>{k.value}</div>
+            <div className="analytics-kpi-value" style={{ color: k.color }}>{k.arrow !== undefined && <TrendArrow positive={k.arrow} size={15} />}{k.value}</div>
           </div>
         ))}
       </motion.div>
@@ -235,7 +237,7 @@ export default function AnalyticsPage() {
 
           {/* Monthly trend */}
           <motion.div className="analytics-card analytics-card-wide" variants={staggerItem}>
-            <h3 className="analytics-card-title">Monthly trend — last 12 months</h3>
+            <h2 className="analytics-card-title">Monthly trend — last 12 months</h2>
             {trendData.length === 0 ? (
               <div className="analytics-empty">No transactions yet.</div>
             ) : (
@@ -257,7 +259,7 @@ export default function AnalyticsPage() {
 
           {/* Category donut */}
           <motion.div className="analytics-card" variants={staggerItem}>
-            <h3 className="analytics-card-title">Spending by category</h3>
+            <h2 className="analytics-card-title">Spending by category</h2>
             {categoryData.length === 0 ? (
               <div className="analytics-empty">No expenses this month.</div>
             ) : (
@@ -294,7 +296,7 @@ export default function AnalyticsPage() {
 
           {/* Daily spend bars */}
           <motion.div className="analytics-card" variants={staggerItem}>
-            <h3 className="analytics-card-title">Daily spending</h3>
+            <h2 className="analytics-card-title">Daily spending</h2>
             {dailyData.every((d) => d.amount === 0) ? (
               <div className="analytics-empty">No expenses this month.</div>
             ) : (
@@ -313,7 +315,7 @@ export default function AnalyticsPage() {
 
           {/* Payment method */}
           <motion.div className="analytics-card" variants={staggerItem}>
-            <h3 className="analytics-card-title">Payment method split</h3>
+            <h2 className="analytics-card-title">Payment method split</h2>
             {methodData.length === 0 ? (
               <div className="analytics-empty">No expenses this month.</div>
             ) : (
@@ -347,7 +349,7 @@ export default function AnalyticsPage() {
 
           {/* Budget vs actual */}
           <motion.div className="analytics-card analytics-card-wide" variants={staggerItem}>
-            <h3 className="analytics-card-title">Budget vs actual</h3>
+            <h2 className="analytics-card-title">Budget vs actual</h2>
             {budgetData.length === 0 ? (
               <div className="analytics-empty">No budget limits set. Add them in Settings → Budgets.</div>
             ) : (
@@ -372,16 +374,16 @@ export default function AnalyticsPage() {
 
           {/* No-spend calendar */}
           <motion.div className="analytics-card" variants={staggerItem}>
-            <h3 className="analytics-card-title">
+            <h2 className="analytics-card-title">
               No-spend calendar
               <span className="analytics-streak-badge"> 🔥 {streak} day streak</span>
-            </h3>
+            </h2>
             <NoSpendCalendar {...calendarData} />
           </motion.div>
 
           {/* Top spending days */}
           <motion.div className="analytics-card" variants={staggerItem}>
-            <h3 className="analytics-card-title">Biggest spending days</h3>
+            <h2 className="analytics-card-title">Biggest spending days</h2>
             {dailyData.every((d) => d.amount === 0) ? (
               <div className="analytics-empty">No expenses this month.</div>
             ) : (
@@ -464,24 +466,28 @@ function NoSpendCalendar({
           const isToday = dateStr === todayStr
           const pct = spend / maxSpend
 
+          // The shade alone can't carry the meaning, so each level also has a mark.
           let cls = 'nsc-day'
-          if (spend === 0) cls += ' nsc-no-spend'
-          else if (pct < 0.33) cls += ' nsc-spend-low'
-          else if (pct < 0.66) cls += ' nsc-spend-med'
-          else cls += ' nsc-spend-high'
+          let mark = ''
+          let level = 'no spend'
+          if (spend === 0) { cls += ' nsc-no-spend'; mark = '✓' }
+          else if (pct < 0.33) { cls += ' nsc-spend-low'; mark = '•'; level = 'low spend' }
+          else if (pct < 0.66) { cls += ' nsc-spend-med'; mark = '••'; level = 'medium spend' }
+          else { cls += ' nsc-spend-high'; mark = '•••'; level = 'high spend' }
           if (isToday) cls += ' nsc-today'
 
           return (
-            <div key={day} className={cls} title={spend > 0 ? formatCurrency(spend) : 'No spend'}>
+            <div key={day} className={cls} title={spend > 0 ? formatCurrency(spend) : 'No spend'} role="img" aria-label={`Day ${day}: ${level}${spend > 0 ? `, ${formatCurrency(spend)}` : ''}`}>
               <span className="nsc-day-num">{day}</span>
+              <span className="nsc-day-mark" aria-hidden="true">{mark}</span>
             </div>
           )
         })}
       </div>
       <div className="nsc-legend">
-        <div className="nsc-legend-item"><div className="nsc-legend-swatch" style={{ background: 'rgba(79, 169, 129,0.4)' }} />No spend</div>
-        <div className="nsc-legend-item"><div className="nsc-legend-swatch" style={{ background: 'rgba(201, 115, 110,0.25)' }} />Low spend</div>
-        <div className="nsc-legend-item"><div className="nsc-legend-swatch" style={{ background: 'rgba(194, 91, 85,0.5)' }} />High spend</div>
+        <div className="nsc-legend-item"><div className="nsc-legend-swatch" style={{ background: 'rgba(79, 169, 129,0.4)' }} />✓ No spend</div>
+        <div className="nsc-legend-item"><div className="nsc-legend-swatch" style={{ background: 'rgba(201, 115, 110,0.25)' }} />• Low spend</div>
+        <div className="nsc-legend-item"><div className="nsc-legend-swatch" style={{ background: 'rgba(194, 91, 85,0.5)' }} />••• High spend</div>
       </div>
     </div>
   )

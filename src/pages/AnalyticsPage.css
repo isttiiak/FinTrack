@@ -213,6 +213,17 @@
   z-index: 1;
   position: relative;
 }
+.nsc-day-mark {
+  position: absolute;
+  bottom: 1px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 7px;
+  line-height: 1;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+}
 .nsc-no-spend {
   background: rgba(79, 169, 129, 0.15);
 }

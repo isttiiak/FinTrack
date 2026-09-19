@@ -11,6 +11,7 @@ export default function MonthPicker({ value, onChange }: MonthPickerProps) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="month-input"
+        aria-label="Month"
       />
     </div>
   )

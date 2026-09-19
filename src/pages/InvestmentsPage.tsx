@@ -1,3 +1,4 @@
+import TrendArrow from '@/components/common/TrendArrow'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -92,7 +93,7 @@ export default function InvestmentsPage() {
             <div className="inv-sum-icon"><BarChart3 size={17} /></div>
             <div className="inv-sum-label">Net P&amp;L</div>
             <div className="inv-sum-value" style={{ color: overallPL >= 0 ? 'var(--accent-teal)' : 'var(--accent-coral)' }}>
-              {overallPL >= 0 ? '+' : ''}{formatCurrency(overallPL)}
+              <TrendArrow positive={overallPL >= 0} />{overallPL >= 0 ? '+' : ''}{formatCurrency(overallPL)}
             </div>
             <div className="inv-sum-sub">
               {overallROI !== null ? `${overallROI >= 0 ? '+' : ''}${overallROI.toFixed(1)}% ROI` : 'No committed amount set'}

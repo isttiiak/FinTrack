@@ -180,13 +180,13 @@ export default function ProfilePage() {
           <motion.div className="pf-row" variants={staggerItem}>
             <div className="profilepage-pf-field">
               <label className="pf-label">Currency</label>
-              <select {...register('currency')} className="pf-select" disabled={isDemo}>
+              <select {...register('currency')} aria-label="Currency" className="pf-select" disabled={isDemo}>
                 {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div className="profilepage-pf-field">
               <label className="pf-label">Timezone</label>
-              <select {...register('timezone')} className="pf-select" disabled={isDemo}>
+              <select {...register('timezone')} aria-label="Timezone" className="pf-select" disabled={isDemo}>
                 {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz}</option>)}
               </select>
             </div>

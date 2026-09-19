@@ -106,7 +106,7 @@ export default function Sidebar() {
         </button>
 
         {/* Main nav */}
-        <nav className="sidebar-nav">
+        <nav className="sidebar-nav" aria-label="Main">
           {NAV_ITEMS.map(({ to, label, icon: Icon }) => {
             const active = location === to || location.startsWith(to + '/')
             return (
