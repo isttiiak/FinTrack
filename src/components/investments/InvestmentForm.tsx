@@ -1,4 +1,5 @@
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
+import SmartAmountInput from '@/components/common/SmartAmountInput'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -40,7 +41,7 @@ export default function InvestmentForm({ editing, onClose }: InvestmentFormProps
   const { mutateAsync: update, isPending: updating } = useUpdateInvestment()
   const isPending = creating || updating
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
+  const { register, control, handleSubmit, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: editing ? {
       name:             editing.name,
@@ -123,10 +124,17 @@ export default function InvestmentForm({ editing, onClose }: InvestmentFormProps
 
           <div className="invf-field">
             <label className="invf-label">Committed amount ({getActiveCurrencySymbol()}) <span className="req">*</span></label>
-            <input
-              {...register('committed_amount', { setValueAs: (v) => (v === '' || v === null || v === undefined) ? undefined : Number(v) })}
-              type="number" step="0.01" placeholder="0.00"
-              className={cn('invf-input invf-amount-input', errors.committed_amount && 'invf-input-error')}
+            <Controller
+              control={control}
+              name="committed_amount"
+              render={({ field }) => (
+                <SmartAmountInput
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="0.00"
+                  className={cn('invf-input invf-amount-input', errors.committed_amount && 'invf-input-error')}
+                />
+              )}
             />
             <p className="field-hint">Total capital you have agreed to invest in this deal.</p>
             {errors.committed_amount && <p className="invf-error">{errors.committed_amount.message}</p>}
@@ -146,10 +154,17 @@ export default function InvestmentForm({ editing, onClose }: InvestmentFormProps
 
           <div className="invf-field">
             <label className="invf-label">Current market value ({getActiveCurrencySymbol()}) <span className="invf-optional">(optional — update any time)</span></label>
-            <input
-              {...register('market_value', { setValueAs: (v) => (v === '' || v === null || v === undefined) ? undefined : Number(v) })}
-              type="number" step="0.01" placeholder="Current value of your investment"
-              className="invf-input"
+            <Controller
+              control={control}
+              name="market_value"
+              render={({ field }) => (
+                <SmartAmountInput
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="Current value of your investment"
+                  className="invf-input"
+                />
+              )}
             />
             <p className="field-hint">Leave blank if unknown. You can update this later as value changes.</p>
           </div>

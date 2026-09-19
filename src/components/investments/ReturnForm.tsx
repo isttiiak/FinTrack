@@ -1,4 +1,5 @@
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
+import SmartAmountInput from '@/components/common/SmartAmountInput'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -36,7 +37,7 @@ export default function ReturnForm({ investment, onClose }: ReturnFormProps) {
   const lastMethod = localStorage.getItem(LS_METHOD_KEY) ?? 'Cash'
   const lastAccount = localStorage.getItem(LS_ACCOUNT_KEY) ?? 'Cash'
 
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
+  const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { return_date: toISODateString(new Date()), payment_method: lastMethod, account: lastAccount },
   })
@@ -88,11 +89,18 @@ export default function ReturnForm({ investment, onClose }: ReturnFormProps) {
         <form onSubmit={handleSubmit(onSubmit)} className="retf-form">
           <div className="retf-field">
             <label className="retf-label">Amount received ({getActiveCurrencySymbol()})</label>
-            <input
-              {...register('amount', { valueAsNumber: true })}
-              type="number" step="0.01" placeholder="0.00"
-              className={cn('retf-input retf-amount', errors.amount && 'retf-input-error')}
-              autoFocus
+            <Controller
+              control={control}
+              name="amount"
+              render={({ field }) => (
+                <SmartAmountInput
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="0.00"
+                  className={cn('retf-input retf-amount', errors.amount && 'retf-input-error')}
+                  autoFocus
+                />
+              )}
             />
             {errors.amount && <p className="retf-error">{errors.amount.message}</p>}
           </div>

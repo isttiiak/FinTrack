@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useForm, Controller } from 'react-hook-form'
+import SmartAmountInput from '@/components/common/SmartAmountInput'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -365,10 +366,17 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
           {/* Amount */}
           <div className="qle-field">
             <label className="qle-label">Amount ({getActiveCurrencySymbol()})</label>
-            <input
-              {...register('total_amount', { valueAsNumber: true })}
-              type="number" step="0.01" placeholder="0.00"
-              className={cn('qle-input qle-amount-input', errors.total_amount && 'qle-input-error')}
+            <Controller
+              control={control}
+              name="total_amount"
+              render={({ field }) => (
+                <SmartAmountInput
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="0.00"
+                  className={cn('qle-input qle-amount-input', errors.total_amount && 'qle-input-error')}
+                />
+              )}
             />
             {errors.total_amount && <p className="qle-error">{errors.total_amount.message}</p>}
           </div>

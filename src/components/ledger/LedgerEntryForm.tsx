@@ -1,4 +1,5 @@
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
+import SmartAmountInput from '@/components/common/SmartAmountInput'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -37,7 +38,7 @@ export default function LedgerEntryForm({ personId, editing, defaultType = 'Lent
   const { mutateAsync: update, isPending: updating } = useUpdateLedgerEntry()
   const isPending = creating || updating
 
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
+  const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: editing
       ? {
@@ -115,11 +116,18 @@ export default function LedgerEntryForm({ personId, editing, defaultType = 'Lent
           {/* Amount */}
           <div className="lef-field">
             <label className="lef-label">Amount ({getActiveCurrencySymbol()})</label>
-            <input
-              {...register('total_amount', { valueAsNumber: true })}
-              type="number" step="0.01" placeholder="0.00"
-              className={cn('lef-input lef-amount-input', errors.total_amount && 'lef-input-error')}
-              autoFocus={!editing}
+            <Controller
+              control={control}
+              name="total_amount"
+              render={({ field }) => (
+                <SmartAmountInput
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="0.00"
+                  className={cn('lef-input lef-amount-input', errors.total_amount && 'lef-input-error')}
+                  autoFocus={!editing}
+                />
+              )}
             />
             {errors.total_amount && <p className="lef-error">{errors.total_amount.message}</p>}
           </div>

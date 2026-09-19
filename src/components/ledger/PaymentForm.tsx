@@ -1,4 +1,5 @@
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
+import SmartAmountInput from '@/components/common/SmartAmountInput'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -32,7 +33,7 @@ interface PaymentFormProps {
 export default function PaymentForm({ personId, personName, ledgerType, remaining, onClose }: PaymentFormProps) {
   const { mutateAsync: createPayment, isPending } = useCreatePayment()
 
-  const { register, handleSubmit, watch, setValue, setError, formState: { errors } } = useForm<FormValues>({
+  const { register, control, handleSubmit, watch, setValue, setError, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       amount:         remaining,
@@ -84,11 +85,18 @@ export default function PaymentForm({ personId, personName, ledgerType, remainin
         <form onSubmit={handleSubmit(onSubmit)} className="payf-form">
           <div className="payf-field">
             <label className="payf-label">Amount ({getActiveCurrencySymbol()})</label>
-            <input
-              {...register('amount', { valueAsNumber: true })}
-              type="number" step="0.01" placeholder="0.00"
-              className={cn('payf-input payf-amount-input', errors.amount && 'payf-input-error')}
-              autoFocus
+            <Controller
+              control={control}
+              name="amount"
+              render={({ field }) => (
+                <SmartAmountInput
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="0.00"
+                  className={cn('payf-input payf-amount-input', errors.amount && 'payf-input-error')}
+                  autoFocus
+                />
+              )}
             />
             {errors.amount && <p className="payf-error">{errors.amount.message}</p>}
           </div>
