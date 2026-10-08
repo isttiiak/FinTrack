@@ -1,0 +1,206 @@
+/* Styles for InvestmentAnalytics.tsx — the Investments page's Analytics tab. */
+.ia-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 14px;
+}
+.ia-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  min-width: 0;
+}
+.ia-card-wide {
+  grid-column: 1 / -1;
+}
+.ia-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+}
+.ia-card-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+.ia-empty {
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 24px 8px;
+  text-align: center;
+}
+
+.ia-legend {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ia-legend-item {
+  display: grid;
+  grid-template-columns: 10px 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.ia-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+.ia-legend-name {
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ia-legend-share {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.ia-legend-value {
+  color: var(--text-primary);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.ia-table {
+  display: flex;
+  flex-direction: column;
+}
+.ia-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 70px minmax(110px, 170px);
+  gap: 8px;
+  align-items: center;
+  padding: 9px 6px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.12s;
+}
+.ia-row:hover {
+  background: var(--bg-hover);
+}
+.ia-row:last-child {
+  border-bottom: none;
+}
+.ia-row > span:not(:first-child) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.ia-row-head {
+  cursor: default;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ia-row-head:hover {
+  background: none;
+}
+.ia-row-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ia-pos {
+  color: var(--accent-primary);
+}
+.ia-neg {
+  color: var(--accent-coral);
+}
+.ia-muted {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.ia-maturity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ia-maturity {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    transform 0.12s;
+}
+.ia-maturity:hover {
+  background: var(--bg-hover);
+  transform: scale(1.005);
+}
+.ia-maturity-matured {
+  border-left-color: var(--text-muted);
+}
+.ia-maturity-soon {
+  border-left-color: var(--accent-gold);
+}
+.ia-maturity-later {
+  border-left-color: var(--accent-primary);
+}
+.ia-maturity-date {
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.ia-maturity-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.ia-maturity-status {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.ia-maturity-soon .ia-maturity-status {
+  color: var(--accent-gold);
+  font-weight: 600;
+}
+.ia-maturity-amount {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 560px) {
+  .ia-row {
+    grid-template-columns: minmax(0, 1fr) 60px minmax(90px, 130px);
+    font-size: 12px;
+  }
+  .ia-maturity {
+    grid-template-columns: 1fr auto;
+    row-gap: 2px;
+  }
+  .ia-maturity-date {
+    grid-column: 1 / -1;
+    font-size: 11px;
+  }
+}

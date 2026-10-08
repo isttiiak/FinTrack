@@ -11,11 +11,12 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 import { useInvestments } from '@/hooks/useInvestments'
 import InvestmentForm from '@/components/investments/InvestmentForm'
 import InvestmentTransactionLogs from '@/components/investments/InvestmentTransactionLogs'
+import InvestmentAnalytics from '@/components/investments/InvestmentAnalytics'
 import ErrorBanner from '@/components/common/ErrorBanner'
 import SearchToggle from '@/components/common/SearchToggle'
 import './InvestmentsPage.css'
 
-type InvTab = 'portfolio' | 'logs'
+type InvTab = 'portfolio' | 'analytics' | 'logs'
 
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -123,6 +124,9 @@ export default function InvestmentsPage() {
           <button className={`inv-tab ${activeTab === 'portfolio' ? 'inv-tab-active' : ''}`} onClick={() => setActiveTab('portfolio')}>
             💼 Portfolio
           </button>
+          <button className={`inv-tab ${activeTab === 'analytics' ? 'inv-tab-active' : ''}`} onClick={() => setActiveTab('analytics')}>
+            📊 Analytics
+          </button>
           <button className={`inv-tab ${activeTab === 'logs' ? 'inv-tab-active' : ''}`} onClick={() => setActiveTab('logs')}>
             📋 Transaction logs
           </button>
@@ -131,6 +135,8 @@ export default function InvestmentsPage() {
           <SearchToggle value={search} onChange={setSearch} placeholder="Search investments…" />
         )}
       </div>
+
+      {activeTab === 'analytics' && <InvestmentAnalytics investments={investments} />}
 
       {/* Transaction logs tab */}
       {activeTab === 'logs' && (

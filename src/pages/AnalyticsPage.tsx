@@ -15,6 +15,7 @@ import SpendingForecast from '@/components/analytics/SpendingForecast'
 import TrendArrow from '@/components/common/TrendArrow'
 import ErrorBanner from '@/components/common/ErrorBanner'
 import { useIsExpensesOnly } from '@/hooks/useTrackingMode'
+import { CHART_COLORS, TOOLTIP_STYLE } from '@/lib/chartTheme'
 import './AnalyticsPage.css'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -35,19 +36,6 @@ function fmtK(v: number) {
 // fine for single-value usage but would silently merge two category slices
 // into an indistinguishable color in this donut/legend. These 10 are curated
 // to stay visually distinct while remaining inside the muted emerald/gold family.
-const CHART_COLORS = [
-  '#4FA981', '#C2A24E', '#C9736E', '#3E9B72',
-  '#C25B55', '#B4923F', '#8A968C',
-  '#B5677A', '#6B8CAE', '#5FA88F',
-]
-const TOOLTIP_STYLE = {
-  contentStyle: {
-    background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 10,
-    color: 'var(--text-primary)', fontSize: 12,
-  },
-  itemStyle: { color: 'var(--text-primary)' },
-  labelStyle: { color: 'var(--text-secondary)', marginBottom: 4 },
-}
 
 type Tab = 'overview' | 'habits' | 'ai'
 

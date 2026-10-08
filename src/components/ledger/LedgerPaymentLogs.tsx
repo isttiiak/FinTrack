@@ -10,8 +10,8 @@ import { useUIStore } from '@/stores/uiStore'
 import type { LedgerPayment, PersonWithLedgers } from '@/types/ledger.types'
 import type { LedgerType } from '@/lib/constants'
 import { fadeUp } from '@/lib/animations'
-import './LedgerPaymentLogs.css'
 import { formatPaymentMethod } from '@/lib/region'
+import './LedgerPaymentLogs.css'
 
 // One row per lend/debt entry OR payment, merged into a single
 // chronological timeline per (person, type) with a running balance —

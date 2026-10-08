@@ -20,8 +20,8 @@ import LedgerPaymentLogs from '@/components/ledger/LedgerPaymentLogs'
 import ErrorBanner from '@/components/common/ErrorBanner'
 import type { PersonLedger, PersonWithLedgers } from '@/types/ledger.types'
 import type { LedgerType } from '@/lib/constants'
-import './PersonDetailPage.css'
 import { formatPaymentMethod } from '@/lib/region'
+import './PersonDetailPage.css'
 
 const STATUS_STYLE = {
   Pending: { bg: 'rgba(201, 115, 110,0.12)', color: '#C9736E', label: '⏳ Pending' },

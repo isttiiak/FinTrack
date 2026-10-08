@@ -11,7 +11,10 @@ import DeleteButton from '@/components/common/DeleteButton'
 import EmptyState from '@/components/common/EmptyState'
 import ErrorBanner from '@/components/common/ErrorBanner'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate, formatDateShort, toISODateString } from '@/lib/utils'
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts'
+import { TOOLTIP_STYLE, AXIS_TICK, GRID_STROKE } from '@/lib/chartTheme'
+import { cumulativeSeries, returnSummary } from '@/lib/investmentAnalytics'
 import { useInvestments, useDeleteReturn, useDeleteInvestmentPayment, useDeleteInvestment } from '@/hooks/useInvestments'
 import InvestmentForm from '@/components/investments/InvestmentForm'
 import ReturnForm from '@/components/investments/ReturnForm'
@@ -93,6 +96,10 @@ export default function InvestmentDetailPage() {
   // valuation was set, contradicting a correctly negative ROI right next to it.
   const portfolioValue = inv.market_value ?? null
   const paymentProgress = committed > 0 ? Math.min(100, (totalPaid / committed) * 100) : 0
+
+  const series = cumulativeSeries(inv)
+  const summary = returnSummary(inv, toISODateString(new Date()))
+  const fmtPct = (r: number) => `${r >= 0 ? '+' : ''}${(r * 100).toFixed(1)}%`
 
   const payments  = (inv.payments  ?? []) as InvestmentPayment[]
   const returns   = (inv.returns   ?? []) as InvestmentReturn[]
@@ -182,7 +189,11 @@ export default function InvestmentDetailPage() {
             {profitLoss !== undefined ? <><TrendArrow positive={profitLoss >= 0} />{`${profitLoss >= 0 ? '+' : ''}${formatCurrency(profitLoss)}`}</> : '—'}
           </div>
           <div className="idp-kpi-sub">
-            {roi !== undefined ? `${roi >= 0 ? '+' : ''}${roi.toFixed(1)}% ROI` : '—'}
+            {/* With a valuation, show the value-inclusive return — the plain ROI only
+                counts cash back, so it can read -92% next to a +45%/yr investment */}
+            {summary.total != null
+              ? `${fmtPct(summary.total)} incl. value${summary.annual != null ? ` · ${fmtPct(summary.annual)}/yr` : ''}`
+              : roi !== undefined ? `${roi >= 0 ? '+' : ''}${roi.toFixed(1)}% ROI` : '—'}
           </div>
         </motion.div>
 
@@ -193,6 +204,24 @@ export default function InvestmentDetailPage() {
           <div className="idp-kpi-sub">{portfolioValue != null ? 'Market value' : 'Not valued yet'}</div>
         </motion.div>
       </motion.div>
+
+      {/* Money in vs money back, over time */}
+      {series.length >= 2 && (
+        <div className="idp-chart-card">
+          <h2 className="idp-chart-title">Paid in vs returned over time</h2>
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={series} margin={{ top: 4, right: 12, bottom: 0, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+              <XAxis dataKey="date" tickFormatter={(d) => formatDateShort(d)} tick={AXIS_TICK} axisLine={false} tickLine={false} minTickGap={24} />
+              <YAxis tickFormatter={(v) => formatCurrency(Number(v))} tick={AXIS_TICK} axisLine={false} tickLine={false} width={72} />
+              <Tooltip {...TOOLTIP_STYLE} labelFormatter={(d) => formatDate(String(d))} formatter={(v) => formatCurrency(Number(v ?? 0))} />
+              <Legend wrapperStyle={{ fontSize: 12, color: '#8A968C' }} />
+              <Line type="stepAfter" dataKey="paid" name="Paid in" stroke="#C9736E" strokeWidth={2} dot={false} />
+              <Line type="stepAfter" dataKey="returned" name="Returned" stroke="#4FA981" strokeWidth={2} strokeDasharray="5 3" dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
 
       {inv.notes && (
         <div className="idp-notes-card">
