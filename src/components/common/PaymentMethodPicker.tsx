@@ -4,6 +4,8 @@ import { ChevronDown, Plus, Check, X } from 'lucide-react'
 import { getMethodGroup } from '@/lib/constants'
 import type { PaymentMethod, Account, PaymentMethodGroup } from '@/lib/constants'
 import { getMfsProviders, setMfsProviders, getBankAccounts, setBankAccounts } from '@/lib/paymentMethodPrefs'
+import { REGION_PRESETS, regionForCurrency, formatPaymentMethod, WALLET_PREFIX } from '@/lib/region'
+import { getActiveCurrency } from '@/lib/utils'
 import './PaymentMethodPicker.css'
 
 interface PaymentMethodPickerProps {
@@ -36,6 +38,8 @@ export default function PaymentMethodPicker({
   const [customAccountMode, setCustomAccountMode] = useState(false)
   const [customAccountVal, setCustomAccountVal] = useState('')
 
+  // "MFS" (bKash/Nagad/Rocket) for BDT users, "Wallet" (PayPal/Wise/…) elsewhere
+  const preset = REGION_PRESETS[regionForCurrency(getActiveCurrency())]
   const [mfsProviders, setMfsProvidersState] = useState<string[]>(getMfsProviders)
   const [bankAccounts, setBankAccountsState] = useState<string[]>(getBankAccounts)
 
@@ -61,14 +65,13 @@ export default function PaymentMethodPicker({
   function selectMFSSub(m: string) {
     onMethodChange(m)
     // auto-map MFS - bKash → bKash, MFS - Nagad → Nagad, etc.
-    const label = m.startsWith('MFS - ') ? m.replace('MFS - ', '') : m
-    onAccountChange(label)
+    onAccountChange(formatPaymentMethod(m))
   }
 
   function saveCustomMethod() {
     const name = newMethodName.trim()
     if (!name) return
-    const fullName = `MFS - ${name}`
+    const fullName = `${WALLET_PREFIX}${name}`
     const updated = [...mfsProviders, fullName]
     setMfsProvidersState(updated); setMfsProviders(updated)
     setAddingMethod(false); setNewMethodName('')
@@ -99,7 +102,7 @@ export default function PaymentMethodPicker({
             <button key={g} type="button"
               className={`pmp-group-chip ${selectedGroup === g ? 'pmp-group-active' : ''}`}
               onClick={() => selectGroup(g)}>
-              {GROUP_META[g].icon} {GROUP_META[g].label}
+              {GROUP_META[g].icon} {g === 'MFS' ? preset.walletLabel : GROUP_META[g].label}
             </button>
           ))}
         </div>
@@ -112,10 +115,10 @@ export default function PaymentMethodPicker({
             exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }} style={{ overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
               <label className="pmp-label" style={{ margin: 0 }}>
-                MFS provider <span style={{ color: 'var(--accent-red)', fontSize: 11 }}>*</span>
+                {preset.walletProviderLabel} <span style={{ color: 'var(--accent-red)', fontSize: 11 }}>*</span>
               </label>
               <button type="button" className="pmp-add-trigger" onClick={() => setAddingMethod((v) => !v)}
-                title="Add a custom MFS provider">
+                title={`Add a custom ${preset.walletProviderLabel.toLowerCase()}`}>
                 <Plus size={12} /> Add provider
               </button>
             </div>
@@ -126,7 +129,7 @@ export default function PaymentMethodPicker({
                   initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }} style={{ overflow: 'hidden' }}>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '0 0 10px' }}>
-                    <input className="pmp-add-input" placeholder="MFS provider name…" value={newMethodName} maxLength={40}
+                    <input className="pmp-add-input" placeholder={`${preset.walletProviderLabel} name…`} value={newMethodName} maxLength={40}
                       onChange={(e) => setNewMethodName(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && saveCustomMethod()} autoFocus />
                     <button type="button" className="pmp-add-save" onClick={saveCustomMethod}
@@ -146,7 +149,7 @@ export default function PaymentMethodPicker({
                 <button key={m} type="button"
                   className={`pmp-sub-chip ${method === m ? 'pmp-sub-active' : ''}`}
                   onClick={() => selectMFSSub(m)}>
-                  {m.replace('MFS - ', '')}
+                  {formatPaymentMethod(m)}
                 </button>
               ))}
             </div>

@@ -1,7 +1,10 @@
-import { PAYMENT_METHOD_GROUPS, BANK_ACCOUNTS } from './constants'
+import { getActiveCurrency } from './utils'
+import { REGION_PRESETS, regionForCurrency } from './region'
 
-// Persisted per-user customization (visibility + order) of the MFS provider
-// list and the shared bank-accounts list. Each stored value is the full
+// Persisted per-user customization (visibility + order) of the MFS / wallet
+// provider list and the shared bank-accounts list. Until a user customises a
+// list, its defaults come from their region's preset (lib/region.ts) — so a
+// BDT user sees bKash/Nagad/Rocket and a USD user sees PayPal/Wise/Revolut. Each stored value is the full
 // ordered, *visible* list — an item missing from it is hidden; array order
 // is display order. Built-in defaults are just the initial value, not a
 // protected subset, so users can reorder, rename, or hide any entry
@@ -18,7 +21,7 @@ function saveMap(key: string, val: Record<string, string[]>) {
 
 export function getMfsProviders(): string[] {
   const map = readMap(LS_METHOD_LIST)
-  return map.MFS ?? [...PAYMENT_METHOD_GROUPS.MFS.methods]
+  return map.MFS ?? [...REGION_PRESETS[regionForCurrency(getActiveCurrency())].wallets]
 }
 export function setMfsProviders(list: string[]) {
   const map = readMap(LS_METHOD_LIST)
@@ -33,7 +36,7 @@ export function resetMfsProviders() {
 
 export function getBankAccounts(): string[] {
   const map = readMap(LS_ACCOUNT_LIST)
-  return map.BankAccounts ?? [...BANK_ACCOUNTS]
+  return map.BankAccounts ?? [...REGION_PRESETS[regionForCurrency(getActiveCurrency())].bankAccounts]
 }
 export function setBankAccounts(list: string[]) {
   const map = readMap(LS_ACCOUNT_LIST)

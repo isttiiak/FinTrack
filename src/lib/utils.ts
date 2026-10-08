@@ -27,6 +27,10 @@ export function setActiveCurrency(currency: string): void {
   activeCurrency = currency
 }
 
+export function getActiveCurrency(): string {
+  return activeCurrency
+}
+
 export function formatCurrency(amount: number, currency = activeCurrency): string {
   if (currency === 'BDT') {
     return `৳${amount.toLocaleString('en-BD', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`

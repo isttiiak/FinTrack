@@ -11,6 +11,7 @@ import type { LedgerPayment, PersonWithLedgers } from '@/types/ledger.types'
 import type { LedgerType } from '@/lib/constants'
 import { fadeUp } from '@/lib/animations'
 import './LedgerPaymentLogs.css'
+import { formatPaymentMethod } from '@/lib/region'
 
 // One row per lend/debt entry OR payment, merged into a single
 // chronological timeline per (person, type) with a running balance —
@@ -254,7 +255,7 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
                     {row.ledgerType === 'Lent' ? '💸 Lent' : '🏦 Debt'}
                   </span>
                   {row.reason && <span>· {row.reason}</span>}
-                  {row.paymentMethod && <span>· {row.paymentMethod}</span>}
+                  {row.paymentMethod && <span>· {formatPaymentMethod(row.paymentMethod)}</span>}
                   {row.notes && <span>· {row.notes}</span>}
                 </div>
               </div>

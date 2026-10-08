@@ -14,4 +14,7 @@ export interface UserProfile {
   notify_weekly_digest: boolean
   notify_monthly_digest: boolean
   transaction_mode: 'expenses_only' | 'both'
+  // null = new account not yet onboarded (016_onboarding_region.sql); absent
+  // on databases that haven't run 016, which the app treats as onboarded
+  onboarded_at?: string | null
 }

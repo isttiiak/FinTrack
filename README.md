@@ -15,7 +15,7 @@
 
 ## What is FinTrack?
 
-FinTrack is an open-source personal finance app built for the Bangladeshi context but usable by anyone. It combines expense tracking, a lent & debt ledger, an investment portfolio tracker, and a full AI assistant — all in a premium dark UI (muted Emerald & Gold) with smooth animations.
+FinTrack is an open-source personal finance app built for Bangladesh and for everyone else — especially international students and families supporting each other across borders. bKash/Nagad and ৳ work out of the box, and new accounts outside Bangladesh start with their own currency, timezone and a neutral category set. It combines expense tracking, a lent & debt ledger, an investment portfolio tracker, and a full AI assistant — all in a premium dark UI (muted Emerald & Gold) with smooth animations.
 
 **Everything is yours.** Your data lives in your own Supabase project. You can export it anytime, delete it anytime, and self-host the app in under 10 minutes.
 
@@ -26,6 +26,7 @@ FinTrack is an open-source personal finance app built for the Bangladeshi contex
 ## Features
 
 ### 💸 Expenses
+
 - Add, edit, delete transactions (Expense / Income)
 - Smart category system with main groups and sub-categories
 - **AI-powered category suggestion** — type a description, Groq auto-suggests the category
@@ -38,6 +39,7 @@ FinTrack is an open-source personal finance app built for the Bangladeshi contex
 - **Floating calculator** — a global, draggable calculator reachable from every page, with copy-to-clipboard
 
 ### 🏦 Lent & Debt
+
 - Track money you've lent and owe across people
 - Full payment history per entry with running remaining balance
 - Tabs: All · Lent · Debt · Summary · Payment Logs
@@ -45,6 +47,7 @@ FinTrack is an open-source personal finance app built for the Bangladeshi contex
 - Two-step delete confirmation on all entries
 
 ### 📈 Investments
+
 - Track committed capital, installment payments, and returns
 - ROI %, P&L, and portfolio total computed live
 - Return types: Profit / Capital Return / Dividend / Rent
@@ -52,30 +55,33 @@ FinTrack is an open-source personal finance app built for the Bangladeshi contex
 - Detail page per investment with payments and returns tabs
 
 ### 🤖 AI Insights (Powered by Groq — free)
+
 All features use your own free Groq API key (14,400 requests/day, no credit card):
 
-| Feature | What it does |
-|---------|-------------|
-| **Smart Categorization** | Auto-suggests category while you type the description |
-| **Anomaly Detection** | Flags spending spikes vs your 3-month average |
-| **Weekly Digest** | Friendly 7-day summary with highlights and tips |
-| **Budget vs Actual Analysis** | Explains WHY you're over/under budget |
-| **Spending Patterns** | Identifies expensive habits over 6 months |
-| **Natural Language Chat** | Ask "How much did I spend on food?" in plain English |
-| **Budget Recommendations** | Suggests realistic budgets from your actual spending |
-| **Goal-Based Plan** | Enter a savings goal → get a month-by-month spending plan |
-| **Benchmarking** | Compares your spending vs typical Bangladesh household |
-| **Debt Payoff Strategy** | Snowball vs Avalanche analysis from your ledger data |
+| Feature                       | What it does                                                  |
+| ----------------------------- | ------------------------------------------------------------- |
+| **Smart Categorization**      | Auto-suggests category while you type the description         |
+| **Anomaly Detection**         | Flags spending spikes vs your 3-month average                 |
+| **Weekly Digest**             | Friendly 7-day summary with highlights and tips               |
+| **Budget vs Actual Analysis** | Explains WHY you're over/under budget                         |
+| **Spending Patterns**         | Identifies expensive habits over 6 months                     |
+| **Natural Language Chat**     | Ask "How much did I spend on food?" in plain English          |
+| **Budget Recommendations**    | Suggests realistic budgets from your actual spending          |
+| **Goal-Based Plan**           | Enter a savings goal → get a month-by-month spending plan     |
+| **Benchmarking**              | Compares your spending with typical households where you live |
+| **Debt Payoff Strategy**      | Snowball vs Avalanche analysis from your ledger data          |
 
 ### ⚙️ Settings & Preferences
+
 - **Data Preferences** — full CRUD for categories (tree view), payment methods, and accounts
-- Payment method smart picker: Cash → auto account · MFS → bKash/Nagad/Rocket · Card/Bank Transfer → bank selector
+- Payment method smart picker: Cash → auto account · MFS/Wallet → bKash/Nagad/Rocket in Bangladesh, PayPal/Wise/Revolut elsewhere (fully editable) · Card/Bank Transfer → bank selector
 - Add custom payment methods and bank accounts
 - Budget limits management
 - CSV import with drag-and-drop
 - Full data export + account deletion (30-day soft-delete recovery)
 
 ### 📊 Analytics
+
 - Monthly trend (12 months, expense + income lines)
 - Category donut for selected month
 - Daily spending bars
@@ -88,35 +94,37 @@ All features use your own free Groq API key (14,400 requests/day, no credit card
 
 ## Tech Stack
 
-| Layer | Tech |
-|-------|------|
-| Framework | React 19 + Vite 6 |
-| Language | TypeScript 5.7 (strict, `.tsx`/`.ts` only) |
-| Styling | Tailwind CSS v4 (CSS-first, no config file) |
-| Routing | TanStack Router v2 (type-safe) |
-| Data fetching | TanStack Query v5 |
-| State | Zustand |
-| Animations | Framer Motion v12 |
-| Forms | React Hook Form v8 + Zod v4 |
-| Charts | Recharts |
-| Icons | Lucide React |
-| Backend | Supabase (PostgreSQL 16 + Auth + RLS) |
-| AI | Groq API (llama-3.1-8b-instant, browser-direct BYOK) |
-| Export | SheetJS (Excel) + Papa Parse (CSV) |
-| PWA | vite-plugin-pwa (installable, offline app-shell caching) |
-| Hosting | Vercel |
-| Package manager | pnpm |
+| Layer           | Tech                                                     |
+| --------------- | -------------------------------------------------------- |
+| Framework       | React 19 + Vite 6                                        |
+| Language        | TypeScript 5.7 (strict, `.tsx`/`.ts` only)               |
+| Styling         | Tailwind CSS v4 (CSS-first, no config file)              |
+| Routing         | TanStack Router v2 (type-safe)                           |
+| Data fetching   | TanStack Query v5                                        |
+| State           | Zustand                                                  |
+| Animations      | Framer Motion v12                                        |
+| Forms           | React Hook Form v8 + Zod v4                              |
+| Charts          | Recharts                                                 |
+| Icons           | Lucide React                                             |
+| Backend         | Supabase (PostgreSQL 16 + Auth + RLS)                    |
+| AI              | Groq API (llama-3.1-8b-instant, browser-direct BYOK)     |
+| Export          | SheetJS (Excel) + Papa Parse (CSV)                       |
+| PWA             | vite-plugin-pwa (installable, offline app-shell caching) |
+| Hosting         | Vercel                                                   |
+| Package manager | pnpm                                                     |
 
 ---
 
 ## Self-Hosting in 10 Minutes
 
 ### Prerequisites
+
 - Node.js 18+, pnpm
 - A [Supabase](https://supabase.com) account (free tier works)
 - A [Vercel](https://vercel.com) account (free tier works)
 
 ### 1. Clone and install
+
 ```bash
 git clone https://github.com/isttiiak/FinTrack.git
 cd FinTrack
@@ -124,30 +132,38 @@ pnpm install
 ```
 
 ### 2. Set up Supabase
+
 1. Create a new Supabase project
 2. Go to **SQL Editor** → paste and run `supabase/migrations/001_initial_schema.sql`
 3. Copy your project URL and anon key from **Settings → API**
 
 ### 3. Configure environment
+
 ```bash
 cp .env.example .env.local
 ```
+
 Edit `.env.local`:
+
 ```
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
 ```
 
 ### 4. Run locally
+
 ```bash
 pnpm dev
 ```
+
 Visit `http://localhost:5173`
 
 ### 5. Deploy to Vercel
+
 ```bash
 pnpm build   # verify it builds cleanly
 ```
+
 Then import the GitHub repo in Vercel and add the two environment variables.
 
 ---
@@ -213,18 +229,18 @@ src/
 
 ## Database Schema (key tables)
 
-| Table | Purpose |
-|-------|---------|
-| `profiles` | User profile (name, avatar, currency, timezone) |
-| `categories` | Expense/income categories with main groups |
-| `budget_limits` | Monthly spend cap per category |
-| `transactions` | All expense and income entries |
-| `persons` | People in the lent/debt ledger |
-| `person_ledger` | Individual lent/debt entries |
-| `ledger_payments` | Payments against ledger entries |
-| `investments` | Investment portfolio entries |
-| `investment_payments` | Installment payments into investments |
-| `investment_returns` | Returns received from investments |
+| Table                 | Purpose                                         |
+| --------------------- | ----------------------------------------------- |
+| `profiles`            | User profile (name, avatar, currency, timezone) |
+| `categories`          | Expense/income categories with main groups      |
+| `budget_limits`       | Monthly spend cap per category                  |
+| `transactions`        | All expense and income entries                  |
+| `persons`             | People in the lent/debt ledger                  |
+| `person_ledger`       | Individual lent/debt entries                    |
+| `ledger_payments`     | Payments against ledger entries                 |
+| `investments`         | Investment portfolio entries                    |
+| `investment_payments` | Installment payments into investments           |
+| `investment_returns`  | Returns received from investments               |
 
 All tables have **Row Level Security** — users can only see their own data.
 
@@ -239,6 +255,7 @@ All tables have **Row Level Security** — users can only see their own data.
 5. Open a PR
 
 ### Code conventions
+
 - No comments unless the WHY is non-obvious
 - No unused variables (TypeScript strict enforces this)
 - Inline `<style>` in components is fine (no Tailwind classes for custom UI)
@@ -253,4 +270,4 @@ MIT — fork it, self-host it, build on it.
 
 ---
 
-*Built by [Istiak Islam](https://github.com/isttiiak)*
+_Built by [Istiak Islam](https://github.com/isttiiak)_

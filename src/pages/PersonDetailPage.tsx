@@ -21,6 +21,7 @@ import ErrorBanner from '@/components/common/ErrorBanner'
 import type { PersonLedger, PersonWithLedgers } from '@/types/ledger.types'
 import type { LedgerType } from '@/lib/constants'
 import './PersonDetailPage.css'
+import { formatPaymentMethod } from '@/lib/region'
 
 const STATUS_STYLE = {
   Pending: { bg: 'rgba(201, 115, 110,0.12)', color: '#C9736E', label: '⏳ Pending' },
@@ -264,7 +265,7 @@ export default function PersonDetailPage() {
                     <div className="pd-entry-meta">
                       <span>{formatDate(entry.start_date)}</span>
                       {entry.reason && <span>· {entry.reason}</span>}
-                      {entry.payment_method && <span>· {entry.payment_method}</span>}
+                      {entry.payment_method && <span>· {formatPaymentMethod(entry.payment_method)}</span>}
                     </div>
 
                     <div className="pd-entry-bottom-row">

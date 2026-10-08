@@ -17,6 +17,8 @@ import { supabase } from '@/lib/supabase'
 import ErrorBanner from '@/components/common/ErrorBanner'
 import { fadeUp } from '@/lib/animations'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
+import { REGION_PRESETS, regionForCurrency, formatPaymentMethod, WALLET_PREFIX, type Region } from '@/lib/region'
+import { getActiveCurrency } from '@/lib/utils'
 import { useIsExpensesOnly } from '@/hooks/useTrackingMode'
 import type { Category } from '@/types/expense.types'
 import './DataSettingsPage.css'
@@ -454,9 +456,24 @@ function PaymentMethodsTab() {
   function updateBank(list: string[]) { setBankAccountsState(list); setBankAccounts(list) }
   function handleResetMfs() { resetMfsProviders(); setMfsProvidersState(getMfsProviders()) }
   function handleResetBank() { resetBankAccounts(); setBankAccountsState(getBankAccounts()) }
+  // Defaults follow the currency, but e.g. a Bangladeshi student abroad on USD
+  // may still pay home through bKash — so either preset can be loaded by hand.
+  function loadPreset(region: Region) {
+    updateMfs([...REGION_PRESETS[region].wallets])
+    updateBank([...REGION_PRESETS[region].bankAccounts])
+  }
+  const preset = REGION_PRESETS[regionForCurrency(getActiveCurrency())]
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div className="dsc-tag-card" style={{ padding: '10px 12px', display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+        <span style={{ fontSize: 12, color: 'var(--text-secondary)', flex: '1 1 220px' }}>
+          Start from a preset — replaces both lists below, then edit freely.
+        </span>
+        <button type="button" className="btn-ghost" onClick={() => loadPreset('bd')}>🇧🇩 Bangladesh (bKash, Nagad…)</button>
+        <button type="button" className="btn-ghost" onClick={() => loadPreset('global')}>🌍 Global (PayPal, Wise…)</button>
+      </div>
+
       {/* Cash — fixed */}
       <div className="dsc-tag-card">
         <div className="dsc-pm-header">
@@ -479,7 +496,7 @@ function PaymentMethodsTab() {
         <div className="dsc-pm-header">
           <div className="dsc-pm-icon" style={{ background: '#4FA9811c', color: '#4FA981' }}>📱</div>
           <div style={{ flex: 1 }}>
-            <div className="dsc-pm-title">MFS</div>
+            <div className="dsc-pm-title">{preset.walletLabel}</div>
             <div className="dsc-pm-sub">Providers — reorder, rename, or remove any of them</div>
           </div>
         </div>
@@ -488,8 +505,8 @@ function PaymentMethodsTab() {
           onChange={updateMfs}
           onReset={handleResetMfs}
           placeholder="Provider name…"
-          toDisplay={(v) => v.replace('MFS - ', '')}
-          toStored={(v) => (v.startsWith('MFS - ') ? v : `MFS - ${v}`)}
+          toDisplay={formatPaymentMethod}
+          toStored={(v) => (v.startsWith(WALLET_PREFIX) ? v : `${WALLET_PREFIX}${v}`)}
         />
       </div>
 

@@ -47,6 +47,7 @@ const LandingPage          = lazyRouteComponent(() => import('@/pages/LandingPag
 import AppShell from '@/components/layout/AppShell'
 import RoutePendingFallback from '@/components/common/RoutePendingFallback'
 import { stashPendingInvite, getPendingInvite } from '@/lib/householdInvite'
+import { detectSettings } from '@/lib/region'
 import './App.css'
 
 const queryClient = new QueryClient({
@@ -78,7 +79,22 @@ function Root() {
         .select('*')
         .eq('id', userId)
         .single()
-      if (data) setProfile(data as UserProfile)
+      if (!data) return
+      if ((data as UserProfile).onboarded_at === null) {
+        // New account's first sign-in: currency, timezone and (outside
+        // Bangladesh) a neutral starter category set, from the browser.
+        // Strictly null — undefined means migration 016 hasn't run.
+        const { currency, timezone, region } = detectSettings()
+        const { error } = await supabase.rpc('complete_onboarding', {
+          p_currency: currency, p_timezone: timezone, p_region: region,
+        })
+        if (!error) {
+          const { data: fresh } = await supabase.from('profiles').select('*').eq('id', userId).single()
+          queryClient.invalidateQueries({ queryKey: ['categories'] })
+          if (fresh) { setProfile(fresh as UserProfile); return }
+        }
+      }
+      setProfile(data as UserProfile)
     }
 
     // Protected-route prefixes used for post-getSession redirect

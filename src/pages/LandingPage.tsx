@@ -53,7 +53,7 @@ const AI_FEATURES = [
   { icon: '🎯', label: 'Goal-Based Planning',      desc: 'Enter a savings goal, get a month-by-month spending plan with specific cuts.' },
   { icon: '🔄', label: 'Spending Patterns',        desc: 'Identifies expensive habits and recurring costs across your 6-month history.' },
   { icon: '💡', label: 'Budget Recommendations',   desc: 'Suggests realistic budgets based on your actual spending averages.' },
-  { icon: '📊', label: 'Benchmarking',             desc: 'Compares your spending vs typical Bangladesh household averages.' },
+  { icon: '📊', label: 'Benchmarking',             desc: 'Compares your spending with typical households where you live.' },
   { icon: '🏦', label: 'Debt Payoff Strategy',     desc: 'Snowball vs Avalanche analysis directly from your lent & debt records.' },
 ]
 
@@ -165,7 +165,7 @@ export default function LandingPage() {
               { val: '10+', label: 'AI features' },
               { val: '100%', label: 'Free & open source' },
               { val: '<10min', label: 'Self-host setup' },
-              { val: 'BDT-first', label: 'Built for Bangladesh' },
+              { val: '৳ $ € £', label: 'Bangladesh & worldwide' },
             ].map((s) => (
               <div key={s.label} className="lp-stat">
                 <span className="lp-stat-val">{s.val}</span>

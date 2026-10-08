@@ -122,7 +122,12 @@ export type TxnType = (typeof TXN_TYPES)[number]
 export const LEDGER_TYPES = ['Lent', 'Debt'] as const
 export type LedgerType = (typeof LEDGER_TYPES)[number]
 
-export const CURRENCIES = ['BDT', 'USD', 'EUR', 'GBP', 'SGD', 'AED', 'INR', 'SEK', 'DKK'] as const
+// BDT first (the original audience), then the currencies lib/region.ts can
+// detect for international students and families abroad.
+export const CURRENCIES = [
+  'BDT', 'USD', 'EUR', 'GBP', 'CAD', 'AUD', 'NZD', 'SGD', 'MYR', 'JPY', 'CNY', 'KRW',
+  'INR', 'PKR', 'NPR', 'LKR', 'AED', 'SAR', 'QAR', 'KWD', 'OMR', 'BHD', 'SEK', 'DKK', 'NOK', 'CHF',
+] as const
 export type Currency = (typeof CURRENCIES)[number]
 
 export const LEDGER_STATUSES = ['Pending', 'Partial', 'Settled'] as const

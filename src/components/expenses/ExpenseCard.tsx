@@ -6,6 +6,7 @@ import type { Transaction } from '@/types/expense.types'
 import { formatCurrency } from '@/lib/utils'
 import { useDeleteExpense } from '@/hooks/useExpenses'
 import { useUIStore } from '@/stores/uiStore'
+import { formatPaymentMethod } from '@/lib/region'
 
 interface ExpenseCardProps {
   txn: Transaction
@@ -74,7 +75,7 @@ export default function ExpenseCard({ txn, onEdit }: ExpenseCardProps) {
               <div className="expense-card-desc">{txn.description}</div>
             )}
             {txn.payment_method && (
-              <span className="expense-card-method-chip">{txn.payment_method}</span>
+              <span className="expense-card-method-chip">{formatPaymentMethod(txn.payment_method)}</span>
             )}
           </div>
 

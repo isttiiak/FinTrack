@@ -16,7 +16,8 @@ import AnimatedNumber from '@/components/common/AnimatedNumber'
 import MonthPicker from '@/components/common/MonthPicker'
 import SearchToggle from '@/components/common/SearchToggle'
 import type { Transaction, TransactionFilters } from '@/types/expense.types'
-import { PAYMENT_METHODS } from '@/lib/constants'
+import { getMfsProviders } from '@/lib/paymentMethodPrefs'
+import { formatPaymentMethod } from '@/lib/region'
 import { formatCurrency, toISODateString } from '@/lib/utils'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { cn } from '@/lib/utils'
@@ -45,6 +46,8 @@ export default function ExpensesPage() {
   const [filterOpen, setFilterOpen] = useState(false)
   const [typeFilter, setTypeFilter] = useState<'All' | 'Expense' | 'Income'>('All')
   const [methodFilter, setMethodFilter] = useState<string>('All')
+  // The user's own wallet list (region preset or customised), not a fixed BD one
+  const methodChoices = useMemo(() => ['All', 'Cash', ...getMfsProviders(), 'Card', 'Bank Transfer'], [])
   const [groupFilter, setGroupFilter] = useState<string>('All')
   const [rangeMode, setRangeMode] = useState(false)
   const [rangeFrom, setRangeFrom] = useState('')
@@ -340,13 +343,13 @@ export default function ExpensesPage() {
                   )}
                 </div>
                 <div className="filter-chips">
-                  {(['All', ...PAYMENT_METHODS] as const).map((m) => (
+                  {methodChoices.map((m) => (
                     <button
                       key={m}
                       className={cn('filter-chip', methodFilter === m && 'filter-chip-active')}
                       onClick={() => setMethodFilter(m)}
                     >
-                      {m}
+                      {m === 'All' ? m : formatPaymentMethod(m)}
                     </button>
                   ))}
                 </div>

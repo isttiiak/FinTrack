@@ -12,15 +12,14 @@ import { cn } from '@/lib/utils'
 import { CURRENCIES } from '@/lib/constants'
 import './ProfilePage.css'
 
-const TIMEZONES = [
-  'Asia/Dhaka',
-  'Asia/Kolkata',
-  'Asia/Singapore',
-  'Asia/Dubai',
-  'Europe/London',
-  'America/New_York',
-  'America/Los_Angeles',
-] as const
+// Every IANA zone the browser knows, falling back to a short list on old ones
+const TIMEZONES: string[] = (() => {
+  try {
+    return (Intl as unknown as { supportedValuesOf(k: string): string[] }).supportedValuesOf('timeZone')
+  } catch {
+    return ['Asia/Dhaka', 'Asia/Kolkata', 'Asia/Singapore', 'Asia/Dubai', 'Europe/London', 'America/New_York', 'America/Los_Angeles', 'UTC']
+  }
+})()
 
 const schema = z.object({
   full_name:  z.string().min(2, 'Name must be at least 2 characters'),
@@ -181,13 +180,13 @@ export default function ProfilePage() {
             <div className="profilepage-pf-field">
               <label className="pf-label">Currency</label>
               <select {...register('currency')} aria-label="Currency" className="pf-select" disabled={isDemo}>
-                {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                {Array.from(new Set([watch('currency'), ...CURRENCIES])).map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div className="profilepage-pf-field">
               <label className="pf-label">Timezone</label>
               <select {...register('timezone')} aria-label="Timezone" className="pf-select" disabled={isDemo}>
-                {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz}</option>)}
+                {Array.from(new Set([watch('timezone'), ...TIMEZONES])).map((tz) => <option key={tz} value={tz}>{tz}</option>)}
               </select>
             </div>
           </motion.div>

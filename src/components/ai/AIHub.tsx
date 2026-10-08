@@ -7,7 +7,8 @@ import { GROQ_MODELS } from '@/lib/constants'
 import { useExpenses } from '@/hooks/useExpenses'
 import { useBudgets } from '@/hooks/useBudgets'
 import { usePersons } from '@/hooks/useLedger'
-import { formatCurrency, getActiveCurrencySymbol, toISODateString } from '@/lib/utils'
+import { formatCurrency, getActiveCurrency, getActiveCurrencySymbol, toISODateString } from '@/lib/utils'
+import { detectTimezone } from '@/lib/region'
 import { fadeUp } from '@/lib/animations'
 import ErrorBanner from '@/components/common/ErrorBanner'
 import { useIsExpensesOnly } from '@/hooks/useTrackingMode'
@@ -372,7 +373,7 @@ Be realistic and encouraging. Use bullet points and show before/after amounts, n
       // "rough, general impression" and required to say so, rather than
       // silently presenting fabricated precision as fact — see TODO.md
       // §1.4's AI-feature review.
-      'Give the user a rough, general impression of how their spending compares to a typical Bangladesh household, using your general knowledge — you do NOT have a real benchmark dataset, so do not invent precise percentages or cite specific statistics as if they were verified. Say plainly this is a general estimate, not verified data. Be encouraging for areas that look reasonable and specific about areas that look high. Use a simple bullet format, never a markdown table.',
+      `Give the user a rough, general impression of how their spending compares to a typical household where they live (their currency is ${getActiveCurrency()} and timezone ${detectTimezone()} — infer the country from these; if unclear, say so and compare generally), using your general knowledge — you do NOT have a real benchmark dataset, so do not invent precise percentages or cite specific statistics as if they were verified. Say plainly this is a general estimate, not verified data. Be encouraging for areas that look reasonable and specific about areas that look high. Use a simple bullet format, never a markdown table.`,
       `User monthly spending:\n${spendingList}\n\nTotal: ${formatCurrency(Object.values(catMap).reduce((s,v)=>s+v,0))}\n\nContext:\n${ctx}`,
       // 600, not 450 — confirmed live (2026-09-04) the response got cut off
       // mid-sentence at 450 ("...Mobile plans in Bangladesh can be cheaper,
@@ -463,7 +464,7 @@ Be realistic and encouraging. Use bullet points and show before/after amounts, n
             onRun={runSpendingPatterns} />
 
           <FeatureCard icon="📊" title="Benchmarking" accent="#B4923F"
-            desc="A rough, AI-estimated comparison to typical Bangladesh household spending — not verified statistics."
+            desc="A rough, AI-estimated comparison to typical household spending where you live — not verified statistics."
             onRun={runBenchmarking} />
 
           <FeatureCard icon="🏦" title="Debt Payoff Strategy" accent="#C9736E"
