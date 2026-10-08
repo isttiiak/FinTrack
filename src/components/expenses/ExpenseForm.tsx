@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -77,6 +77,7 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
         }
       : {
           type:           defaultType,
+          category_id:    '',
           txn_date:       toISODateString(new Date()),
           payment_method: lastMethod,
           account:        lastAccount,
@@ -92,9 +93,16 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
   const { suggestedCategory, loading: suggestLoading, dismiss: dismissSuggest } =
     useAICategorySuggest(description, filteredCategories, categoryId)
 
+  // Categories are per type, so switching Expense↔Income clears the pick —
+  // including when editing, or the hidden old category would be saved with
+  // the new type. Skips the first render so an edit opens with its category.
+  const typeOnOpen = useRef(selectedType)
   useEffect(() => {
-    if (!editing) setValue('category_id', '')
-  }, [selectedType, editing, setValue])
+    if (selectedType !== typeOnOpen.current) {
+      typeOnOpen.current = selectedType
+      setValue('category_id', '')
+    }
+  }, [selectedType, setValue])
 
   async function onSubmit(values: FormValues) {
     if (values.payment_method) localStorage.setItem(LS_METHOD_KEY, values.payment_method)

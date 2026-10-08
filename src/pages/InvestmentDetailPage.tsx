@@ -12,7 +12,7 @@ import EmptyState from '@/components/common/EmptyState'
 import ErrorBanner from '@/components/common/ErrorBanner'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { useInvestments, useDeleteReturn, useDeleteInvestmentPayment, useDeleteInvestment, useUpdateInvestmentPayment, useUpdateReturn } from '@/hooks/useInvestments'
+import { useInvestments, useDeleteReturn, useDeleteInvestmentPayment, useDeleteInvestment } from '@/hooks/useInvestments'
 import InvestmentForm from '@/components/investments/InvestmentForm'
 import ReturnForm from '@/components/investments/ReturnForm'
 import InvestmentPaymentForm from '@/components/investments/InvestmentPaymentForm'
@@ -33,17 +33,13 @@ export default function InvestmentDetailPage() {
   const { mutate: deleteReturn } = useDeleteReturn()
   const { mutate: deletePayment } = useDeleteInvestmentPayment()
   const { mutate: deleteInvestment } = useDeleteInvestment()
-  const { mutate: updatePayment } = useUpdateInvestmentPayment()
-  const { mutate: updateReturn } = useUpdateReturn()
 
   const [tab, setTab] = useState<DetailTab>('payments')
   const [editingInv, setEditingInv] = useState<Investment | null>(null)
   const [loggingPayment, setLoggingPayment] = useState(false)
   const [loggingReturn, setLoggingReturn] = useState(false)
-  const [editingPaymentId, setEditingPaymentId] = useState<string | null>(null)
-  const [editingReturnId, setEditingReturnId] = useState<string | null>(null)
-  const [paymentEditDraft, setPaymentEditDraft] = useState<{ amount: string; payment_date: string; notes: string }>({ amount: '', payment_date: '', notes: '' })
-  const [returnEditDraft, setReturnEditDraft] = useState<{ amount: string; return_date: string; return_type: string; notes: string }>({ amount: '', return_date: '', return_type: '', notes: '' })
+  const [editingPayment, setEditingPayment] = useState<InvestmentPayment | null>(null)
+  const [editingReturn, setEditingReturn] = useState<InvestmentReturn | null>(null)
 
   const inv = investments.find((i) => i.id === investmentId)
 
@@ -229,7 +225,6 @@ export default function InvestmentDetailPage() {
               .sort((a, b) => b.payment_date.localeCompare(a.payment_date))
               .map((pay, i, arr) => {
                 const remaining = Math.max(0, committed - (totalPaid - arr.slice(0, i).reduce((s, p) => s + p.amount, 0)))
-                const isEditing = editingPaymentId === pay.id
                 return (
                   <div key={pay.id} className="idp-row" style={{ flexWrap: 'wrap' }}>
                     <div className="idp-row-dot" style={{ background: 'var(--accent-coral)' }} />
@@ -249,50 +244,10 @@ export default function InvestmentDetailPage() {
                         <span className="idp-fully-paid">Fully paid ✓</span>
                       )}
                     </div>
-                    <button
-                      className="idp-row-edit-btn edit-btn-purple"
-                      onClick={() => {
-                        setEditingPaymentId(pay.id)
-                        setPaymentEditDraft({ amount: String(pay.amount), payment_date: pay.payment_date, notes: pay.notes ?? '' })
-                      }}
-                    >
+                    <button className="idp-row-edit-btn edit-btn-purple" onClick={() => setEditingPayment(pay)}>
                       <Edit2 size={12} /> Edit
                     </button>
                     <DeleteButton onConfirm={() => deletePayment(pay.id)} className="idp-del-btn" iconSize={12} />
-                    {isEditing && (
-                      <div className="idp-inline-edit">
-                        <input
-                          type="number" step="0.01" className="idp-inline-input" placeholder="Amount"
-                          value={paymentEditDraft.amount}
-                          onChange={(e) => setPaymentEditDraft((d) => ({ ...d, amount: e.target.value }))}
-                        />
-                        <input
-                          type="date" className="idp-inline-input"
-                          value={paymentEditDraft.payment_date}
-                          onChange={(e) => setPaymentEditDraft((d) => ({ ...d, payment_date: e.target.value }))}
-                        />
-                        <input
-                          type="text" className="idp-inline-input" placeholder="Notes (optional)"
-                          value={paymentEditDraft.notes}
-                          onChange={(e) => setPaymentEditDraft((d) => ({ ...d, notes: e.target.value }))}
-                        />
-                        <div className="idp-inline-actions">
-                          <button
-                            className="idp-inline-save"
-                            onClick={() => {
-                              updatePayment({
-                                id: pay.id,
-                                amount: parseFloat(paymentEditDraft.amount),
-                                payment_date: paymentEditDraft.payment_date,
-                                notes: paymentEditDraft.notes || null,
-                              })
-                              setEditingPaymentId(null)
-                            }}
-                          >Save</button>
-                          <button className="idp-inline-cancel" onClick={() => setEditingPaymentId(null)}>Cancel</button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )
               })
@@ -314,7 +269,6 @@ export default function InvestmentDetailPage() {
               .sort((a, b) => b.return_date.localeCompare(a.return_date))
               .map((ret) => {
                 const color = RETURN_TYPE_COLORS[ret.return_type ?? ''] ?? 'var(--text-muted)'
-                const isEditing = editingReturnId === ret.id
                 return (
                   <div key={ret.id} className="idp-row" style={{ flexWrap: 'wrap' }}>
                     <div className="idp-row-dot" style={{ background: color }} />
@@ -327,61 +281,10 @@ export default function InvestmentDetailPage() {
                       {ret.notes && <span className="idp-row-notes">{ret.notes}</span>}
                     </div>
                     <div className="idp-row-remaining" />
-                    <button
-                      className="idp-row-edit-btn edit-btn-purple"
-                      onClick={() => {
-                        setEditingReturnId(ret.id)
-                        setReturnEditDraft({ amount: String(ret.amount), return_date: ret.return_date, return_type: ret.return_type ?? '', notes: ret.notes ?? '' })
-                      }}
-                    >
+                    <button className="idp-row-edit-btn edit-btn-purple" onClick={() => setEditingReturn(ret)}>
                       <Edit2 size={12} /> Edit
                     </button>
                     <DeleteButton onConfirm={() => deleteReturn(ret.id)} className="idp-del-btn" iconSize={12} />
-                    {isEditing && (
-                      <div className="idp-inline-edit">
-                        <input
-                          type="number" step="0.01" className="idp-inline-input" placeholder="Amount"
-                          value={returnEditDraft.amount}
-                          onChange={(e) => setReturnEditDraft((d) => ({ ...d, amount: e.target.value }))}
-                        />
-                        <input
-                          type="date" className="idp-inline-input"
-                          value={returnEditDraft.return_date}
-                          onChange={(e) => setReturnEditDraft((d) => ({ ...d, return_date: e.target.value }))}
-                        />
-                        <select
-                          className="idp-inline-input"
-                          value={returnEditDraft.return_type}
-                          onChange={(e) => setReturnEditDraft((d) => ({ ...d, return_type: e.target.value }))}
-                        >
-                          <option value="">— None —</option>
-                          {(['Profit', 'Capital Return', 'Dividend', 'Rent', 'Other'] as const).map((t) => (
-                            <option key={t} value={t}>{t}</option>
-                          ))}
-                        </select>
-                        <input
-                          type="text" className="idp-inline-input" placeholder="Notes (optional)"
-                          value={returnEditDraft.notes}
-                          onChange={(e) => setReturnEditDraft((d) => ({ ...d, notes: e.target.value }))}
-                        />
-                        <div className="idp-inline-actions">
-                          <button
-                            className="idp-inline-save"
-                            onClick={() => {
-                              updateReturn({
-                                id: ret.id,
-                                amount: parseFloat(returnEditDraft.amount),
-                                return_date: returnEditDraft.return_date,
-                                return_type: (returnEditDraft.return_type as InvestmentReturn['return_type']) || null,
-                                notes: returnEditDraft.notes || null,
-                              })
-                              setEditingReturnId(null)
-                            }}
-                          >Save</button>
-                          <button className="idp-inline-cancel" onClick={() => setEditingReturnId(null)}>Cancel</button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )
               })
@@ -394,6 +297,8 @@ export default function InvestmentDetailPage() {
         {editingInv && <InvestmentForm editing={editingInv} onClose={() => setEditingInv(null)} />}
         {loggingPayment && <InvestmentPaymentForm investment={inv} onClose={() => setLoggingPayment(false)} />}
         {loggingReturn && <ReturnForm investment={inv} onClose={() => setLoggingReturn(false)} />}
+        {editingPayment && <InvestmentPaymentForm investment={inv} editing={editingPayment} onClose={() => setEditingPayment(null)} />}
+        {editingReturn && <ReturnForm investment={inv} editing={editingReturn} onClose={() => setEditingReturn(null)} />}
       </AnimatePresence>
 
     </motion.div>

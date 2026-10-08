@@ -1,21 +1,16 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Filter, Check, HandCoins, CreditCard, ArrowDownCircle, ArrowUpCircle, ChevronDown } from 'lucide-react'
+import { X, Filter, HandCoins, CreditCard, ArrowDownCircle, ArrowUpCircle, ChevronDown } from 'lucide-react'
 import DeleteButton from '@/components/common/DeleteButton'
 import { formatCurrency, formatDate, round2 } from '@/lib/utils'
-import { useDeletePayment, useUpdatePayment } from '@/hooks/useLedger'
-import { DemoBlockedError } from '@/hooks/useDemoGuard'
+import { useDeletePayment } from '@/hooks/useLedger'
+import PaymentForm from './PaymentForm'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
-import type { PersonWithLedgers } from '@/types/ledger.types'
+import type { LedgerPayment, PersonWithLedgers } from '@/types/ledger.types'
 import type { LedgerType } from '@/lib/constants'
 import { fadeUp } from '@/lib/animations'
 import './LedgerPaymentLogs.css'
-
-interface EditingState {
-  id: string
-  amount: string
-}
 
 // One row per lend/debt entry OR payment, merged into a single
 // chronological timeline per (person, type) with a running balance —
@@ -47,11 +42,10 @@ function rowColor(row: HistoryRow): string {
 
 export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedgers[] }) {
   const { mutate: deletePayment } = useDeletePayment()
-  const { mutateAsync: updatePayment, isPending: updating } = useUpdatePayment()
   const isDemo = useDemoStore((s) => s.isDemo)
   const addToast = useUIStore((s) => s.addToast)
   const [filterPerson, setFilterPerson] = useState<string | null>(null)
-  const [editing, setEditing] = useState<EditingState | null>(null)
+  const [editing, setEditing] = useState<{ person: PersonWithLedgers; payment: LedgerPayment } | null>(null)
 
   const allRows = useMemo((): HistoryRow[] => {
     const rows: HistoryRow[] = []
@@ -113,19 +107,9 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
   }
 
   function startEdit(row: HistoryRow) {
-    setEditing({ id: row.sourceId, amount: String(row.amount) })
-  }
-
-  async function saveEdit() {
-    if (!editing) return
-    const amount = Number(editing.amount)
-    if (isNaN(amount) || amount <= 0) { addToast({ type: 'error', message: 'Enter a valid amount' }); return }
-    try {
-      await updatePayment({ id: editing.id, amount })
-      setEditing(null)
-    } catch (err) {
-      if (err instanceof DemoBlockedError) setEditing(null)
-    }
+    const person = persons.find((p) => p.id === row.personId)
+    const payment = person?.payments.find((p) => p.id === row.sourceId)
+    if (person && payment) setEditing({ person, payment })
   }
 
   // Per-person summary for filter pills
@@ -277,41 +261,17 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
 
               <div className="lpl-row-balance">
                 <span className="lpl-balance-label">Balance</span>
-                {editing?.id === row.sourceId ? (
-                  <input
-                    className="lpl-edit-input"
-                    type="number"
-                    step="0.01"
-                    value={editing.amount}
-                    onChange={(e) => setEditing({ ...editing, amount: e.target.value })}
-                    autoFocus
-                  />
-                ) : (
-                  <span className="lpl-balance-value">
-                    {row.runningBalance === 0 ? '—' : formatCurrency(row.runningBalance)}
-                  </span>
-                )}
+                <span className="lpl-balance-value">
+                  {row.runningBalance === 0 ? '—' : formatCurrency(row.runningBalance)}
+                </span>
               </div>
 
               {row.kind === 'payment' && (
                 <div className="lpl-row-actions">
-                  {editing?.id === row.sourceId ? (
-                    <>
-                      <button className="lpl-save-btn" onClick={saveEdit} disabled={updating}>
-                        <Check size={12} />
-                      </button>
-                      <button className="lpl-cancel-btn" onClick={() => setEditing(null)}>
-                        <X size={12} />
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button className="lpl-edit-btn edit-btn-purple" onClick={() => startEdit(row)}>
-                        Edit
-                      </button>
-                      <DeleteButton onConfirm={() => handleDelete(row.sourceId)} iconSize={12} />
-                    </>
-                  )}
+                  <button className="lpl-edit-btn edit-btn-purple" onClick={() => startEdit(row)}>
+                    Edit
+                  </button>
+                  <DeleteButton onConfirm={() => handleDelete(row.sourceId)} iconSize={12} />
                 </div>
               )}
             </motion.div>
@@ -319,6 +279,20 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
         )}
       </div>
 
+      <AnimatePresence>
+        {editing && (
+          <PaymentForm
+            personId={editing.person.id}
+            personName={editing.person.name}
+            ledgerType={editing.payment.ledger_type}
+            remaining={editing.payment.ledger_type === 'Lent'
+              ? editing.person.total_outstanding_lent
+              : editing.person.total_outstanding_debt}
+            editing={editing.payment}
+            onClose={() => setEditing(null)}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }

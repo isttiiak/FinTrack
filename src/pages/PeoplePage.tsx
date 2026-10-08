@@ -1,12 +1,12 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Plus, Edit2, Check, X, Users, Trash2, ChevronDown } from 'lucide-react'
+import { ArrowLeft, Plus, Edit2, Users, Trash2, ChevronDown } from 'lucide-react'
 import { fadeUp } from '@/lib/animations'
 import ErrorBanner from '@/components/common/ErrorBanner'
 import SearchToggle from '@/components/common/SearchToggle'
-import { usePersons, useCreatePerson, useUpdatePerson, useDeletePerson } from '@/hooks/useLedger'
-import { DemoBlockedError } from '@/hooks/useDemoGuard'
+import { usePersons, useDeletePerson } from '@/hooks/useLedger'
+import PersonForm from '@/components/ledger/PersonForm'
 import { useConfirmStore } from '@/stores/confirmStore'
 import { formatCurrency } from '@/lib/utils'
 import { RELATIONSHIPS } from '@/lib/constants'
@@ -30,28 +30,15 @@ type PeopleTab = 'all' | 'lent' | 'debt'
 // ── Person Row ────────────────────────────────────────────────────────────────
 interface PersonRowProps {
   person: PersonWithLedgers
-  isExpanded: boolean
-  onToggleEdit: () => void
-  onSave: (data: { relationship: Relationship | null; phone: string }) => Promise<void>
+  onEdit: () => void
   onDelete: () => void
-  isSaving: boolean
 }
 
-function PersonRow({ person, isExpanded, onToggleEdit, onSave, onDelete, isSaving }: PersonRowProps) {
+function PersonRow({ person, onEdit, onDelete }: PersonRowProps) {
   const relColor = RELATIONSHIP_COLORS[person.relationship ?? ''] ?? '#8A968C'
-  const [editRel, setEditRel] = useState<Relationship | ''>(person.relationship ?? '')
-  const [editPhone, setEditPhone] = useState(person.phone ?? '')
-
-  async function handleSave() {
-    await onSave({
-      relationship: editRel ? (editRel as Relationship) : null,
-      phone: editPhone,
-    })
-  }
 
   return (
     <div className="pmp-person-row-wrap">
-      {/* Main row */}
       <div className="pmp-person-row">
         {/* Avatar */}
         <div
@@ -96,173 +83,15 @@ function PersonRow({ person, isExpanded, onToggleEdit, onSave, onDelete, isSavin
 
         {/* Actions */}
         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-          <button
-            className={`pmp-edit-btn ${isExpanded ? 'pmp-edit-btn-active' : ''}`}
-            onClick={onToggleEdit}
-          >
-            {isExpanded ? <><X size={13} /> Cancel</> : <><Edit2 size={13} /> Edit</>}
+          <button className="pmp-edit-btn" onClick={onEdit}>
+            <Edit2 size={13} /> Edit
           </button>
-          {!isExpanded && (
-            <button className="pmp-delete-btn" onClick={onDelete}>
-              <Trash2 size={13} />
-            </button>
-          )}
+          <button className="pmp-delete-btn" onClick={onDelete} aria-label={`Remove ${person.name}`}>
+            <Trash2 size={13} />
+          </button>
         </div>
       </div>
-
-      {/* Inline edit form */}
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            className="pmp-edit-form"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.18 }}
-            style={{ overflow: 'hidden' }}
-          >
-            <div className="pmp-edit-form-inner">
-              <div className="pmp-field-group">
-                <label className="pmp-label">Relationship</label>
-                <select
-                  className="peoplepage-pmp-select"
-                  value={editRel}
-                  onChange={(e) => setEditRel(e.target.value as Relationship | '')}
-                >
-                  <option value="">— None —</option>
-                  {RELATIONSHIPS.map((r) => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="pmp-field-group">
-                <label className="pmp-label">Phone</label>
-                <input
-                  className="pmp-input"
-                  type="tel"
-                  placeholder="Optional phone number"
-                  value={editPhone}
-                  onChange={(e) => setEditPhone(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-                />
-              </div>
-
-              <div className="pmp-edit-actions">
-                <button
-                  className="pmp-save-btn"
-                  onClick={handleSave}
-                  disabled={isSaving}
-                >
-                  {isSaving ? (
-                    <span className="pmp-saving-dot" />
-                  ) : (
-                    <Check size={13} />
-                  )}
-                  Save
-                </button>
-                <button className="pmp-cancel-btn" onClick={onToggleEdit}>
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
-  )
-}
-
-// ── Add Person Form ───────────────────────────────────────────────────────────
-interface AddPersonFormProps {
-  onSave: (data: { name: string; relationship: Relationship | null; phone: string }) => Promise<void>
-  onCancel: () => void
-  isSaving: boolean
-}
-
-function AddPersonForm({ onSave, onCancel, isSaving }: AddPersonFormProps) {
-  const [name, setName] = useState('')
-  const [relationship, setRelationship] = useState<Relationship | ''>('')
-  const [phone, setPhone] = useState('')
-
-  async function handleSubmit() {
-    const trimmed = name.trim()
-    if (!trimmed) return
-    await onSave({
-      name: trimmed,
-      relationship: relationship ? (relationship as Relationship) : null,
-      phone,
-    })
-  }
-
-  return (
-    <motion.div
-      className="pmp-add-form"
-      initial={{ opacity: 0, y: -6 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -6 }}
-      transition={{ duration: 0.18 }}
-    >
-      <div className="pmp-add-form-title">
-        <Plus size={14} style={{ color: 'var(--accent-primary)' }} />
-        New person
-      </div>
-
-      <div className="pmp-add-form-fields">
-        <div className="pmp-field-group">
-          <label className="pmp-label">Name *</label>
-          <input
-            className="pmp-input"
-            placeholder="Full name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-            autoFocus
-          />
-        </div>
-
-        <div className="pmp-field-row">
-          <div className="pmp-field-group" style={{ flex: 1 }}>
-            <label className="pmp-label">Relationship</label>
-            <select
-              className="peoplepage-pmp-select"
-              value={relationship}
-              onChange={(e) => setRelationship(e.target.value as Relationship | '')}
-            >
-              <option value="">— None —</option>
-              {RELATIONSHIPS.map((r) => (
-                <option key={r} value={r}>{r}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="pmp-field-group" style={{ flex: 1 }}>
-            <label className="pmp-label">Phone</label>
-            <input
-              className="pmp-input"
-              type="tel"
-              placeholder="Optional"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="pmp-add-form-actions">
-        <button
-          className="pmp-save-btn"
-          onClick={handleSubmit}
-          disabled={isSaving || !name.trim()}
-        >
-          {isSaving ? <span className="pmp-saving-dot" /> : <Check size={13} />}
-          Add person
-        </button>
-        <button className="pmp-cancel-btn" onClick={onCancel}>
-          Cancel
-        </button>
-      </div>
-    </motion.div>
   )
 }
 
@@ -271,13 +100,12 @@ export default function PeoplePage() {
   const navigate = useNavigate()
   const personsQ = usePersons()
   const { data: persons = [] } = personsQ
-  const { mutateAsync: createPerson, isPending: isCreating } = useCreatePerson()
-  const { mutateAsync: updatePerson, isPending: isUpdating } = useUpdatePerson()
   const { mutate: deletePerson } = useDeletePerson()
   const confirm = useConfirmStore((s) => s.confirm)
 
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [expandedEditId, setExpandedEditId] = useState<string | null>(null)
+  // Add (editing: null) or edit one person — the full PersonForm, so name,
+  // notes and custom relationships are editable too
+  const [personForm, setPersonForm] = useState<{ editing: PersonWithLedgers | null } | null>(null)
   const [tab, setTab] = useState<PeopleTab>('all')
   const [relFilter, setRelFilter] = useState<Relationship | ''>('')
   const [search, setSearch] = useState('')
@@ -299,28 +127,6 @@ export default function PeoplePage() {
       return true
     })
   }, [persons, tab, relFilter, search])
-
-  async function handleCreatePerson(data: { name: string; relationship: Relationship | null; phone: string }) {
-    try {
-      await createPerson({ name: data.name, relationship: data.relationship, phone: data.phone || null, notes: null })
-      setShowAddForm(false)
-    } catch (err) {
-      if (err instanceof DemoBlockedError) setShowAddForm(false)
-    }
-  }
-
-  async function handleUpdatePerson(id: string, data: { relationship: Relationship | null; phone: string }) {
-    try {
-      await updatePerson({ id, relationship: data.relationship, phone: data.phone || null })
-      setExpandedEditId(null)
-    } catch (err) {
-      if (err instanceof DemoBlockedError) setExpandedEditId(null)
-    }
-  }
-
-  function toggleEdit(id: string) {
-    setExpandedEditId((prev) => (prev === id ? null : id))
-  }
 
   async function handleDeletePerson(person: PersonWithLedgers) {
     const ok = await confirm({
@@ -346,7 +152,7 @@ export default function PeoplePage() {
         <motion.button
           className="btn-primary"
           style={{ display: 'flex', alignItems: 'center', gap: 8 }}
-          onClick={() => { setShowAddForm((v) => !v); setExpandedEditId(null) }}
+          onClick={() => setPersonForm({ editing: null })}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.97 }}
         >
@@ -394,18 +200,7 @@ export default function PeoplePage() {
 
       {/* Person list */}
       <div className="pmp-content">
-        <AnimatePresence>
-          {showAddForm && (
-            <AddPersonForm
-              key="add-form"
-              onSave={handleCreatePerson}
-              onCancel={() => setShowAddForm(false)}
-              isSaving={isCreating}
-            />
-          )}
-        </AnimatePresence>
-
-        {filtered.length === 0 && !showAddForm && (
+        {filtered.length === 0 && (
           <div className="pmp-empty">
             <Users size={36} style={{ color: 'var(--text-muted)', marginBottom: 10 }} />
             <p>{persons.length === 0 ? 'No people yet' : 'No people match this filter'}</p>
@@ -420,16 +215,16 @@ export default function PeoplePage() {
             <PersonRow
               key={person.id}
               person={person}
-              isExpanded={expandedEditId === person.id}
-              onToggleEdit={() => toggleEdit(person.id)}
-              onSave={(data) => handleUpdatePerson(person.id, data)}
+              onEdit={() => setPersonForm({ editing: person })}
               onDelete={() => handleDeletePerson(person)}
-              isSaving={isUpdating}
             />
           ))}
         </div>
       </div>
 
+      <AnimatePresence>
+        {personForm && <PersonForm editing={personForm.editing} onClose={() => setPersonForm(null)} />}
+      </AnimatePresence>
     </motion.div>
   )
 }

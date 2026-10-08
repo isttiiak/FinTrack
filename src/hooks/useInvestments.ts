@@ -196,7 +196,7 @@ export function useUpdateInvestmentPayment() {
   const guardDemo = useDemoGuard()
 
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; amount?: number; payment_date?: string; notes?: string | null }) => {
+    mutationFn: async ({ id, ...data }: Partial<Omit<InvestmentPayment, 'id' | 'user_id' | 'created_at' | 'investment_id'>> & { id: string }) => {
       guardDemo()
       const { data: row, error } = await supabase
         .from('investment_payments')

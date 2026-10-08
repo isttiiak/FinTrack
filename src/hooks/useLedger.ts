@@ -182,6 +182,7 @@ export function useUpdatePerson() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['persons'] })
+      qc.invalidateQueries({ queryKey: ['person'] })
       addToast({ type: 'success', message: 'Person updated' })
     },
     onError: (err: Error) => {
@@ -346,7 +347,7 @@ export function useUpdatePayment() {
   const guardDemo = useDemoGuard()
 
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; amount?: number; payment_date?: string; notes?: string | null }) => {
+    mutationFn: async ({ id, ...data }: Partial<Omit<LedgerPayment, 'id' | 'user_id' | 'created_at'>> & { id: string }) => {
       guardDemo()
       const { data: row, error } = await supabase
         .from('ledger_payments')

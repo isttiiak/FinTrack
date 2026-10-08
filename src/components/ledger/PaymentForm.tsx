@@ -5,12 +5,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 import { scaleIn } from '@/lib/animations'
-import { cn, toISODateString, formatCurrency, getActiveCurrencySymbol } from '@/lib/utils'
+import { cn, toISODateString, formatCurrency, getActiveCurrencySymbol, round2 } from '@/lib/utils'
 import type { PaymentMethod, Account } from '@/lib/constants'
 import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
-import { useCreatePayment } from '@/hooks/useLedger'
+import { useCreatePayment, useUpdatePayment } from '@/hooks/useLedger'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import type { LedgerType } from '@/lib/constants'
+import type { LedgerPayment } from '@/types/ledger.types'
 import './PaymentForm.css'
 
 const schema = z.object({
@@ -27,40 +28,57 @@ interface PaymentFormProps {
   personName: string
   ledgerType: LedgerType
   remaining: number
+  // Edit an existing payment instead of logging a new one
+  editing?: LedgerPayment | null
   onClose: () => void
 }
 
-export default function PaymentForm({ personId, personName, ledgerType, remaining, onClose }: PaymentFormProps) {
-  const { mutateAsync: createPayment, isPending } = useCreatePayment()
+export default function PaymentForm({ personId, personName, ledgerType, remaining, editing, onClose }: PaymentFormProps) {
+  const { mutateAsync: createPayment, isPending: creating } = useCreatePayment()
+  const { mutateAsync: updatePayment, isPending: updating } = useUpdatePayment()
+  const isPending = creating || updating
+  // The payment being edited is already counted in `remaining`, so it can grow back up to it
+  const maxAmount = editing ? round2(remaining + editing.amount) : remaining
 
   const { register, control, handleSubmit, watch, setValue, setError, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      amount:         remaining,
-      payment_date:   toISODateString(new Date()),
-      payment_method: 'Cash',
-      account:        'Cash',
-    },
+    defaultValues: editing
+      ? {
+          amount:         editing.amount,
+          payment_date:   editing.payment_date,
+          payment_method: editing.payment_method ?? '',
+          account:        editing.account ?? '',
+          notes:          editing.notes ?? '',
+        }
+      : {
+          amount:         remaining,
+          payment_date:   toISODateString(new Date()),
+          payment_method: 'Cash',
+          account:        'Cash',
+        },
   })
 
   const paymentMethod = watch('payment_method')
   const accountValue  = watch('account')
 
   async function onSubmit(values: FormValues) {
-    if (values.amount > remaining) {
-      setError('amount', { message: `Cannot exceed remaining balance of ${formatCurrency(remaining)}` })
+    if (values.amount > maxAmount) {
+      setError('amount', { message: `Cannot exceed remaining balance of ${formatCurrency(maxAmount)}` })
       return
     }
+    const fields = {
+      amount:         values.amount,
+      payment_date:   values.payment_date,
+      payment_method: (values.payment_method || null) as PaymentMethod | null,
+      account:        (values.account || null) as Account | null,
+      notes:          values.notes || null,
+    }
     try {
-      await createPayment({
-        person_id:      personId,
-        ledger_type:    ledgerType,
-        amount:         values.amount,
-        payment_date:   values.payment_date,
-        payment_method: (values.payment_method || null) as PaymentMethod | null,
-        account:        (values.account || null) as Account | null,
-        notes:          values.notes || null,
-      })
+      if (editing) {
+        await updatePayment({ id: editing.id, ...fields })
+      } else {
+        await createPayment({ person_id: personId, ledger_type: ledgerType, ...fields })
+      }
       onClose()
     } catch (err) {
       if (err instanceof DemoBlockedError) onClose()
@@ -72,11 +90,11 @@ export default function PaymentForm({ personId, personName, ledgerType, remainin
       <motion.div className="payf-panel" variants={scaleIn} initial="initial" animate="animate" exit="exit">
         <div className="payf-header">
           <div>
-            <h2 className="payf-title">Log payment — {personName}</h2>
+            <h2 className="payf-title">{editing ? 'Edit payment' : 'Log payment'} — {personName}</h2>
             <p className="payf-sub">
               {ledgerType === 'Lent' ? 'They paid you back' : 'You paid them'}
               {' · '}
-              <span className="payf-remaining">Remaining: {formatCurrency(remaining)}</span>
+              <span className="payf-remaining">{editing ? 'Up to' : 'Remaining'}: {formatCurrency(maxAmount)}</span>
             </p>
           </div>
           <button className="payf-close" onClick={onClose}><X size={18} /></button>
@@ -140,7 +158,7 @@ export default function PaymentForm({ personId, personName, ledgerType, remainin
                   <motion.span key="spin" className="payf-spinner" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
                 ) : (
                   <motion.span key="label" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                    Log payment
+                    {editing ? 'Save changes' : 'Log payment'}
                   </motion.span>
                 )}
               </AnimatePresence>

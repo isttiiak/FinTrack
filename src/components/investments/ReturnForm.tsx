@@ -7,10 +7,10 @@ import { X } from 'lucide-react'
 import { scaleIn } from '@/lib/animations'
 import { cn, toISODateString, formatCurrency, getActiveCurrencySymbol } from '@/lib/utils'
 import { RETURN_TYPES } from '@/types/investment.types'
-import { useCreateReturn } from '@/hooks/useInvestments'
+import { useCreateReturn, useUpdateReturn } from '@/hooks/useInvestments'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
-import type { Investment } from '@/types/investment.types'
+import type { Investment, InvestmentReturn } from '@/types/investment.types'
 import './ReturnForm.css'
 
 const schema = z.object({
@@ -28,18 +28,31 @@ const LS_ACCOUNT_KEY = 'fintrack_last_account'
 
 interface ReturnFormProps {
   investment: Investment
+  // Edit an existing return instead of logging a new one
+  editing?: InvestmentReturn | null
   onClose: () => void
 }
 
-export default function ReturnForm({ investment, onClose }: ReturnFormProps) {
-  const { mutateAsync: createReturn, isPending } = useCreateReturn()
+export default function ReturnForm({ investment, editing, onClose }: ReturnFormProps) {
+  const { mutateAsync: createReturn, isPending: creating } = useCreateReturn()
+  const { mutateAsync: updateReturn, isPending: updating } = useUpdateReturn()
+  const isPending = creating || updating
 
   const lastMethod = localStorage.getItem(LS_METHOD_KEY) ?? 'Cash'
   const lastAccount = localStorage.getItem(LS_ACCOUNT_KEY) ?? 'Cash'
 
   const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { return_date: toISODateString(new Date()), payment_method: lastMethod, account: lastAccount },
+    defaultValues: editing
+      ? {
+          amount:         editing.amount,
+          return_date:    editing.return_date,
+          return_type:    editing.return_type ?? undefined,
+          payment_method: editing.payment_method ?? '',
+          account:        editing.account ?? '',
+          notes:          editing.notes ?? '',
+        }
+      : { return_date: toISODateString(new Date()), payment_method: lastMethod, account: lastAccount },
   })
   const watchMethod  = watch('payment_method')
   const watchAccount = watch('account')
@@ -48,16 +61,20 @@ export default function ReturnForm({ investment, onClose }: ReturnFormProps) {
     if (values.payment_method) localStorage.setItem(LS_METHOD_KEY, values.payment_method)
     if (values.account) localStorage.setItem(LS_ACCOUNT_KEY, values.account)
 
+    const fields = {
+      amount:         values.amount,
+      return_date:    values.return_date,
+      return_type:    values.return_type ?? null,
+      payment_method: values.payment_method || null,
+      account:        values.account || null,
+      notes:          values.notes || null,
+    }
     try {
-      await createReturn({
-        investment_id:  investment.id,
-        amount:         values.amount,
-        return_date:    values.return_date,
-        return_type:    values.return_type ?? null,
-        payment_method: values.payment_method || null,
-        account:        values.account || null,
-        notes:          values.notes || null,
-      })
+      if (editing) {
+        await updateReturn({ id: editing.id, ...fields })
+      } else {
+        await createReturn({ investment_id: investment.id, ...fields })
+      }
       onClose()
     } catch (err) {
       if (err instanceof DemoBlockedError) onClose()
@@ -72,7 +89,7 @@ export default function ReturnForm({ investment, onClose }: ReturnFormProps) {
       <motion.div className="retf-panel" variants={scaleIn} initial="initial" animate="animate" exit="exit">
         <div className="retf-header">
           <div>
-            <h2 className="retf-title">Log return</h2>
+            <h2 className="retf-title">{editing ? 'Edit return' : 'Log return'}</h2>
             <p className="retf-sub">
               {investment.name}
               {committed > 0 && (
@@ -151,7 +168,7 @@ export default function ReturnForm({ investment, onClose }: ReturnFormProps) {
                 {isPending ? (
                   <motion.span key="spin" className="retf-spinner" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
                 ) : (
-                  <motion.span key="label" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>Log return</motion.span>
+                  <motion.span key="label" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>{editing ? 'Save changes' : 'Log return'}</motion.span>
                 )}
               </AnimatePresence>
             </motion.button>

@@ -106,40 +106,13 @@
   overflow: hidden;
   overflow-x: auto;
 }
-.itl-edit-input {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-focus);
-  border-radius: 6px;
-  color: var(--text-primary);
-  font-size: 12px;
-  padding: 3px 6px;
-  width: 100%;
-  outline: none;
-}
 .itl-edit-btn,
-.itl-save-btn {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  cursor: pointer;
-}
 .itl-edit-btn {
   color: var(--text-muted);
 }
 .itl-edit-btn:hover {
   background: rgba(79, 169, 129, 0.1);
   color: var(--accent-primary);
-}
-.itl-save-btn {
-  color: var(--accent-teal);
-}
-.itl-save-btn:hover {
-  background: rgba(79, 169, 129, 0.1);
 }
 .itl-header-row,
 .itl-row {

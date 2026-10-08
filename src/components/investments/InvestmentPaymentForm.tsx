@@ -6,10 +6,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, ArrowUpRight } from 'lucide-react'
 import { scaleIn } from '@/lib/animations'
 import { cn, toISODateString, formatCurrency, getActiveCurrencySymbol } from '@/lib/utils'
-import { useCreateInvestmentPayment } from '@/hooks/useInvestments'
+import { useCreateInvestmentPayment, useUpdateInvestmentPayment } from '@/hooks/useInvestments'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
-import type { Investment } from '@/types/investment.types'
+import type { Investment, InvestmentPayment } from '@/types/investment.types'
 import './InvestmentPaymentForm.css'
 
 const schema = z.object({
@@ -26,11 +26,15 @@ const LS_ACCOUNT_KEY = 'fintrack_last_account'
 
 interface InvestmentPaymentFormProps {
   investment: Investment
+  // Edit an existing installment instead of logging a new one
+  editing?: InvestmentPayment | null
   onClose: () => void
 }
 
-export default function InvestmentPaymentForm({ investment, onClose }: InvestmentPaymentFormProps) {
-  const { mutateAsync: createPayment, isPending } = useCreateInvestmentPayment()
+export default function InvestmentPaymentForm({ investment, editing, onClose }: InvestmentPaymentFormProps) {
+  const { mutateAsync: createPayment, isPending: creating } = useCreateInvestmentPayment()
+  const { mutateAsync: updatePayment, isPending: updating } = useUpdateInvestmentPayment()
+  const isPending = creating || updating
 
   const committed = investment.committed_amount ?? 0
   const paid = investment.total_paid ?? 0
@@ -41,12 +45,20 @@ export default function InvestmentPaymentForm({ investment, onClose }: Investmen
 
   const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      amount:         remaining > 0 ? remaining : undefined,
-      payment_date:   toISODateString(new Date()),
-      payment_method: lastMethod,
-      account:        lastAccount,
-    },
+    defaultValues: editing
+      ? {
+          amount:         editing.amount,
+          payment_date:   editing.payment_date,
+          payment_method: editing.payment_method ?? '',
+          account:        editing.account ?? '',
+          notes:          editing.notes ?? '',
+        }
+      : {
+          amount:         remaining > 0 ? remaining : undefined,
+          payment_date:   toISODateString(new Date()),
+          payment_method: lastMethod,
+          account:        lastAccount,
+        },
   })
   const watchMethod  = watch('payment_method')
   const watchAccount = watch('account')
@@ -55,15 +67,19 @@ export default function InvestmentPaymentForm({ investment, onClose }: Investmen
     if (values.payment_method) localStorage.setItem(LS_METHOD_KEY, values.payment_method)
     if (values.account) localStorage.setItem(LS_ACCOUNT_KEY, values.account)
 
+    const fields = {
+      amount:         values.amount,
+      payment_date:   values.payment_date,
+      payment_method: values.payment_method || null,
+      account:        values.account || null,
+      notes:          values.notes || null,
+    }
     try {
-      await createPayment({
-        investment_id:  investment.id,
-        amount:         values.amount,
-        payment_date:   values.payment_date,
-        payment_method: values.payment_method || null,
-        account:        values.account || null,
-        notes:          values.notes || null,
-      })
+      if (editing) {
+        await updatePayment({ id: editing.id, ...fields })
+      } else {
+        await createPayment({ investment_id: investment.id, ...fields })
+      }
       onClose()
     } catch (err) {
       if (err instanceof DemoBlockedError) onClose()
@@ -75,7 +91,7 @@ export default function InvestmentPaymentForm({ investment, onClose }: Investmen
       <motion.div className="ipf-panel" variants={scaleIn} initial="initial" animate="animate" exit="exit">
         <div className="ipf-header">
           <div>
-            <h2 className="ipf-title">Log installment payment</h2>
+            <h2 className="ipf-title">{editing ? 'Edit installment payment' : 'Log installment payment'}</h2>
             <p className="ipf-sub">
               <ArrowUpRight size={11} style={{ display: 'inline', color: 'var(--accent-coral)' }} />
               {' '}{investment.name}
@@ -161,7 +177,7 @@ export default function InvestmentPaymentForm({ investment, onClose }: Investmen
                   <motion.span key="spin" className="ipf-spinner" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
                 ) : (
                   <motion.span key="label" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                    Log payment
+                    {editing ? 'Save changes' : 'Log payment'}
                   </motion.span>
                 )}
               </AnimatePresence>

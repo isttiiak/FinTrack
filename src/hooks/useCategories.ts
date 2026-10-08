@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
@@ -59,6 +59,15 @@ export function useCreateCategory() {
   })
 }
 
+// Expenses, budgets and recurring rules embed their category (name, group,
+// colour), so a rename/recolour/delete has to refresh them too — not just the
+// category list — or they keep showing the old values until a reload.
+function invalidateCategoryViews(qc: QueryClient) {
+  for (const key of ['categories', 'expenses', 'budgets', 'recurring_rules']) {
+    qc.invalidateQueries({ queryKey: [key] })
+  }
+}
+
 export function useUpdateCategory() {
   const qc = useQueryClient()
   const addToast = useUIStore((s) => s.addToast)
@@ -70,7 +79,7 @@ export function useUpdateCategory() {
       const { error } = await supabase.from('categories').update(fields).eq('id', id)
       if (error) throw error
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['categories'] }),
+    onSuccess: () => invalidateCategoryViews(qc),
     onError: (err: Error) => {
       if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
@@ -89,7 +98,7 @@ export function useDeleteCategory() {
       const { error } = await supabase.from('categories').delete().eq('id', id)
       if (error) throw error
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['categories'] }),
+    onSuccess: () => invalidateCategoryViews(qc),
     onError: (err: Error) => {
       if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
@@ -113,7 +122,7 @@ export function useRenameMainGroup() {
         .eq('main_group', oldName)
       if (error) throw error
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['categories'] }),
+    onSuccess: () => invalidateCategoryViews(qc),
     onError: (err: Error) => {
       if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
@@ -137,7 +146,7 @@ export function useDeleteMainGroup() {
         .eq('main_group', groupName)
       if (error) throw error
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['categories'] }),
+    onSuccess: () => invalidateCategoryViews(qc),
     onError: (err: Error) => {
       if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })

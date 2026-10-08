@@ -1,15 +1,14 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Filter, ArrowUpRight, ArrowDownRight, Edit2, Check } from 'lucide-react'
+import { X, Filter, ArrowUpRight, ArrowDownRight, Edit2 } from 'lucide-react'
 import DeleteButton from '@/components/common/DeleteButton'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { useDeleteInvestmentPayment, useDeleteReturn, useUpdateInvestmentPayment, useUpdateReturn } from '@/hooks/useInvestments'
-import { DemoBlockedError } from '@/hooks/useDemoGuard'
+import { useDeleteInvestmentPayment, useDeleteReturn } from '@/hooks/useInvestments'
+import InvestmentPaymentForm from './InvestmentPaymentForm'
+import ReturnForm from './ReturnForm'
 import { fadeUp } from '@/lib/animations'
-import type { Investment } from '@/types/investment.types'
+import type { Investment, InvestmentPayment, InvestmentReturn } from '@/types/investment.types'
 import './InvestmentTransactionLogs.css'
-
-interface EditState { id: string; type: 'Payment Out' | 'Return In'; amount: string; notes: string }
 
 interface TxRow {
   id: string
@@ -27,24 +26,22 @@ interface TxRow {
 export default function InvestmentTransactionLogs({ investments }: { investments: Investment[] }) {
   const { mutate: deletePayment } = useDeleteInvestmentPayment()
   const { mutate: deleteReturn } = useDeleteReturn()
-  const { mutateAsync: updatePayment, isPending: updatingPay } = useUpdateInvestmentPayment()
-  const { mutateAsync: updateReturn, isPending: updatingRet } = useUpdateReturn()
   const [filterInv, setFilterInv] = useState<string | null>(null)
-  const [editState, setEditState] = useState<EditState | null>(null)
+  const [editing, setEditing] = useState<
+    | { kind: 'payment'; investment: Investment; row: InvestmentPayment }
+    | { kind: 'return'; investment: Investment; row: InvestmentReturn }
+    | null
+  >(null)
 
-  async function saveEdit() {
-    if (!editState) return
-    const amount = Number(editState.amount)
-    if (isNaN(amount) || amount <= 0) return
-    try {
-      if (editState.type === 'Payment Out') {
-        await updatePayment({ id: editState.id, amount, notes: editState.notes || null })
-      } else {
-        await updateReturn({ id: editState.id, amount, notes: editState.notes || null })
-      }
-      setEditState(null)
-    } catch (err) {
-      if (err instanceof DemoBlockedError) setEditState(null)
+  function startEdit(row: TxRow) {
+    const investment = investments.find((i) => i.id === row.invId)
+    if (!investment) return
+    if (row.txType === 'Payment Out') {
+      const payment = investment.payments?.find((p) => p.id === row.id)
+      if (payment) setEditing({ kind: 'payment', investment, row: payment })
+    } else {
+      const ret = investment.returns?.find((r) => r.id === row.id)
+      if (ret) setEditing({ kind: 'return', investment, row: ret })
     }
   }
 
@@ -204,16 +201,11 @@ export default function InvestmentTransactionLogs({ investments }: { investments
             {/* Date */}
             <div className="itl-cell itl-cell-muted" data-label="Date">{formatDate(row.date)}</div>
 
-            {/* Amount — inline edit */}
+            {/* Amount */}
             <div className="itl-cell" data-label="Amount">
-              {editState?.id === row.id ? (
-                <input className="itl-edit-input" type="number" step="0.01" value={editState.amount}
-                  onChange={(e) => setEditState({ ...editState, amount: e.target.value })} autoFocus />
-              ) : (
-                <span className={row.txType === 'Payment Out' ? 'itl-amount-out' : 'itl-amount-in'}>
-                  {row.txType === 'Payment Out' ? '−' : '+'}{formatCurrency(row.amount)}
-                </span>
-              )}
+              <span className={row.txType === 'Payment Out' ? 'itl-amount-out' : 'itl-amount-in'}>
+                {row.txType === 'Payment Out' ? '−' : '+'}{formatCurrency(row.amount)}
+              </span>
             </div>
 
             {/* Remaining to pay */}
@@ -232,46 +224,34 @@ export default function InvestmentTransactionLogs({ investments }: { investments
               </span>
             </div>
 
-            {/* Notes — inline edit */}
+            {/* Notes */}
             <div className="itl-cell" data-label="Notes">
-              {editState?.id === row.id ? (
-                <input className="itl-edit-input" type="text" placeholder="Notes…" value={editState.notes}
-                  onChange={(e) => setEditState({ ...editState, notes: e.target.value })} />
-              ) : (
-                <span className="itl-cell-muted">{row.notes ?? '—'}</span>
-              )}
+              <span className="itl-cell-muted">{row.notes ?? '—'}</span>
             </div>
 
             {/* Edit / Delete */}
             <div className="itl-cell" style={{ display: 'flex', gap: 4 }}>
-              {editState?.id === row.id ? (
-                <button className="itl-save-btn" onClick={saveEdit} disabled={updatingPay || updatingRet} data-tooltip="Save">
-                  <Check size={12} />
-                </button>
-              ) : (
-                <button className="itl-edit-btn"
-                  onClick={() => setEditState({ id: row.id, type: row.txType, amount: String(row.amount), notes: row.notes ?? '' })}
-                  data-tooltip="Edit"
-                >
-                  <Edit2 size={12} />
-                </button>
-              )}
-              {editState?.id === row.id ? (
-                <button className="itl-del-btn" data-tooltip="Cancel" onClick={() => setEditState(null)}>
-                  <X size={12} />
-                </button>
-              ) : (
-                <DeleteButton
-                  onConfirm={() => row.txType === 'Payment Out' ? deletePayment(row.id) : deleteReturn(row.id)}
-                  className="itl-del-btn"
-                  iconSize={12}
-                />
-              )}
+              <button className="itl-edit-btn" onClick={() => startEdit(row)} data-tooltip="Edit" aria-label="Edit">
+                <Edit2 size={12} />
+              </button>
+              <DeleteButton
+                onConfirm={() => row.txType === 'Payment Out' ? deletePayment(row.id) : deleteReturn(row.id)}
+                className="itl-del-btn"
+                iconSize={12}
+              />
             </div>
           </motion.div>
         ))}
       </div>
 
+      <AnimatePresence>
+        {editing?.kind === 'payment' && (
+          <InvestmentPaymentForm investment={editing.investment} editing={editing.row} onClose={() => setEditing(null)} />
+        )}
+        {editing?.kind === 'return' && (
+          <ReturnForm investment={editing.investment} editing={editing.row} onClose={() => setEditing(null)} />
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }
