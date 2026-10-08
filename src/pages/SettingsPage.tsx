@@ -9,7 +9,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import {
   DollarSign, Plus, Download, AlertTriangle,
   ChevronDown, Check, X, Upload, Sparkles, Eye, EyeOff,
-  Power, Trash2, Lock, Unlock, Bell,
+  Power, Trash2, Lock, Unlock, Bell, Edit2,
 } from 'lucide-react'
 import DeleteButton from '@/components/common/DeleteButton'
 import { useCategories } from '@/hooks/useCategories'
@@ -36,7 +36,8 @@ import './SettingsPage.css'
 
 const budgetSchema = z.object({
   category_id:   z.string().min(1, 'Pick a category'),
-  monthly_limit: z.number().positive('Must be > 0'),
+  monthly_limit: z.number({ error: 'Enter an amount' }).positive('Must be > 0'),
+  rollover:      z.boolean(),
 })
 type BudgetForm = z.infer<typeof budgetSchema>
 
@@ -47,21 +48,45 @@ function BudgetSection() {
   const { mutate: upsert, isPending: upserting } = useUpsertBudget()
   const { mutate: deleteBudget } = useDeleteBudget()
   const [addOpen, setAddOpen] = useState(false)
+  // Editing an existing limit reuses the add form with its category fixed —
+  // there was previously no way to change a budget's amount at all
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<BudgetForm>({
     resolver: zodResolver(budgetSchema),
+    defaultValues: { category_id: '', rollover: false },
   })
 
   const existingCatIds = new Set(budgets.map((b) => b.category_id))
-  const availableCategories = categories.filter((c) => !existingCatIds.has(c.id))
+  const editing = budgets.find((b) => b.id === editingId) ?? null
+  const availableCategories = categories.filter((c) => !existingCatIds.has(c.id) || c.id === editing?.category_id)
+
+  function closeForm() {
+    reset({ category_id: '', rollover: false })
+    setAddOpen(false)
+    setEditingId(null)
+  }
+
+  function startEdit(id: string) {
+    const b = budgets.find((x) => x.id === id)
+    if (!b) return
+    setEditingId(id)
+    reset({ category_id: b.category_id, monthly_limit: b.monthly_limit, rollover: !!b.rollover })
+    setAddOpen(true)
+  }
 
   function onSubmit(values: BudgetForm) {
-    upsert(values, {
-      onSuccess: () => {
-        reset()
-        setAddOpen(false)
-      },
-    })
+    // Only send rollover when it's on or being changed, so a plain budget
+    // still saves on a database without 017_budget_rollover.sql
+    const changesRollover = values.rollover || !!editing?.rollover
+    upsert(
+      { category_id: values.category_id, monthly_limit: values.monthly_limit, ...(changesRollover && { rollover: values.rollover }) },
+      { onSuccess: closeForm },
+    )
+  }
+
+  function toggleRollover(b: { category_id: string; monthly_limit: number; rollover?: boolean }) {
+    upsert({ category_id: b.category_id, monthly_limit: b.monthly_limit, rollover: !b.rollover })
   }
 
   return (
@@ -71,7 +96,7 @@ function BudgetSection() {
           <h2 className="settings-section-title"><DollarSign size={16} /> Budget Limits</h2>
           <p className="settings-section-desc">Set monthly spending caps per category. A warning shows at 80%, alert at 100%.</p>
         </div>
-        <button className="settings-add-btn" onClick={() => setAddOpen((v) => !v)}>
+        <button className="settings-add-btn" onClick={() => (addOpen ? closeForm() : setAddOpen(true))}>
           <Plus size={14} /> Add limit
         </button>
       </div>
@@ -90,6 +115,10 @@ function BudgetSection() {
             <div className="budget-add-inner">
               <div className="settingspage-pf-field" style={{ flex: 1 }}>
                 <label className="pf-label">Category</label>
+                {editing ? (
+                  // Category is fixed while editing; react-hook-form keeps the value
+                  <div className="budget-edit-category">{editing.category?.main_group} › {editing.category?.name}</div>
+                ) : (
                 <div style={{ position: 'relative' }}>
                   <select {...register('category_id')} aria-label="Category" className="settingspage-pf-select">
                     <option value="">Select…</option>
@@ -99,6 +128,7 @@ function BudgetSection() {
                   </select>
                   <ChevronDown size={14} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
                 </div>
+                )}
                 {errors.category_id && <p className="pf-error">{errors.category_id.message}</p>}
               </div>
 
@@ -108,8 +138,14 @@ function BudgetSection() {
                 {errors.monthly_limit && <p className="pf-error">{errors.monthly_limit.message}</p>}
               </div>
 
+              <label className="budget-rollover-check">
+                <input type="checkbox" {...register('rollover')} />
+                Roll unspent over
+                <span className="budget-rollover-hint">Last month's leftover is added to this month — one month only</span>
+              </label>
+
               <div style={{ display: 'flex', gap: 8, alignSelf: 'flex-end' }}>
-                <button type="button" className="btn-ghost" onClick={() => { reset(); setAddOpen(false) }}><X size={14} /></button>
+                <button type="button" className="btn-ghost" onClick={closeForm} aria-label="Cancel"><X size={14} /></button>
                 <button type="submit" className="btn-primary" style={{ padding: '9px 16px', minWidth: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }} disabled={upserting}>
                   {upserting ? <span className="settingspage-auth-spinner" /> : <><Check size={14} /> Save</>}
                 </button>
@@ -138,7 +174,22 @@ function BudgetSection() {
                 <span className="budget-row-group">{b.category?.main_group}</span>
               </div>
               <div className="budget-row-right">
-                <span className="budget-row-amount">{formatCurrency(b.monthly_limit)}/mo</span>
+                <span className="budget-row-amount">
+                  {formatCurrency(b.monthly_limit)}/mo
+                  {b.carryover > 0 && <span className="budget-row-carry"> + {formatCurrency(b.carryover)} rolled over</span>}
+                </span>
+                <button
+                  type="button"
+                  className={cn('budget-rollover-chip', b.rollover && 'budget-rollover-chip-on')}
+                  aria-pressed={!!b.rollover}
+                  onClick={() => toggleRollover(b)}
+                  title="Carry last month's unspent amount into this month"
+                >
+                  Rollover {b.rollover ? 'on' : 'off'}
+                </button>
+                <button type="button" className="budget-edit-btn" onClick={() => startEdit(b.id)} aria-label={`Edit ${b.category?.name ?? ''} budget`}>
+                  <Edit2 size={13} />
+                </button>
                 <DeleteButton
                   onConfirm={() => deleteBudget(b.id)}
                   className="budget-delete-btn"

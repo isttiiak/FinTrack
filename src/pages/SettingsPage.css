@@ -118,7 +118,9 @@
 .budget-row-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }
 .budget-row-amount {
   font-size: 13px;
@@ -139,6 +141,75 @@
   transition:
     background 0.15s,
     color 0.15s;
+}
+.budget-row-carry {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.budget-rollover-chip {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+}
+.budget-rollover-chip:hover {
+  background: var(--bg-hover);
+}
+.budget-rollover-chip-on {
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+  background: rgba(79, 169, 129, 0.12);
+}
+.budget-edit-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.budget-edit-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.budget-edit-category {
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
+}
+.budget-rollover-check {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-end;
+  font-size: 12px;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding-bottom: 10px;
+  max-width: 220px;
+}
+.budget-rollover-hint {
+  flex-basis: 100%;
+  font-size: 11px;
+  color: var(--text-muted);
 }
 .budget-delete-btn:hover {
   background: rgba(194, 91, 85, 0.1);

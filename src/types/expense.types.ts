@@ -31,9 +31,15 @@ export interface BudgetLimit {
   user_id: string
   category_id: string
   monthly_limit: number
+  // Carry last month's unspent amount forward (017_budget_rollover.sql).
+  // Absent on databases that haven't run 017 — treated as off.
+  rollover?: boolean
   created_at: string
   // joined
   category?: Category | null
+  // computed by useBudgets(month) — limit for the month being viewed
+  carryover?: number
+  effective_limit?: number
 }
 
 export interface TransactionFormData {

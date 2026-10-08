@@ -96,7 +96,7 @@ export default function ExpensesPage() {
 
   const transactionsQ = useExpenses(filters)
   const { data: transactions = [], isLoading } = transactionsQ
-  const { data: budgets = [] } = useBudgets()
+  const { data: budgets = [] } = useBudgets(month)
   const { data: allCategories = [] } = useCategories()
 
   // Category multi-select choices follow the Type filter, so "Income" doesn't
@@ -158,7 +158,7 @@ export default function ExpensesPage() {
   const budgetsWithSpend = budgets.map((b) => ({
     ...b,
     spent: categorySpend[b.category_id] ?? 0,
-  })).filter((b) => b.monthly_limit > 0)
+  })).filter((b) => b.effective_limit > 0)
 
   const isCurrentMonth = !rangeMode && month === `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 

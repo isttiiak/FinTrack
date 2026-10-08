@@ -21,8 +21,29 @@ const CRON_SECRET           = Deno.env.get('CRON_SECRET')!
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
 
-function formatBDT(n: number): string {
-  return `৳${Math.round(n).toLocaleString('en-BD')}`
+// Amounts go out in the user's own Profile → Currency (it used to be ৳ for
+// everyone, which was wrong for anyone outside Bangladesh). Same rules as the
+// app's lib/utils.ts formatCurrency.
+function formatMoney(n: number, currency: string | null | undefined): string {
+  const cur = currency || 'BDT'
+  if (cur === 'BDT') {
+    return `৳${n.toLocaleString('en-BD', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
+  }
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: cur, minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n)
+  } catch {
+    return `${cur} ${n.toFixed(2)}`
+  }
+}
+
+// 'YYYY-MM' → first and last day of the month before it.
+function previousMonthRange(month: string): { from: string; to: string } {
+  const [y, m] = month.split('-').map(Number)
+  const prevY = m === 1 ? y - 1 : y
+  const prevM = m === 1 ? 12 : m - 1
+  const last = new Date(Date.UTC(prevY, prevM, 0)).getUTCDate()
+  const mm = String(prevM).padStart(2, '0')
+  return { from: `${prevY}-${mm}-01`, to: `${prevY}-${mm}-${String(last).padStart(2, '0')}` }
 }
 
 function todayISO(): string {
@@ -65,7 +86,7 @@ async function runBudgetAlerts() {
   const monthStart = `${currentMonth}-01`
 
   const { data: users, error: usersErr } = await supabase
-    .from('profiles').select('id, email').eq('notify_budget_alerts', true).is('deleted_at', null)
+    .from('profiles').select('id, email, currency').eq('notify_budget_alerts', true).is('deleted_at', null)
   if (usersErr) throw usersErr
 
   let sent = 0
@@ -73,7 +94,7 @@ async function runBudgetAlerts() {
   for (const user of users ?? []) {
     const { data: budgets } = await supabase
       .from('budget_limits')
-      .select('category_id, monthly_limit, category:categories(name)')
+      .select('*, category:categories(name)')
       .eq('user_id', user.id)
     if (!budgets?.length) continue
 
@@ -88,9 +109,32 @@ async function runBudgetAlerts() {
       spentByCategory.set(t.category_id, (spentByCategory.get(t.category_id) ?? 0) + Number(t.amount))
     }
 
+    // Opt-in rollover (017_budget_rollover.sql): last month's unspent part of
+    // the base limit is added to this month's — same rule as the app's
+    // src/lib/budgetRollover.ts, so the email agrees with what the user sees.
+    const lastMonthSpent = new Map<string, number>()
+    const rolling = budgets.filter((b) => b.rollover && String(b.created_at).slice(0, 10) < monthStart)
+    if (rolling.length > 0) {
+      const { from, to } = previousMonthRange(currentMonth)
+      const { data: prev } = await supabase
+        .from('transactions')
+        .select('category_id, amount')
+        .eq('user_id', user.id)
+        .eq('type', 'Expense')
+        .in('category_id', rolling.map((b) => b.category_id))
+        .gte('txn_date', from)
+        .lte('txn_date', to)
+      for (const t of prev ?? []) {
+        lastMonthSpent.set(t.category_id, (lastMonthSpent.get(t.category_id) ?? 0) + Number(t.amount))
+      }
+    }
+
     for (const b of budgets) {
       const spent = spentByCategory.get(b.category_id) ?? 0
-      if (spent < b.monthly_limit) continue
+      const base = Number(b.monthly_limit)
+      const carry = rolling.includes(b) ? Math.max(0, base - (lastMonthSpent.get(b.category_id) ?? 0)) : 0
+      const limit = base + carry
+      if (spent < limit) continue
 
       const { data: existing } = await supabase
         .from('budget_alert_log')
@@ -107,7 +151,7 @@ async function runBudgetAlerts() {
         await sendEmail(
           user.email,
           `Budget exceeded: ${categoryName}`,
-          `<p>You've spent <strong>${formatBDT(spent)}</strong> on <strong>${categoryNameHtml}</strong> this month — over your ${formatBDT(b.monthly_limit)} budget.</p>
+          `<p>You've spent <strong>${formatMoney(spent, user.currency)}</strong> on <strong>${categoryNameHtml}</strong> this month — over your ${formatMoney(limit, user.currency)} budget${carry > 0 ? ` (including ${formatMoney(carry, user.currency)} rolled over from last month)` : ''}.</p>
            <p>— FinTrack</p>`,
         )
         await supabase.from('budget_alert_log').insert({ user_id: user.id, category_id: b.category_id, alert_month: currentMonth })
@@ -127,7 +171,7 @@ async function runWeeklyDigest() {
   const from = weekAgo.toISOString().slice(0, 10)
 
   const { data: users, error: usersErr } = await supabase
-    .from('profiles').select('id, email').eq('notify_weekly_digest', true).is('deleted_at', null)
+    .from('profiles').select('id, email, currency').eq('notify_weekly_digest', true).is('deleted_at', null)
   if (usersErr) throw usersErr
 
   let sent = 0
@@ -146,13 +190,13 @@ async function runWeeklyDigest() {
       byCategory.set(name, (byCategory.get(name) ?? 0) + Number(t.amount))
     }
     const top = [...byCategory.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5)
-    const topHtml = top.map(([name, amt]) => `<li>${escapeHtml(name)}: ${formatBDT(amt)}</li>`).join('')
+    const topHtml = top.map(([name, amt]) => `<li>${escapeHtml(name)}: ${formatMoney(amt, user.currency)}</li>`).join('')
 
     try {
       await sendEmail(
         user.email,
         'Your weekly spending digest',
-        `<p>You spent <strong>${formatBDT(total)}</strong> over the last 7 days.</p>
+        `<p>You spent <strong>${formatMoney(total, user.currency)}</strong> over the last 7 days.</p>
          <p>Top categories:</p><ul>${topHtml}</ul>
          <p>— FinTrack</p>`,
       )
@@ -175,7 +219,7 @@ async function runMonthlyDigest() {
   const monthLabel = prevMonthStart.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
 
   const { data: users, error: usersErr } = await supabase
-    .from('profiles').select('id, email').eq('notify_monthly_digest', true).is('deleted_at', null)
+    .from('profiles').select('id, email, currency').eq('notify_monthly_digest', true).is('deleted_at', null)
   if (usersErr) throw usersErr
 
   let sent = 0
@@ -195,14 +239,14 @@ async function runMonthlyDigest() {
       byCategory.set(name, (byCategory.get(name) ?? 0) + Number(t.amount))
     }
     const top = [...byCategory.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8)
-    const topHtml = top.map(([name, amt]) => `<li>${escapeHtml(name)}: ${formatBDT(amt)}</li>`).join('')
+    const topHtml = top.map(([name, amt]) => `<li>${escapeHtml(name)}: ${formatMoney(amt, user.currency)}</li>`).join('')
 
     try {
       await sendEmail(
         user.email,
         `Your ${monthLabel} summary`,
         `<p><strong>${monthLabel}</strong></p>
-         <p>Income: ${formatBDT(income)}<br>Expenses: ${formatBDT(expense)}<br>Net: ${formatBDT(income - expense)}</p>
+         <p>Income: ${formatMoney(income, user.currency)}<br>Expenses: ${formatMoney(expense, user.currency)}<br>Net: ${formatMoney(income - expense, user.currency)}</p>
          <p>Top categories:</p><ul>${topHtml}</ul>
          <p>— FinTrack</p>`,
       )

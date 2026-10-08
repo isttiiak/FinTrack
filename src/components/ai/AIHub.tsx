@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, Send, AlertCircle, RefreshCw, Settings } from 'lucide-react'
 import { groqChat, isGroqConfigured, getGroqModel } from '@/lib/groq'
@@ -161,7 +161,9 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
   // allTxns above is now capped at selectedMonthEnd, which may be in the past.
   const sevenDaysAgo = (() => { const d = new Date(); d.setDate(d.getDate() - 7); return toISODateString(d) })()
   const { data: last7DaysTxns = [] } = useExpenses({ from: sevenDaysAgo, to: toISODateString(new Date()) })
-  const { data: budgets   = [] } = useBudgets()
+  const { data: budgetRows = [] } = useBudgets(selectedMonth)
+  // AI sees the limit that applies this month, rollover included
+  const budgets = useMemo(() => budgetRows.map((b) => ({ ...b, monthly_limit: b.effective_limit })), [budgetRows])
   const { data: persons   = [] } = usePersons()
   const hasError = allTxnsQ.isError || thisTxnsQ.isError
   const retryAll = () => { allTxnsQ.refetch(); thisTxnsQ.refetch() }
@@ -262,7 +264,8 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
       // own budget-performance block already has (aiContext.ts).
       const pct   = b.monthly_limit > 0 ? Math.round((spent / b.monthly_limit) * 100) : 0
       const status = pct > 100 ? '🔴 OVER' : pct > 80 ? '🟡 NEAR' : '🟢 OK'
-      return `  ${b.category!.name}: budget ${formatCurrency(b.monthly_limit)}, spent ${formatCurrency(spent)} (${pct}%) ${status}`
+      const rolled = b.carryover > 0 ? ` (incl. ${formatCurrency(b.carryover)} rolled over from last month)` : ''
+      return `  ${b.category!.name}: budget ${formatCurrency(b.monthly_limit)}${rolled}, spent ${formatCurrency(spent)} (${pct}%) ${status}`
     }).join('\n')
     return groqChat(
       'Analyze budget vs actual spending. Explain WHY over-budget categories are high, suggest specific actions to bring them in line. Be concise and use bullet points, never a markdown table.',

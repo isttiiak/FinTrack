@@ -1,16 +1,17 @@
 import { motion } from 'framer-motion'
 import { AlertTriangle, AlertCircle } from 'lucide-react'
-import type { BudgetLimit } from '@/types/expense.types'
+import type { BudgetWithLimit } from '@/hooks/useBudgets'
 import { formatCurrency } from '@/lib/utils'
 
 interface BudgetIndicatorProps {
-  budget: BudgetLimit
+  budget: BudgetWithLimit
   spent: number
 }
 
 export default function BudgetIndicator({ budget, spent }: BudgetIndicatorProps) {
-  const pct = Math.min((spent / budget.monthly_limit) * 100, 100)
-  const isOver = spent > budget.monthly_limit
+  const limit = budget.effective_limit
+  const pct = Math.min((spent / limit) * 100, 100)
+  const isOver = spent > limit
   const isWarning = pct >= 80 && !isOver
 
   const barColor = isOver
@@ -28,9 +29,15 @@ export default function BudgetIndicator({ budget, spent }: BudgetIndicatorProps)
         <span style={{ color: isOver ? 'var(--accent-red)' : 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
           {isOver && <><AlertTriangle size={11} aria-hidden="true" />Over · </>}
           {isWarning && <><AlertCircle size={11} aria-hidden="true" style={{ color: 'var(--accent-amber)' }} />Near limit · </>}
-          {formatCurrency(spent)} / {formatCurrency(budget.monthly_limit)}
+          {formatCurrency(spent)} / {formatCurrency(limit)}
         </span>
       </div>
+      {budget.carryover > 0 && (
+        // Say where a bigger-than-usual limit came from, so it's never a mystery
+        <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+          {formatCurrency(budget.monthly_limit)} + {formatCurrency(budget.carryover)} rolled over from last month
+        </span>
+      )}
       <div
         role="progressbar"
         aria-label={`${budget.category?.name ?? 'Budget'} budget`}

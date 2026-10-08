@@ -65,7 +65,9 @@ export default function AnalyticsPage() {
   const { data: thisTxns = [] } = thisTxnsQ
   const hasError = allTxnsQ.isError || thisTxnsQ.isError
   const retryAll = () => { allTxnsQ.refetch(); thisTxnsQ.refetch() }
-  const { data: budgets = [] }  = useBudgets()
+  const { data: budgetRows = [] }  = useBudgets(selectedMonth)
+  // The forecast and charts compare against this month's limit, rollover included
+  const budgets = useMemo(() => budgetRows.map((b) => ({ ...b, monthly_limit: b.effective_limit })), [budgetRows])
   const streak = useNoSpendStreak(allTxns)
   const isCurrentMonth = selectedMonth === toISODateString(new Date()).slice(0, 7)
 
