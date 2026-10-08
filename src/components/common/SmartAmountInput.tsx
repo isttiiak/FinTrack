@@ -13,6 +13,15 @@ interface SmartAmountInputProps {
   id?: string
 }
 
+// Whether a mouse/pen/finger is currently pressed anywhere on the page —
+// see handleBlur. Capture phase so it's set before any element's handlers.
+let pointerIsDown = false
+if (typeof window !== 'undefined') {
+  window.addEventListener('pointerdown', () => { pointerIsDown = true }, true)
+  window.addEventListener('pointerup', () => { pointerIsDown = false }, true)
+  window.addEventListener('pointercancel', () => { pointerIsDown = false }, true)
+}
+
 const OPERATOR_CHIPS = [
   { label: '+', char: '+' },
   { label: '−', char: '-' },
@@ -63,16 +72,22 @@ export default function SmartAmountInput({
   }
 
   function handleBlur() {
-    // Deferred by a tick rather than called synchronously: collapsing the
-    // chip row immediately reflows the layout of whatever sits below this
-    // field (e.g. the Category combobox in ExpenseForm) *between* the
-    // mousedown and click of whatever the user just clicked on, so the
-    // click's hit-test lands on the wrong element and gets swallowed — the
-    // user has to click twice. Deferring the collapse until after the click
-    // has already been dispatched fixes it with no visible behavior change.
-    setTimeout(() => {
+    // Collapsing the chip row reflows whatever sits below this field (e.g.
+    // the Category combobox in ExpenseForm). If that happens between the
+    // mousedown and mouseup of the click that caused this blur, the two land
+    // on different elements and the browser fires no click at all — the user
+    // has to click twice. A setTimeout(0) alone isn't enough: it still fires
+    // while the button is held. So when a pointer is down, wait for it to be
+    // released (and the click dispatched) before collapsing. Touch and
+    // keyboard blurs arrive with no pointer held and just defer a tick.
+    const collapse = () => {
       if (document.activeElement !== inputRef.current) setFocused(false)
-    }, 0)
+    }
+    if (pointerIsDown) {
+      window.addEventListener('pointerup', () => setTimeout(collapse, 0), { once: true })
+    } else {
+      setTimeout(collapse, 0)
+    }
     const result = evaluate(rawText)
     if (result.ok) setRawText(String(round2(result.value)))
   }
