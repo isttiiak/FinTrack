@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Home, Plus } from 'lucide-react'
 import ErrorBanner from '@/components/common/ErrorBanner'
@@ -17,6 +18,7 @@ import { computeBalances, suggestSettlements, formatMoney } from '@/lib/househol
 import { useConfirmStore } from '@/stores/confirmStore'
 import { fadeUp } from '@/lib/animations'
 import { cn } from '@/lib/utils'
+import { inviteCodeFromUrl, getPendingInvite, clearPendingInvite } from '@/lib/householdInvite'
 import type { HouseholdMember, HouseholdSettlement, SharedExpense } from '@/types/household.types'
 import '@/components/household/Household.css'
 
@@ -27,7 +29,16 @@ export default function HouseholdPage() {
   const { data: households = [] } = householdsQ
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [showSetup, setShowSetup] = useState(false)
+  // Opened from an invite link (directly, or stashed across login)
+  const [inviteCode] = useState(() => inviteCodeFromUrl() ?? getPendingInvite())
+  const [showSetup, setShowSetup] = useState(!!inviteCode)
+  const navigate = useNavigate()
+  useEffect(() => {
+    if (!inviteCode) return
+    clearPendingInvite()
+    // Drop ?join= from the address bar so a refresh doesn't re-open the join step
+    if (window.location.search) navigate({ to: '/household', replace: true })
+  }, [inviteCode, navigate])
   const [tab, setTab] = useState<Tab>('expenses')
   const [expenseForm, setExpenseForm] = useState<{ editing: SharedExpense | null } | null>(null)
   const [settleForm, setSettleForm] = useState<{ initial?: { from: string; to: string; amount: number } } | null>(null)
@@ -147,7 +158,7 @@ export default function HouseholdPage() {
               <div>You’re not in a household yet.</div>
             </div>
           )}
-          <HouseholdSetup onDone={(id) => { if (id) setSelectedId(id); setShowSetup(false) }} />
+          <HouseholdSetup initialCode={inviteCode} onDone={(id) => { if (id) setSelectedId(id); setShowSetup(false) }} />
           {showSetup && households.length > 0 && <button className="hh-ghost-btn" style={{ alignSelf: 'flex-start' }} onClick={() => setShowSetup(false)}>Cancel</button>}
         </>
       )}

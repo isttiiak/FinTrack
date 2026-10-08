@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Copy, Check, UserPlus, RefreshCw } from 'lucide-react'
+import { Copy, Check, UserPlus, RefreshCw, Share2 } from 'lucide-react'
 import { useAddMember, useRemoveMember, useRotateInviteCode } from '@/hooks/useHousehold'
 import { useUIStore } from '@/stores/uiStore'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
+import { inviteLink } from '@/lib/householdInvite'
 import type { Household, HouseholdMember } from '@/types/household.types'
 
 interface MembersPanelProps {
@@ -21,7 +22,9 @@ export default function MembersPanel({ household, members, meId, isOwner, onLeav
   const addToast = useUIStore((s) => s.addToast)
 
   const [name, setName] = useState('')
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied] = useState<'link' | 'code' | null>(null)
+  const link = inviteLink(household.invite_code)
+  const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault()
@@ -40,14 +43,20 @@ export default function MembersPanel({ household, members, meId, isOwner, onLeav
     } catch { /* toast shown by the hook */ }
   }
 
-  async function copyCode() {
+  async function copy(what: 'link' | 'code') {
     try {
-      await navigator.clipboard.writeText(household.invite_code)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
+      await navigator.clipboard.writeText(what === 'link' ? link : household.invite_code)
+      setCopied(what)
+      setTimeout(() => setCopied(null), 1500)
     } catch {
-      addToast({ type: 'info', message: 'Select the code and copy it manually' })
+      addToast({ type: 'info', message: `Select the ${what} and copy it manually` })
     }
+  }
+
+  async function share() {
+    try {
+      await navigator.share({ title: `Join ${household.name} on FinTrack`, text: `Join "${household.name}" on FinTrack to split shared costs:`, url: link })
+    } catch { /* dismissed the share sheet */ }
   }
 
   async function handleRotate() {
@@ -86,11 +95,15 @@ export default function MembersPanel({ household, members, meId, isOwner, onLeav
       </form>
 
       <div className="hh-panel">
-        <h3 className="hh-panel-title">Invite people with an account</h3>
-        <p className="hh-note">Share this code. They choose “Join with a code” on the Household page. Anyone with the code can join, so replace it if it gets shared too widely.</p>
+        <h3 className="hh-panel-title">Invite a friend</h3>
+        <p className="hh-note">Send them this link. If they don’t have an account yet they can sign up first, and the link brings them straight back here to join. Anyone with the link can join, so replace it if it gets shared too widely.</p>
         <div className="hh-inline">
-          <div className="hh-code">{household.invite_code}</div>
-          <button className="hh-ghost-btn" onClick={copyCode}>{copied ? <Check size={14} /> : <Copy size={14} />} {copied ? 'Copied' : 'Copy'}</button>
+          <div className="hh-code hh-invite-link">{link}</div>
+        </div>
+        <div className="hh-inline hh-inline-wrap">
+          {canShare && <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 6 }} onClick={share}><Share2 size={14} /> Share link</button>}
+          <button className="hh-ghost-btn" onClick={() => copy('link')}>{copied === 'link' ? <Check size={14} /> : <Copy size={14} />} {copied === 'link' ? 'Copied' : 'Copy link'}</button>
+          <button className="hh-ghost-btn" onClick={() => copy('code')}>{copied === 'code' ? <Check size={14} /> : <Copy size={14} />} {copied === 'code' ? 'Copied' : `Code: ${household.invite_code}`}</button>
           {isOwner && <button className="hh-ghost-btn" onClick={handleRotate} disabled={rotating}><RefreshCw size={14} /> Replace</button>}
         </div>
       </div>

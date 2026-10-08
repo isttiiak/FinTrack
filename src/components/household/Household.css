@@ -307,6 +307,17 @@
   display: flex;
   gap: 8px;
 }
+.hh-inline > button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.hh-inline-wrap {
+  flex-wrap: wrap;
+}
+.hh-invite-link {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
 .hh-code {
   flex: 1;
   min-width: 0;

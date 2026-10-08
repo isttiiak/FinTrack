@@ -46,6 +46,7 @@ const LandingPage          = lazyRouteComponent(() => import('@/pages/LandingPag
 // route, so lazy-loading it would only add a waterfall hop with no payoff.
 import AppShell from '@/components/layout/AppShell'
 import RoutePendingFallback from '@/components/common/RoutePendingFallback'
+import { stashPendingInvite, getPendingInvite } from '@/lib/householdInvite'
 import './App.css'
 
 const queryClient = new QueryClient({
@@ -81,7 +82,7 @@ function Root() {
     }
 
     // Protected-route prefixes used for post-getSession redirect
-    const PROTECTED = ['/dashboard', '/expenses', '/ledger', '/analytics', '/settings', '/profile', '/investments', '/investment']
+    const PROTECTED = ['/dashboard', '/expenses', '/ledger', '/analytics', '/settings', '/profile', '/investments', '/investment', '/household']
 
     // Initial session check — await profile so splash hides only when data is ready
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -93,6 +94,7 @@ function Root() {
       if (!session && !useDemoStore.getState().isDemo) {
         const { pathname } = router.state.location
         if (PROTECTED.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
+          stashPendingInvite()
           router.navigate({ to: '/login', replace: true })
         }
       }
@@ -111,7 +113,12 @@ function Root() {
         // Only redirect when on a public/auth page.
         // Token refreshes also fire SIGNED_IN — don't kick the user to /dashboard mid-session.
         const currentPath = router.state.location.pathname
-        if (AUTH_PATHS.includes(currentPath)) {
+        if (getPendingInvite() && currentPath !== '/household') {
+          // Signed in after opening a household invite link (the OAuth return
+          // lands on /dashboard) — finish what they came for. The page
+          // consumes the stash, so later token refreshes don't re-trigger this.
+          router.navigate({ to: '/household', replace: true })
+        } else if (AUTH_PATHS.includes(currentPath)) {
           router.navigate({ to: '/dashboard', replace: true })
         }
       } else if (event === 'SIGNED_OUT') {
@@ -222,7 +229,10 @@ const appRoute = createRoute({
     const { session, loading } = useAuthStore.getState()
     const { isDemo } = useDemoStore.getState()
     if (loading) return  // Root shows splash screen; getSession callback handles redirect
-    if (!session && !isDemo) throw redirect({ to: '/login' })
+    if (!session && !isDemo) {
+      stashPendingInvite()
+      throw redirect({ to: '/login' })
+    }
   },
   component: AppShell,
 })

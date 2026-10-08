@@ -1,25 +1,30 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Home, KeyRound } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
+import { useDemoStore } from '@/stores/demoStore'
 import { useCreateHousehold, useJoinHousehold, lookupInvite } from '@/hooks/useHousehold'
 import { CURRENCIES } from '@/lib/constants'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
+import { normalizeInviteCode } from '@/lib/householdInvite'
 
 interface HouseholdSetupProps {
+  // From an invite link — looked up straight away
+  initialCode?: string | null
   onDone: (householdId: string | null) => void
 }
 
 // Shown when the user has no household (or wants another): create one, or
 // join one with an invite code.
-export default function HouseholdSetup({ onDone }: HouseholdSetupProps) {
+export default function HouseholdSetup({ initialCode, onDone }: HouseholdSetupProps) {
   const profileCurrency = useAuthStore((s) => s.profile?.currency)
+  const isDemo = useDemoStore((s) => s.isDemo)
   const { mutateAsync: create, isPending: creating } = useCreateHousehold()
   const { mutateAsync: join, isPending: joining } = useJoinHousehold()
 
   const [name, setName] = useState('')
   const [currency, setCurrency] = useState<string>(profileCurrency ?? 'USD')
 
-  const [code, setCode] = useState('')
+  const [code, setCode] = useState(initialCode ?? '')
   const [invite, setInvite] = useState<{ name: string; members: { id: string; name: string }[] } | null>(null)
   const [lookupError, setLookupError] = useState('')
   const [looking, setLooking] = useState(false)
@@ -34,13 +39,18 @@ export default function HouseholdSetup({ onDone }: HouseholdSetupProps) {
     }
   }
 
-  async function handleLookup(e: React.FormEvent) {
-    e.preventDefault()
-    if (!code.trim()) return
+  async function lookup(raw: string) {
+    const normalized = normalizeInviteCode(raw)
+    if (!normalized) return
+    setCode(normalized)
+    if (isDemo) {
+      setLookupError('Joining a household needs an account — sign up, then open the invite again.')
+      return
+    }
     setLooking(true)
     setLookupError('')
     try {
-      setInvite(await lookupInvite(code))
+      setInvite(await lookupInvite(normalized))
     } catch (err) {
       setInvite(null)
       setLookupError((err as { message?: string }).message ?? 'Could not look up that code')
@@ -49,9 +59,23 @@ export default function HouseholdSetup({ onDone }: HouseholdSetupProps) {
     }
   }
 
+  function handleLookup(e: React.FormEvent) {
+    e.preventDefault()
+    lookup(code)
+  }
+
+  const autoLooked = useRef(false)
+  useEffect(() => {
+    if (initialCode && !autoLooked.current) {
+      autoLooked.current = true
+      lookup(initialCode)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, for the invite link
+  }, [initialCode])
+
   async function handleJoin(memberId: string | null) {
     try {
-      onDone((await join({ code: code.trim(), memberId })) as string)
+      onDone((await join({ code: normalizeInviteCode(code), memberId })) as string)
     } catch (err) {
       if (err instanceof DemoBlockedError) return
     }
@@ -82,8 +106,9 @@ export default function HouseholdSetup({ onDone }: HouseholdSetupProps) {
         <h3 className="hh-panel-title"><KeyRound size={13} style={{ verticalAlign: -2 }} /> Join with a code</h3>
         {!invite ? (
           <form onSubmit={handleLookup} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <p className="hh-note">Ask a member for the invite code from their Members tab.</p>
-            <input className="hh-input" placeholder="Invite code" value={code} onChange={(e) => setCode(e.target.value)} aria-label="Invite code" />
+            <p className="hh-note">Paste the invite link or code a member shared from their Members tab.</p>
+            <input className="hh-input" placeholder="Invite code or link" value={code} onChange={(e) => setCode(e.target.value)} aria-label="Invite code"
+              autoCapitalize="off" autoCorrect="off" autoComplete="off" spellCheck={false} />
             {lookupError && <p className="hh-error">{lookupError}</p>}
             <button className="btn-primary" disabled={looking || !code.trim()}>{looking ? 'Checking…' : 'Continue'}</button>
           </form>
