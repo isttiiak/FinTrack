@@ -126,33 +126,41 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
 
     let personId = values.person_id
 
-    // Create new person if needed
-    if (!personId && values.new_person_name) {
-      const newPerson = await createPerson({
-        name:         values.new_person_name.trim(),
-        relationship: (values.new_person_relation || null) as Person['relationship'],
-        phone:        values.new_person_phone || null,
-        notes:        null,
+    // The hooks toast any failure; catching keeps the form open with the
+    // entered values instead of an unhandled rejection.
+    try {
+      // Create new person if needed
+      if (!personId && values.new_person_name) {
+        const newPerson = await createPerson({
+          name:         values.new_person_name.trim(),
+          relationship: (values.new_person_relation || null) as Person['relationship'],
+          phone:        values.new_person_phone || null,
+          notes:        null,
+        })
+        personId = newPerson.id
+        // so a retry after a failed entry below doesn't create them twice
+        setValue('person_id', personId)
+      }
+
+      if (!personId) return
+
+      await createEntry({
+        person_id:      personId,
+        ledger_type:    values.ledger_type,
+        total_amount:   values.total_amount,
+        start_date:     values.start_date,
+        reason:         values.reason || null,
+        payment_method: (values.payment_method || null) as PaymentMethod | null,
+        account:        (values.account || null) as Account | null,
+        doc_link:       values.doc_link || null,
+        notes:          null,
+        settled_date:   null,
       })
-      personId = newPerson.id
+
+      onClose()
+    } catch {
+      /* toast already shown by the failing hook */
     }
-
-    if (!personId) return
-
-    await createEntry({
-      person_id:      personId,
-      ledger_type:    values.ledger_type,
-      total_amount:   values.total_amount,
-      start_date:     values.start_date,
-      reason:         values.reason || null,
-      payment_method: (values.payment_method || null) as PaymentMethod | null,
-      account:        (values.account || null) as Account | null,
-      doc_link:       values.doc_link || null,
-      notes:          null,
-      settled_date:   null,
-    })
-
-    onClose()
   }
 
   return (

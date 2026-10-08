@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
+import { useUIStore } from '@/stores/uiStore'
+import { useDemoGuard, DemoBlockedError } from '@/hooks/useDemoGuard'
 import type { BudgetLimit } from '@/types/expense.types'
 
 export function useBudgets() {
@@ -27,9 +29,12 @@ export function useBudgets() {
 export function useUpsertBudget() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
+  const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async ({ category_id, monthly_limit }: { category_id: string; monthly_limit: number }) => {
+      guardDemo()
       const { data, error } = await supabase
         .from('budget_limits')
         .upsert({ user_id: userId!, category_id, monthly_limit }, { onConflict: 'user_id,category_id' })
@@ -39,15 +44,22 @@ export function useUpsertBudget() {
       return data
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['budgets'] }),
+    onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
+      addToast({ type: 'error', message: err.message })
+    },
   })
 }
 
 export function useDeleteBudget() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
+  const addToast = useUIStore((s) => s.addToast)
+  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (id: string) => {
+      guardDemo()
       const { error } = await supabase
         .from('budget_limits')
         .delete()
@@ -56,5 +68,9 @@ export function useDeleteBudget() {
       if (error) throw error
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['budgets'] }),
+    onError: (err: Error) => {
+      if (err instanceof DemoBlockedError) return
+      addToast({ type: 'error', message: err.message })
+    },
   })
 }
