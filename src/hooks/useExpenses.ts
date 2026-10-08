@@ -6,11 +6,11 @@ import type { Transaction, TransactionFilters } from '@/types/expense.types'
 import { resolveDateRange } from '@/lib/utils'
 import { useUIStore } from '@/stores/uiStore'
 import { useDemoGuard, DemoBlockedError } from '@/hooks/useDemoGuard'
+import { toastWithUndo } from '@/lib/undo'
 
 export function useExpenses(filters?: TransactionFilters) {
   const userId = useAuthStore((s) => s.user?.id)
   const isDemo = useDemoStore((s) => s.isDemo)
-  const demoTransactions = useDemoStore((s) => s.transactions)
 
   const { from, to } = resolveDateRange(filters)
 
@@ -19,7 +19,10 @@ export function useExpenses(filters?: TransactionFilters) {
     enabled: isDemo || !!userId,
     queryFn: async (): Promise<Transaction[]> => {
       if (isDemo) {
-        let txns = demoTransactions
+        // Read the store at fetch time, not from this render's closure — a
+        // refetch fired right after a demo add/remove (e.g. Undo) would
+        // otherwise still see the old list.
+        let txns = useDemoStore.getState().transactions
         if (from) txns = txns.filter((t) => t.txn_date >= from)
         if (to)   txns = txns.filter((t) => t.txn_date <= to)
         if (filters?.type && filters.type !== 'All') txns = txns.filter((t) => t.type === filters.type)
@@ -66,6 +69,7 @@ export function useCreateExpense() {
   const isDemo = useDemoStore((s) => s.isDemo)
   const demoCategories = useDemoStore((s) => s.categories)
   const addDemoTransaction = useDemoStore((s) => s.addTransaction)
+  const removeDemoTransaction = useDemoStore((s) => s.removeTransaction)
   const addToast = useUIStore((s) => s.addToast)
 
   return useMutation({
@@ -91,9 +95,17 @@ export function useCreateExpense() {
       if (error) throw error
       return data
     },
-    onSuccess: () => {
+    onSuccess: (created: Transaction) => {
       qc.invalidateQueries({ queryKey: ['expenses'] })
-      addToast({ type: 'success', message: 'Transaction saved' })
+      toastWithUndo(addToast, 'Transaction saved', async () => {
+        if (isDemo) {
+          removeDemoTransaction(created.id)
+        } else {
+          const { error } = await supabase.from('transactions').delete().eq('id', created.id).eq('user_id', userId!)
+          if (error) throw error
+        }
+        qc.invalidateQueries({ queryKey: ['expenses'] })
+      }, 'Transaction removed')
     },
     onError: (err: Error) => {
       addToast({ type: 'error', message: err.message })
@@ -108,6 +120,15 @@ export function useUpdateExpense() {
   const guardDemo = useDemoGuard()
 
   return useMutation({
+    // Snapshot the row from the cache first, so the success toast can offer
+    // to put the old values back
+    onMutate: ({ id }: Partial<Transaction> & { id: string }) => {
+      for (const [, rows] of qc.getQueriesData<Transaction[]>({ queryKey: ['expenses'] })) {
+        const found = rows?.find((t) => t.id === id)
+        if (found) return { previous: found }
+      }
+      return { previous: undefined as Transaction | undefined }
+    },
     mutationFn: async ({ id, ...txn }: Partial<Transaction> & { id: string }) => {
       guardDemo()
       const { data, error } = await supabase
@@ -120,9 +141,22 @@ export function useUpdateExpense() {
       if (error) throw error
       return data
     },
-    onSuccess: () => {
+    onSuccess: (_row, _vars, ctx) => {
       qc.invalidateQueries({ queryKey: ['expenses'] })
-      addToast({ type: 'success', message: 'Transaction updated' })
+      const prev = ctx?.previous
+      if (!prev) { addToast({ type: 'success', message: 'Transaction updated' }); return }
+      toastWithUndo(addToast, 'Transaction updated', async () => {
+        const { error } = await supabase
+          .from('transactions')
+          .update({
+            type: prev.type, amount: prev.amount, category_id: prev.category_id, description: prev.description,
+            txn_date: prev.txn_date, payment_method: prev.payment_method, account: prev.account,
+          })
+          .eq('id', prev.id)
+          .eq('user_id', userId!)
+        if (error) throw error
+        qc.invalidateQueries({ queryKey: ['expenses'] })
+      }, 'Change undone')
     },
     onError: (err: Error) => {
       if (err instanceof DemoBlockedError) return

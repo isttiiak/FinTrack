@@ -19,6 +19,7 @@ interface DemoState {
   enterDemo: () => void
   exitDemo: () => void
   addTransaction: (txn: Transaction) => void
+  removeTransaction: (id: string) => void
 }
 
 // Demo seed data — realistic BDT transactions over ~3 months
@@ -172,4 +173,5 @@ export const useDemoStore = create<DemoState>((set) => ({
   // in the demo rather than silently faking success. In-memory only, lost
   // on exitDemo()/reload, same as the rest of the seed data.
   addTransaction: (txn) => set((s) => ({ transactions: [txn, ...s.transactions] })),
+  removeTransaction: (id) => set((s) => ({ transactions: s.transactions.filter((t) => t.id !== id) })),
 }))

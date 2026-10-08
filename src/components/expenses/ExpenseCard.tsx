@@ -35,6 +35,14 @@ export default function ExpenseCard({ txn, onEdit }: ExpenseCardProps) {
   function handleDelete() {
     setDeleting(true)
     const id = txn.id
+    // Undo must cancel the pending delete, not just re-show the card — it
+    // used to do only the latter, so the row was deleted 3.6s later anyway.
+    const timer = setTimeout(() => {
+      // If the mutation is blocked (e.g. demo mode) or fails, the card must
+      // reappear — otherwise it stays hidden forever even though nothing
+      // was actually deleted, contradicting the "Undo" the toast promised.
+      deleteExpense(id, { onError: () => setDeleting(false) })
+    }, 3600)
     addToast({
       type: 'info',
       message: 'Transaction deleted',
@@ -42,16 +50,11 @@ export default function ExpenseCard({ txn, onEdit }: ExpenseCardProps) {
       action: {
         label: 'Undo',
         onClick: () => {
+          clearTimeout(timer)
           setDeleting(false)
         },
       },
     })
-    setTimeout(() => {
-      // If the mutation is blocked (e.g. demo mode) or fails, the card must
-      // reappear — otherwise it stays hidden forever even though nothing
-      // was actually deleted, contradicting the "Undo" the toast promised.
-      deleteExpense(id, { onError: () => setDeleting(false) })
-    }, 3600)
   }
 
   return (

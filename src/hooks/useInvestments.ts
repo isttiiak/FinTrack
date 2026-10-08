@@ -5,6 +5,7 @@ import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
 import { useDemoGuard, DemoBlockedError } from '@/hooks/useDemoGuard'
 import type { Investment, InvestmentReturn, InvestmentPayment } from '@/types/investment.types'
+import { toastWithUndo } from '@/lib/undo'
 
 function enrich(inv: Investment & { investment_returns?: InvestmentReturn[]; investment_payments?: InvestmentPayment[] }): Investment {
   const returns: InvestmentReturn[] = inv.investment_returns ?? []
@@ -150,9 +151,13 @@ export function useCreateReturn() {
       if (error) throw error
       return row as InvestmentReturn
     },
-    onSuccess: () => {
+    onSuccess: (created) => {
       qc.invalidateQueries({ queryKey: ['investments'] })
-      addToast({ type: 'success', message: 'Return logged' })
+      toastWithUndo(addToast, 'Return logged', async () => {
+        const { error } = await supabase.from('investment_returns').delete().eq('id', created.id).eq('user_id', userId!)
+        if (error) throw error
+        qc.invalidateQueries({ queryKey: ['investments'] })
+      }, 'Return removed')
     },
     onError: (err: Error) => {
       if (err instanceof DemoBlockedError) return
@@ -176,11 +181,15 @@ export function useCreateInvestmentPayment() {
         .select()
         .single()
       if (error) throw error
-      return row
+      return row as InvestmentPayment
     },
-    onSuccess: () => {
+    onSuccess: (created) => {
       qc.invalidateQueries({ queryKey: ['investments'] })
-      addToast({ type: 'success', message: 'Payment logged' })
+      toastWithUndo(addToast, 'Payment logged', async () => {
+        const { error } = await supabase.from('investment_payments').delete().eq('id', created.id).eq('user_id', userId!)
+        if (error) throw error
+        qc.invalidateQueries({ queryKey: ['investments'] })
+      }, 'Payment removed')
     },
     onError: (err: Error) => {
       if (err instanceof DemoBlockedError) return

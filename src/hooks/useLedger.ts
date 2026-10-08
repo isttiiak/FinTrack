@@ -6,6 +6,7 @@ import { useUIStore } from '@/stores/uiStore'
 import { useDemoGuard, DemoBlockedError } from '@/hooks/useDemoGuard'
 import { aggregateForType } from '@/lib/ledgerAggregate'
 import type { Person, PersonLedger, LedgerPayment, PersonWithLedgers } from '@/types/ledger.types'
+import { toastWithUndo } from '@/lib/undo'
 
 function enrichPerson(
   person: Person,
@@ -328,10 +329,15 @@ export function useCreatePayment() {
       if (error) throw error
       return row as LedgerPayment
     },
-    onSuccess: () => {
+    onSuccess: (created) => {
       qc.invalidateQueries({ queryKey: ['persons'] })
       qc.invalidateQueries({ queryKey: ['person'] })
-      addToast({ type: 'success', message: 'Payment logged' })
+      toastWithUndo(addToast, 'Payment logged', async () => {
+        const { error } = await supabase.from('ledger_payments').delete().eq('id', created.id).eq('user_id', userId!)
+        if (error) throw error
+        qc.invalidateQueries({ queryKey: ['persons'] })
+        qc.invalidateQueries({ queryKey: ['person'] })
+      }, 'Payment removed')
     },
     onError: (err: Error) => {
       if (err instanceof DemoBlockedError) return
