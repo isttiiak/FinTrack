@@ -33,7 +33,7 @@ function buildDemoData() {
   const categories: Category[] = [
     { id: 'c1', user_id: 'demo', name: 'Food',        main_group: 'Food',      type: 'Expense', color_hex: '#F97316', is_default: true, created_at: '' },
     { id: 'c2', user_id: 'demo', name: 'Coffee',      main_group: 'Coffee',    type: 'Expense', color_hex: '#F59E0B', is_default: true, created_at: '' },
-    { id: 'c3', user_id: 'demo', name: 'Ricksha Fare',main_group: 'Transport', type: 'Expense', color_hex: '#6C63FF', is_default: true, created_at: '' },
+    { id: 'c3', user_id: 'demo', name: 'Rickshaw Fare', main_group: 'Transport', type: 'Expense', color_hex: '#6C63FF', is_default: true, created_at: '' },
     { id: 'c4', user_id: 'demo', name: 'Salary',      main_group: 'Income',    type: 'Income',  color_hex: '#10B981', is_default: true, created_at: '' },
     { id: 'c5', user_id: 'demo', name: 'Shopping',    main_group: 'Shopping',  type: 'Expense', color_hex: '#A855F7', is_default: true, created_at: '' },
     { id: 'c6', user_id: 'demo', name: 'Medical',     main_group: 'Medical',   type: 'Expense', color_hex: '#EF4444', is_default: true, created_at: '' },

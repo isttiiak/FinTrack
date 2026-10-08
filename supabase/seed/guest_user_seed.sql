@@ -50,7 +50,7 @@ BEGIN
   -- ── Resolve default category ids (seeded automatically at signup) ───
   SELECT id INTO v_cat_food     FROM public.categories WHERE user_id = v_user_id AND name = 'Food';
   SELECT id INTO v_cat_coffee   FROM public.categories WHERE user_id = v_user_id AND name = 'Coffee';
-  SELECT id INTO v_cat_ricksha  FROM public.categories WHERE user_id = v_user_id AND name = 'Ricksha Fare';
+  SELECT id INTO v_cat_ricksha  FROM public.categories WHERE user_id = v_user_id AND name IN ('Rickshaw Fare', 'Ricksha Fare') LIMIT 1;
   SELECT id INTO v_cat_salary   FROM public.categories WHERE user_id = v_user_id AND name = 'Salary';
   SELECT id INTO v_cat_shopping FROM public.categories WHERE user_id = v_user_id AND name = 'Shopping';
   SELECT id INTO v_cat_medical  FROM public.categories WHERE user_id = v_user_id AND name = 'Medical';

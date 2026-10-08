@@ -14,7 +14,7 @@ interface ExpenseCardProps {
 
 const CATEGORY_ICON_MAP: Record<string, string> = {
   Food: '🍚', Restaurants: '🍽️', Coffee: '☕', Fruits: '🍎', 'Dry Food': '🛒',
-  Chicken: '🍗', 'Ricksha Fare': '🛺', 'Bus Fare': '🚌', 'Uber/Pathao': '🛵',
+  Chicken: '🍗', 'Rickshaw Fare': '🛺', 'Ricksha Fare': '🛺', 'Bus Fare': '🚌', 'Uber/Pathao': '🛵',
   'Phone Bill': '📱', 'Internet Bill': '🌐', Laundry: '👕', Medical: '💊',
   Entertainment: '🎬', Education: '📚', Shopping: '🛍️', Fragrance: '🌸',
   Treats: '🍭', Donate: '❤️', Gift: '🎁', Others: '📌', 'Cashout Charge': '💸',

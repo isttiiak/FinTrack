@@ -8,7 +8,7 @@ export const DEFAULT_CATEGORIES = [
   // Coffee (tracked separately)
   { name: 'Coffee',         main_group: 'Coffee',        type: 'Expense' as const },
   // Transport
-  { name: 'Ricksha Fare',   main_group: 'Transport',     type: 'Expense' as const },
+  { name: 'Rickshaw Fare',  main_group: 'Transport',     type: 'Expense' as const },
   { name: 'Bus Fare',       main_group: 'Transport',     type: 'Expense' as const },
   { name: 'Uber/Pathao',    main_group: 'Transport',     type: 'Expense' as const },
   // Utility
