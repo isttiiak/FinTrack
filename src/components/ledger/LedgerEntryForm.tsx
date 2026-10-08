@@ -19,8 +19,8 @@ const schema = z.object({
   total_amount:   z.number({ error: 'Enter a valid amount' }).positive(),
   start_date:     z.string().min(1, 'Select a date'),
   reason:         z.string().optional(),
-  payment_method: z.string().min(1, 'Required'),
-  account:        z.string().min(1, 'Required'),
+  payment_method: z.string().optional(),
+  account:        z.string().optional(),
   doc_link:       z.string().url('Enter a valid URL').or(z.literal('')).optional(),
   notes:          z.string().optional(),
 })
@@ -46,8 +46,8 @@ export default function LedgerEntryForm({ personId, editing, defaultType = 'Lent
           total_amount:   editing.total_amount,
           start_date:     editing.start_date,
           reason:         editing.reason ?? '',
-          payment_method: editing.payment_method ?? 'Cash',
-          account:        editing.account ?? 'Cash',
+          payment_method: editing.payment_method ?? '',
+          account:        editing.account ?? '',
           doc_link:       editing.doc_link ?? '',
           notes:          editing.notes ?? '',
         }
@@ -159,8 +159,8 @@ export default function LedgerEntryForm({ personId, editing, defaultType = 'Lent
             <PaymentMethodPicker
               method={paymentMethod}
               account={accountValue}
-              onMethodChange={(m) => setValue('payment_method', m ?? 'Cash')}
-              onAccountChange={(a) => setValue('account', a ?? 'Cash')}
+              onMethodChange={(m) => setValue('payment_method', m ?? '')}
+              onAccountChange={(a) => setValue('account', a ?? '')}
             />
           </div>
 

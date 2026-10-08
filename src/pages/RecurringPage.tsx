@@ -33,8 +33,8 @@ const schema = z.object({
   cadence:        z.enum(['Weekly', 'Monthly', 'Yearly']),
   start_date:     z.string().min(1, 'Select a start date'),
   end_date:       z.string().optional(),
-  payment_method: z.string().min(1, 'Required'),
-  account:        z.string().min(1, 'Required'),
+  payment_method: z.string().optional(),
+  account:        z.string().optional(),
 })
 type FormValues = z.infer<typeof schema>
 
@@ -56,8 +56,8 @@ function RecurringRuleForm({ editing, onClose }: { editing?: RecurringRule | nul
           cadence:        editing.cadence,
           start_date:     editing.start_date,
           end_date:       editing.end_date ?? '',
-          payment_method: editing.payment_method ?? 'Cash',
-          account:        editing.account ?? 'Cash',
+          payment_method: editing.payment_method ?? '',
+          account:        editing.account ?? '',
         }
       : {
           type:           'Expense',
@@ -81,12 +81,18 @@ function RecurringRuleForm({ editing, onClose }: { editing?: RecurringRule | nul
       ...values,
       description: values.description || undefined,
       end_date:    values.end_date    || undefined,
-      payment_method: values.payment_method as PaymentMethod,
-      account:        values.account as Account,
+      payment_method: (values.payment_method || undefined) as PaymentMethod | undefined,
+      account:        (values.account || undefined) as Account | undefined,
     }
     try {
       if (editing) {
-        await update({ id: editing.id, ...payload })
+        // null, not undefined, so picking "None" clears a previously set method
+        await update({
+          id: editing.id,
+          ...payload,
+          payment_method: payload.payment_method ?? null,
+          account:        payload.account ?? null,
+        })
       } else {
         await create(payload)
       }

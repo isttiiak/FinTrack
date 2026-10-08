@@ -101,6 +101,8 @@ export function getMethodGroup(method: string | null | undefined): PaymentMethod
   for (const [group, cfg] of Object.entries(PAYMENT_METHOD_GROUPS)) {
     if ((cfg.methods as readonly string[]).includes(method)) return group as PaymentMethodGroup
   }
+  // User-added MFS providers are saved as "MFS - <name>" (PaymentMethodPicker)
+  if (method.startsWith('MFS - ')) return 'MFS'
   return null
 }
 

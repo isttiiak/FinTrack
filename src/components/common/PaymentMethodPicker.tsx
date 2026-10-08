@@ -126,7 +126,7 @@ export default function PaymentMethodPicker({
                   initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }} style={{ overflow: 'hidden' }}>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '0 0 10px' }}>
-                    <input className="pmp-add-input" placeholder="MFS provider name…" value={newMethodName}
+                    <input className="pmp-add-input" placeholder="MFS provider name…" value={newMethodName} maxLength={40}
                       onChange={(e) => setNewMethodName(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && saveCustomMethod()} autoFocus />
                     <button type="button" className="pmp-add-save" onClick={saveCustomMethod}
@@ -163,7 +163,7 @@ export default function PaymentMethodPicker({
             {customAccountMode ? (
               <div style={{ display: 'flex', gap: 8 }}>
                 <input className="pmp-add-input" style={{ flex: 1 }}
-                  placeholder="Enter account name…" value={customAccountVal}
+                  placeholder="Enter account name…" value={customAccountVal} maxLength={60}
                   onChange={(e) => setCustomAccountVal(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && saveCustomAccount()} autoFocus />
                 <button type="button" className="pmp-add-save" onClick={saveCustomAccount}

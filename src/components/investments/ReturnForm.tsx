@@ -17,8 +17,8 @@ const schema = z.object({
   amount:         z.number().positive('Enter a valid amount'),
   return_date:    z.string().min(1, 'Select a date'),
   return_type:    z.enum(RETURN_TYPES).optional(),
-  payment_method: z.string().min(1, 'Required'),
-  account:        z.string().min(1, 'Required'),
+  payment_method: z.string().optional(),
+  account:        z.string().optional(),
   notes:          z.string().optional(),
 })
 type FormValues = z.infer<typeof schema>
@@ -128,8 +128,8 @@ export default function ReturnForm({ investment, onClose }: ReturnFormProps) {
             <PaymentMethodPicker
               method={watchMethod}
               account={watchAccount}
-              onMethodChange={(v) => setValue('payment_method', v ?? lastMethod)}
-              onAccountChange={(v) => setValue('account', v ?? lastAccount)}
+              onMethodChange={(v) => setValue('payment_method', v ?? '')}
+              onAccountChange={(v) => setValue('account', v ?? '')}
             />
           </div>
 

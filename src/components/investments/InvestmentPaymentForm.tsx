@@ -15,8 +15,8 @@ import './InvestmentPaymentForm.css'
 const schema = z.object({
   amount:         z.number().positive('Enter a valid amount'),
   payment_date:   z.string().min(1, 'Select a date'),
-  payment_method: z.string().min(1, 'Required'),
-  account:        z.string().min(1, 'Required'),
+  payment_method: z.string().optional(),
+  account:        z.string().optional(),
   notes:          z.string().optional(),
 })
 type FormValues = z.infer<typeof schema>
@@ -138,8 +138,8 @@ export default function InvestmentPaymentForm({ investment, onClose }: Investmen
           <PaymentMethodPicker
             method={watchMethod}
             account={watchAccount}
-            onMethodChange={(v) => setValue('payment_method', v ?? lastMethod)}
-            onAccountChange={(v) => setValue('account', v ?? lastAccount)}
+            onMethodChange={(v) => setValue('payment_method', v ?? '')}
+            onAccountChange={(v) => setValue('account', v ?? '')}
           />
 
           <div className="ipf-field">

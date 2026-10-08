@@ -27,8 +27,8 @@ const schema = z.object({
   category_id:    z.string().min(1, 'Select a category'),
   description:    z.string().optional(),
   txn_date:       z.string().min(1, 'Select a date'),
-  payment_method: z.string().min(1, 'Required'),
-  account:        z.string().min(1, 'Required'),
+  payment_method: z.string().optional(),
+  account:        z.string().optional(),
 })
 type FormValues = z.infer<typeof schema>
 
@@ -72,8 +72,8 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
           category_id:    editing.category_id ?? '',
           description:    editing.description ?? '',
           txn_date:       editing.txn_date,
-          payment_method: editing.payment_method ?? lastMethod,
-          account:        editing.account ?? lastAccount,
+          payment_method: editing.payment_method ?? '',
+          account:        editing.account ?? '',
         }
       : {
           type:           defaultType,
@@ -103,8 +103,8 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
     const payload = {
       ...values,
       description:    values.description    ?? null,
-      payment_method: (values.payment_method ?? null) as PaymentMethod | null,
-      account:        (values.account        ?? null) as Account | null,
+      payment_method: (values.payment_method || null) as PaymentMethod | null,
+      account:        (values.account || null) as Account | null,
     }
     try {
       if (editing) {

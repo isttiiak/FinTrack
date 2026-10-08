@@ -16,8 +16,8 @@ import './PaymentForm.css'
 const schema = z.object({
   amount:         z.number({ error: 'Enter a valid amount' }).positive(),
   payment_date:   z.string().min(1, 'Select a date'),
-  payment_method: z.string().min(1, 'Required'),
-  account:        z.string().min(1, 'Required'),
+  payment_method: z.string().optional(),
+  account:        z.string().optional(),
   notes:          z.string().optional(),
 })
 type FormValues = z.infer<typeof schema>
@@ -116,8 +116,8 @@ export default function PaymentForm({ personId, personName, ledgerType, remainin
             <PaymentMethodPicker
               method={paymentMethod}
               account={accountValue}
-              onMethodChange={(v) => setValue('payment_method', v ?? 'Cash')}
-              onAccountChange={(v) => setValue('account', v ?? 'Cash')}
+              onMethodChange={(v) => setValue('payment_method', v ?? '')}
+              onAccountChange={(v) => setValue('account', v ?? '')}
             />
           </div>
 
