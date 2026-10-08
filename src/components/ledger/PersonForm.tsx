@@ -33,7 +33,7 @@ export default function PersonForm({ editing, onClose }: PersonFormProps) {
     editing?.relationship != null && !RELATIONSHIPS.includes(editing.relationship as never),
   )
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       name:         editing?.name ?? '',
@@ -90,10 +90,11 @@ export default function PersonForm({ editing, onClose }: PersonFormProps) {
                   {...register('relationship')}
                   className="pf-input"
                   placeholder="e.g. Cousin, Mentor, Neighbour…"
+                  maxLength={40}
                   style={{ flex: 1 }}
                   autoFocus
                 />
-                <button type="button" className="pf-custom-back" onClick={() => setCustomRelation(false)}>
+                <button type="button" className="pf-custom-back" onClick={() => { setValue('relationship', ''); setCustomRelation(false) }}>
                   ↩ List
                 </button>
               </div>
@@ -103,9 +104,12 @@ export default function PersonForm({ editing, onClose }: PersonFormProps) {
                 className="pf-select"
                 onChange={(e) => {
                   if (e.target.value === '__custom__') {
-                    e.preventDefault()
+                    setValue('relationship', '')
                     setCustomRelation(true)
+                    return
                   }
+                  // Overriding onChange replaces register()'s own — forward it, or the pick is never saved
+                  register('relationship').onChange(e)
                 }}
               >
                 <option value="">— Select —</option>

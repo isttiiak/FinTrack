@@ -105,7 +105,7 @@ export default function InvestmentForm({ editing, onClose }: InvestmentFormProps
           <div className="invf-row">
             <div className="invf-field">
               <label className="invf-label">Category</label>
-              <select {...register('category')} className="invf-select">
+              <select {...register('category', { setValueAs: (v) => v || undefined })} className="invf-select">
                 <option value="">— Select —</option>
                 {INVESTMENT_CATEGORIES.map((c) => (
                   <option key={c} value={c}>{CATEGORY_ICONS[c]} {c}</option>

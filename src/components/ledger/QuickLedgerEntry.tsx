@@ -316,12 +316,13 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
                           {...register('new_person_relation')}
                           className="qle-input"
                           placeholder="e.g. Cousin, Mentor…"
+                          maxLength={40}
                           style={{ flex: 1 }}
                         />
                         <button
                           type="button"
                           className="qle-custom-back"
-                          onClick={() => { setCustomRelation(false) }}
+                          onClick={() => { setValue('new_person_relation', ''); setCustomRelation(false) }}
                           data-tooltip="Pick from list"
                         >
                           <ChevronDown size={14} />
@@ -334,9 +335,12 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
                           className="qle-select"
                           onChange={(e) => {
                             if (e.target.value === '__custom__') {
-                              e.preventDefault()
+                              setValue('new_person_relation', '')
                               setCustomRelation(true)
+                              return
                             }
+                            // Overriding onChange replaces register()'s own — forward it, or the pick is never saved
+                            register('new_person_relation').onChange(e)
                           }}
                         >
                           <option value="">— Select —</option>

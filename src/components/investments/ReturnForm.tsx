@@ -116,7 +116,7 @@ export default function ReturnForm({ investment, onClose }: ReturnFormProps) {
             </div>
             <div className="retf-field">
               <label className="retf-label">Type <span className="retf-optional">(optional)</span></label>
-              <select {...register('return_type')} className="retf-select">
+              <select {...register('return_type', { setValueAs: (v) => v || undefined })} className="retf-select">
                 <option value="">— None —</option>
                 {RETURN_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
