@@ -97,7 +97,7 @@ export default function PaymentForm({ personId, personName, ledgerType, remainin
               <span className="payf-remaining">{editing ? 'Up to' : 'Remaining'}: {formatCurrency(maxAmount)}</span>
             </p>
           </div>
-          <button className="payf-close" onClick={onClose}><X size={18} /></button>
+          <button aria-label="Close" className="payf-close" onClick={onClose}><X size={18} /></button>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="payf-form">
@@ -121,7 +121,7 @@ export default function PaymentForm({ personId, personName, ledgerType, remainin
 
           <div className="payf-field">
             <label className="payf-label">Date</label>
-            <input
+            <input aria-label="Date"
               {...register('payment_date')}
               type="date"
               className={cn('payf-input', errors.payment_date && 'payf-input-error')}

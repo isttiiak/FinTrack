@@ -128,6 +128,8 @@ export default function FloatingCalculatorPanel() {
       <motion.div
         ref={panelRef}
         className="fcp-panel"
+        role="region"
+        aria-label="Calculator"
         style={{ x, y }}
         drag
         dragControls={dragControls}
@@ -144,7 +146,7 @@ export default function FloatingCalculatorPanel() {
         <div className="fcp-header" onPointerDown={(e) => dragControls.start(e)}>
           <GripHorizontal size={16} className="fcp-grip" />
           <span className="fcp-title">Calculator</span>
-          <button
+          <button aria-label="Close calculator"
             type="button"
             className="fcp-close"
             onPointerDown={(e) => e.stopPropagation()}

@@ -119,7 +119,7 @@ export default function CategoryManagerModal({
                 <h2 className="cmm-title">Manage Categories</h2>
                 <p className="cmm-sub">Add and browse {txnType.toLowerCase()} categories</p>
               </div>
-              <button className="cmm-close" onClick={onClose}><X size={18} /></button>
+              <button aria-label="Close" className="cmm-close" onClick={onClose}><X size={18} /></button>
             </div>
 
             {/* Add form */}
@@ -246,7 +246,7 @@ export default function CategoryManagerModal({
                 )}
               </div>
 
-              <div className="cmm-categories">
+              <div className="cmm-categories" tabIndex={0} role="region" aria-label="Categories">
                 {Object.keys(grouped).length === 0 ? (
                   <div className="cmm-empty">
                     {search ? `No categories matching "${search}"` : `No ${txnType.toLowerCase()} categories yet.`}

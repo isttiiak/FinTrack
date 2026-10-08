@@ -107,7 +107,7 @@ function RecurringRuleForm({ editing, onClose }: { editing?: RecurringRule | nul
       <motion.div className="rf-panel" variants={modalIn} initial="initial" animate="animate" exit="exit">
         <div className="rf-header">
           <h2 className="rf-title">{editing ? 'Edit recurring rule' : 'New recurring rule'}</h2>
-          <button className="rf-close" onClick={onClose}><X size={18} /></button>
+          <button aria-label="Close" className="rf-close" onClick={onClose}><X size={18} /></button>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="rf-form">
@@ -202,12 +202,12 @@ function RecurringRuleForm({ editing, onClose }: { editing?: RecurringRule | nul
           <div className="rf-row">
             <div className="rf-field">
               <label className="rf-label">Start date <span className="req">*</span></label>
-              <input {...register('start_date')} type="date" className={cn('rf-input', errors.start_date && 'rf-input-error')} />
+              <input aria-label="Start date" {...register('start_date')} type="date" className={cn('rf-input', errors.start_date && 'rf-input-error')} />
               {errors.start_date && <p className="rf-error">{errors.start_date.message}</p>}
             </div>
             <div className="rf-field">
               <label className="rf-label">End date <span className="rf-optional">(optional)</span></label>
-              <input {...register('end_date')} type="date" className="rf-input" />
+              <input aria-label="End date" {...register('end_date')} type="date" className="rf-input" />
             </div>
           </div>
 

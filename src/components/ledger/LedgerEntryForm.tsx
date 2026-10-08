@@ -93,7 +93,7 @@ export default function LedgerEntryForm({ personId, editing, defaultType = 'Lent
       <motion.div className="lef-panel" variants={scaleIn} initial="initial" animate="animate" exit="exit">
         <div className="lef-header">
           <h2 className="lef-title">{editing ? 'Edit entry' : 'Add ledger entry'}</h2>
-          <button className="lef-close" onClick={onClose}><X size={18} /></button>
+          <button aria-label="Close" className="lef-close" onClick={onClose}><X size={18} /></button>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="lef-form">
@@ -135,7 +135,7 @@ export default function LedgerEntryForm({ personId, editing, defaultType = 'Lent
           {/* Date */}
           <div className="lef-field">
             <label className="lef-label">Date</label>
-            <input
+            <input aria-label="Date"
               {...register('start_date')}
               type="date"
               className={cn('lef-input', errors.start_date && 'lef-input-error')}

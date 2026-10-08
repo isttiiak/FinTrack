@@ -179,7 +179,7 @@ export default function PaymentMethodPicker({
             ) : (
               <div style={{ display: 'flex', gap: 8 }}>
                 <div className="pmp-select-wrap" style={{ flex: 1 }}>
-                  <select className="pmp-select" value={account ?? ''}
+                  <select aria-label="Account / Bank" className="pmp-select" value={account ?? ''}
                     onChange={(e) => onAccountChange(e.target.value || undefined)}>
                     <option value="">— Select bank —</option>
                     {bankAccounts.map((a) => (

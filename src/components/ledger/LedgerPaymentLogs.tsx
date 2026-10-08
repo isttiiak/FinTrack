@@ -164,7 +164,7 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
             All people
           </button>
           <div className="lpl-person-select-wrap">
-            <select
+            <select aria-label="Filter by person"
               className="lpl-person-select"
               value={filterPerson ?? ''}
               onChange={(e) => setFilterPerson(e.target.value || null)}

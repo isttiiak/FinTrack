@@ -158,7 +158,7 @@ function CategoriesTab({ categories }: { categories: Category[] }) {
                 onChange={(e) => setNewGroupName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && saveNewGroup()} autoFocus
               />
-              <select className="dsc-type-select" value={newGroupType}
+              <select aria-label="Category type" className="dsc-type-select" value={newGroupType}
                 onChange={(e) => setNewGroupType(e.target.value as 'Expense' | 'Income')}>
                 <option value="Expense">Expense</option>
                 {!isExpensesOnly && <option value="Income">Income</option>}
@@ -174,7 +174,7 @@ function CategoriesTab({ categories }: { categories: Category[] }) {
         </AnimatePresence>
 
         <div className="dsc-type-filter-wrap">
-          <select className="dsc-type-filter" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}>
+          <select aria-label="Filter by type" className="dsc-type-filter" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}>
             <option value="All">All types</option>
             <option value="Expense">Expense only</option>
             {!isExpensesOnly && <option value="Income">Income only</option>}
@@ -193,7 +193,8 @@ function CategoriesTab({ categories }: { categories: Category[] }) {
           <div key={group} className="dsc-group-card">
             {/* Group header */}
             <div className="dsc-group-header">
-              <button type="button" className="dsc-expand-btn" onClick={() => toggleExpand(group)}>
+              <button type="button" className="dsc-expand-btn" onClick={() => toggleExpand(group)}
+                aria-label={`${isOpen ? 'Collapse' : 'Expand'} ${group}`} aria-expanded={isOpen}>
                 {isOpen ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
               </button>
 

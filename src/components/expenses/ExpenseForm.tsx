@@ -158,7 +158,7 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
         {/* Header */}
         <div className="ef-header">
           <h2 className="ef-title">{editing ? 'Edit transaction' : 'Add transaction'}</h2>
-          <button className="ef-close" onClick={onClose}><X size={18} /></button>
+          <button aria-label="Close" className="ef-close" onClick={onClose}><X size={18} /></button>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="ef-form">
@@ -268,7 +268,7 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
           {/* Date */}
           <div className="ef-field">
             <label className="ef-label">Date <span className="req">*</span></label>
-            <input
+            <input aria-label="Date"
               {...register('txn_date')}
               type="date"
               className={cn('ef-input', errors.txn_date && 'ef-input-error')}

@@ -71,7 +71,7 @@ export default function SearchToggle({ value, onChange, placeholder = 'Search…
                 <X size={12} />
               </button>
             )}
-            <button
+            <button aria-label="Close search"
               type="button"
               className="stg-close"
               onMouseDown={(e) => e.preventDefault()}

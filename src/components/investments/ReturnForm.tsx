@@ -100,7 +100,7 @@ export default function ReturnForm({ investment, editing, onClose }: ReturnFormP
               )}
             </p>
           </div>
-          <button className="retf-close" onClick={onClose}><X size={18} /></button>
+          <button aria-label="Close" className="retf-close" onClick={onClose}><X size={18} /></button>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="retf-form">
@@ -125,7 +125,7 @@ export default function ReturnForm({ investment, editing, onClose }: ReturnFormP
           <div className="retf-row">
             <div className="retf-field">
               <label className="retf-label">Date</label>
-              <input
+              <input aria-label="Date"
                 {...register('return_date')}
                 type="date"
                 className={cn('retf-input', errors.return_date && 'retf-input-error')}
@@ -133,7 +133,7 @@ export default function ReturnForm({ investment, editing, onClose }: ReturnFormP
             </div>
             <div className="retf-field">
               <label className="retf-label">Type <span className="retf-optional">(optional)</span></label>
-              <select {...register('return_type', { setValueAs: (v) => v || undefined })} className="retf-select">
+              <select aria-label="Return type" {...register('return_type', { setValueAs: (v) => v || undefined })} className="retf-select">
                 <option value="">— None —</option>
                 {RETURN_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>

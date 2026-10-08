@@ -97,7 +97,7 @@ export default function InvestmentPaymentForm({ investment, editing, onClose }: 
               {' '}{investment.name}
             </p>
           </div>
-          <button className="ipf-close" onClick={onClose}><X size={18} /></button>
+          <button aria-label="Close" className="ipf-close" onClick={onClose}><X size={18} /></button>
         </div>
 
         {/* Progress strip */}
@@ -143,7 +143,7 @@ export default function InvestmentPaymentForm({ investment, editing, onClose }: 
 
           <div className="ipf-field">
             <label className="ipf-label">Payment date <span className="req">*</span></label>
-            <input
+            <input aria-label="Payment date"
               {...register('payment_date')}
               type="date"
               className={cn('ipf-input', errors.payment_date && 'ipf-input-error')}

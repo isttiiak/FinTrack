@@ -67,7 +67,7 @@ export default function PersonForm({ editing, onClose }: PersonFormProps) {
       <motion.div className="pf-panel" variants={scaleIn} initial="initial" animate="animate" exit="exit">
         <div className="pf-header">
           <h2 className="pf-title">{editing ? 'Edit person' : 'Add person'}</h2>
-          <button className="pf-close" onClick={onClose}><X size={18} /></button>
+          <button aria-label="Close" className="pf-close" onClick={onClose}><X size={18} /></button>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="pf-form">
@@ -99,7 +99,7 @@ export default function PersonForm({ editing, onClose }: PersonFormProps) {
                 </button>
               </div>
             ) : (
-              <select
+              <select aria-label="Relationship"
                 {...register('relationship')}
                 className="pf-select"
                 onChange={(e) => {

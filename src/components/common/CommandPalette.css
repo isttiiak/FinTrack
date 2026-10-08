@@ -79,6 +79,10 @@
 .cp-item-active {
   background: var(--bg-hover);
 }
+/* --text-muted is AA on card surfaces but not on the lighter hover row */
+.cp-item-active .cp-item-hint {
+  color: var(--text-secondary);
+}
 .cp-item-icon {
   flex-shrink: 0;
   display: flex;

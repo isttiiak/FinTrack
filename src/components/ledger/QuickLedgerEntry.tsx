@@ -170,7 +170,7 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
         {/* Header */}
         <div className="qle-header">
           <h2 className="qle-title">Add entry</h2>
-          <button className="qle-close" onClick={onClose}><X size={18} /></button>
+          <button aria-label="Close" className="qle-close" onClick={onClose}><X size={18} /></button>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="qle-form">
@@ -338,7 +338,7 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
                       </div>
                     ) : (
                       <div className="qle-select-wrap">
-                        <select
+                        <select aria-label="Relationship"
                           {...register('new_person_relation')}
                           className="qle-select"
                           onChange={(e) => {
@@ -396,7 +396,7 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
           {/* Date */}
           <div className="qle-field">
             <label className="qle-label">Date</label>
-            <input
+            <input aria-label="Date"
               {...register('start_date')}
               type="date"
               className={cn('qle-input', errors.start_date && 'qle-input-error')}

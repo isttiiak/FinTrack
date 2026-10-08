@@ -14,11 +14,11 @@ import './PersonCard.css'
 // (e.g. `${relColor}33`), which only works with plain hex strings.
 const RELATIONSHIP_COLORS: Record<string, string> = {
   Friend:           '#4FA981',
-  Family:           '#3E9B72',
+  Family:           '#42A077',
   'Business Partner': '#C2A24E',
   Colleague:        '#B4923F',
   Self:             '#8A968C',
-  Other:            '#5F6B62',
+  Other:            '#7A97B8',
 }
 
 interface PersonCardProps {

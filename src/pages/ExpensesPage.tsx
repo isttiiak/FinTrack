@@ -237,7 +237,7 @@ export default function ExpensesPage() {
       <div className="filters-row">
         {rangeMode ? (
           <div className="date-range-wrap">
-            <input
+            <input aria-label="From date"
               type="date"
               value={rangeFrom}
               onChange={(e) => setRangeFrom(e.target.value)}
@@ -245,7 +245,7 @@ export default function ExpensesPage() {
               placeholder="Start"
             />
             <span className="range-sep">→</span>
-            <input
+            <input aria-label="To date"
               type="date"
               value={rangeTo}
               onChange={(e) => setRangeTo(e.target.value)}

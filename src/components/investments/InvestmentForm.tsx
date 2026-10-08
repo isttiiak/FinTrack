@@ -87,7 +87,7 @@ export default function InvestmentForm({ editing, onClose }: InvestmentFormProps
       <motion.div className="invf-panel" variants={scaleIn} initial="initial" animate="animate" exit="exit">
         <div className="invf-header">
           <h2 className="invf-title">{editing ? 'Edit investment' : 'Add investment'}</h2>
-          <button className="invf-close" onClick={onClose}><X size={18} /></button>
+          <button aria-label="Close" className="invf-close" onClick={onClose}><X size={18} /></button>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="invf-form">
@@ -105,7 +105,7 @@ export default function InvestmentForm({ editing, onClose }: InvestmentFormProps
           <div className="invf-row">
             <div className="invf-field">
               <label className="invf-label">Category</label>
-              <select {...register('category', { setValueAs: (v) => v || undefined })} className="invf-select">
+              <select aria-label="Category" {...register('category', { setValueAs: (v) => v || undefined })} className="invf-select">
                 <option value="">— Select —</option>
                 {INVESTMENT_CATEGORIES.map((c) => (
                   <option key={c} value={c}>{CATEGORY_ICONS[c]} {c}</option>
@@ -143,11 +143,11 @@ export default function InvestmentForm({ editing, onClose }: InvestmentFormProps
           <div className="invf-row">
             <div className="invf-field">
               <label className="invf-label">Start date</label>
-              <input {...register('start_date')} type="date" className="invf-input" />
+              <input aria-label="Start date" {...register('start_date')} type="date" className="invf-input" />
             </div>
             <div className="invf-field">
               <label className="invf-label">Maturity / exit date <span className="invf-optional">(optional)</span></label>
-              <input {...register('end_date')} type="date" className="invf-input" />
+              <input aria-label="End date" {...register('end_date')} type="date" className="invf-input" />
               <p className="field-hint">When you expect to exit or get capital back — e.g. lease end date, bond maturity, or planned sale date.</p>
             </div>
           </div>
