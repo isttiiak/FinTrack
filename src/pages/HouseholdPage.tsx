@@ -141,7 +141,7 @@ export default function HouseholdPage() {
 
       {schemaMissing && (
         <div className="hh-panel">
-          <h3 className="hh-panel-title">Household mode isn’t set up on this database yet</h3>
+          <h2 className="hh-panel-title">Household mode isn’t set up on this database yet</h2>
           <p className="hh-note">Run <code>supabase/migrations/012_households.sql</code> in the Supabase SQL Editor, then reload.</p>
         </div>
       )}

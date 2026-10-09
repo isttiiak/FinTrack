@@ -84,7 +84,7 @@ export default function MembersPanel({ household, members, meId, isOwner, onLeav
       </div>
 
       <form className="hh-panel" onSubmit={handleAdd}>
-        <h3 className="hh-panel-title">Add someone without an account</h3>
+        <h2 className="hh-panel-title">Add someone without an account</h2>
         <p className="hh-note">For a parent, partner or flatmate who won’t use FinTrack. They can be paid for and share costs; if they sign up later they can join and claim their name.</p>
         <div className="hh-inline">
           <input className="hh-input" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} maxLength={60} aria-label="Member name" />
@@ -95,7 +95,7 @@ export default function MembersPanel({ household, members, meId, isOwner, onLeav
       </form>
 
       <div className="hh-panel">
-        <h3 className="hh-panel-title">Invite a friend</h3>
+        <h2 className="hh-panel-title">Invite a friend</h2>
         <p className="hh-note">Send them this link. If they don’t have an account yet they can sign up first, and the link brings them straight back here to join. Anyone with the link can join, so replace it if it gets shared too widely.</p>
         <div className="hh-inline">
           <div className="hh-code hh-invite-link">{link}</div>

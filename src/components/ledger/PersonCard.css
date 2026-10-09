@@ -1,4 +1,8 @@
 /* Styles for PersonCard.tsx — extracted from an inline <style> block (TODO.md §4.1). */
+.pc-card-settled {
+  border-style: dashed;
+  background: transparent;
+}
 .pc-card {
   background: var(--bg-card);
   border: 1px solid var(--border);

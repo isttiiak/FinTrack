@@ -47,8 +47,9 @@ export default function PersonCard({ person, onLogPayment }: PersonCardProps) {
 
   return (
     <motion.div
-      className="pc-card"
-      style={{ opacity: allSettled ? 0.6 : 1 }}
+      // Settled cards used to be dimmed with opacity: 0.6, which dragged their
+      // text below AA contrast. A dashed border + the "All settled ✓" label say it instead.
+      className={`pc-card${allSettled ? ' pc-card-settled' : ''}`}
       whileHover={{ scale: 1.005 }}
       layout
     >

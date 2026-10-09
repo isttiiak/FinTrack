@@ -444,7 +444,8 @@
 .danger-unlock-off {
   background: rgba(194, 91, 85, 0.08);
   border: 1px solid rgba(194, 91, 85, 0.2);
-  color: rgba(194, 91, 85, 0.5);
+  /* locked is the safe, neutral state — was faded red at 1.9:1 contrast */
+  color: var(--text-secondary);
 }
 .danger-unlock-on {
   background: linear-gradient(

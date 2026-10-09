@@ -984,8 +984,9 @@ function DangerSection() {
     <section className={`settingspage-settings-section settings-danger-section ${unlocked ? 'danger-unlocked' : ''}`}>
       {/* Header with unlock toggle */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
-        <h2 className="settings-section-title" style={{ color: 'var(--accent-red)', margin: 0 }}>
-          <AlertTriangle size={16} /> Danger Zone
+        {/* Red icon, primary text: --accent-red text is 4.25:1 on the card (AA needs 4.5) */}
+        <h2 className="settings-section-title" style={{ margin: 0 }}>
+          <AlertTriangle size={16} style={{ color: 'var(--accent-red)' }} /> Danger Zone
         </h2>
         <button
           className={`danger-unlock-btn ${unlocked ? 'danger-unlock-on' : 'danger-unlock-off'}`}

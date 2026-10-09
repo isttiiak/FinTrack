@@ -86,7 +86,7 @@ export default function HouseholdSetup({ initialCode, onDone }: HouseholdSetupPr
   return (
     <div className="hh-setup">
       <form className="hh-panel" onSubmit={handleCreate}>
-        <h3 className="hh-panel-title"><Home size={13} style={{ verticalAlign: -2 }} /> Create a household</h3>
+        <h2 className="hh-panel-title"><Home size={13} style={{ verticalAlign: -2 }} /> Create a household</h2>
         <p className="hh-note">A shared space for family or flatmates to log shared costs, split them, and settle up. Your personal finances stay private.</p>
         <div className="hh-field">
           <label className="hh-label" htmlFor="hh-name">Name</label>
@@ -103,7 +103,7 @@ export default function HouseholdSetup({ initialCode, onDone }: HouseholdSetupPr
       </form>
 
       <div className="hh-panel">
-        <h3 className="hh-panel-title"><KeyRound size={13} style={{ verticalAlign: -2 }} /> Join with a code</h3>
+        <h2 className="hh-panel-title"><KeyRound size={13} style={{ verticalAlign: -2 }} /> Join with a code</h2>
         {!invite ? (
           <form onSubmit={handleLookup} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <p className="hh-note">Paste the invite link or code a member shared from their Members tab.</p>
