@@ -43,14 +43,13 @@ export default function InvestmentsPage() {
   // Portfolio summary
   const totalCommitted  = investments.reduce((s, i) => s + (i.committed_amount ?? 0), 0)
   const totalReturned   = investments.reduce((s, i) => s + (i.total_returned ?? 0), 0)
-  // Only sum investments where the user actually entered a market_value —
-  // falling back to committed_amount made "Portfolio value" silently equal
-  // "Total committed" whenever nobody had set a valuation, which read as a
-  // contradiction next to a correctly negative ROI.
-  const valuedInvestments = investments.filter((i) => i.market_value != null)
-  const totalMarketValue = valuedInvestments.reduce((s, i) => s + (i.market_value ?? 0), 0)
-  const overallPL = totalReturned - totalCommitted
-  const overallROI = totalCommitted > 0 ? ((totalReturned - totalCommitted) / totalCommitted) * 100 : null
+  // P&L = returned + current value − invested, per investment (see
+  // investmentPosition); the portfolio ROI is total profit ÷ total invested.
+  const totalInvested = investments.reduce((s, i) => s + (i.invested ?? 0), 0)
+  const totalValue    = investments.reduce((s, i) => s + (i.current_value ?? 0), 0)
+  const estimatedCount = investments.filter((i) => i.value_is_estimate && (i.current_value ?? 0) > 0).length
+  const overallPL = investments.reduce((s, i) => s + (i.profit_loss ?? 0), 0)
+  const overallROI = totalInvested > 0 ? (overallPL / totalInvested) * 100 : null
 
   return (
     <motion.div variants={fadeUp} initial="initial" animate="animate" className="inv-page">
@@ -97,22 +96,18 @@ export default function InvestmentsPage() {
               <TrendArrow positive={overallPL >= 0} />{overallPL >= 0 ? '+' : ''}{formatCurrency(overallPL)}
             </div>
             <div className="inv-sum-sub">
-              {overallROI !== null ? `${overallROI >= 0 ? '+' : ''}${overallROI.toFixed(1)}% ROI` : 'No committed amount set'}
+              {overallROI !== null ? `${overallROI >= 0 ? '+' : ''}${overallROI.toFixed(1)}% on ${formatCurrency(totalInvested)} invested` : 'Nothing invested yet'}
             </div>
           </motion.div>
 
           <motion.div className="inv-sum-card inv-sum-purple" variants={staggerItem}>
             <div className="inv-sum-icon"><BarChart3 size={17} /></div>
             <div className="inv-sum-label">Portfolio value</div>
-            <div className="inv-sum-value">
-              {valuedInvestments.length > 0 ? formatCurrency(totalMarketValue) : '—'}
-            </div>
+            <div className="inv-sum-value">{formatCurrency(totalValue)}</div>
             <div className="inv-sum-sub">
-              {valuedInvestments.length === 0
-                ? 'No valuations entered yet'
-                : valuedInvestments.length === investments.length
-                  ? 'current value'
-                  : `valued: ${valuedInvestments.length} of ${investments.length}`}
+              {estimatedCount === 0
+                ? 'current value'
+                : `${estimatedCount} of ${investments.length} valued at cost — add a market value for accuracy`}
             </div>
           </motion.div>
         </motion.div>

@@ -3,6 +3,38 @@
 import { parseDate, round2 } from './utils'
 import type { Investment } from '@/types/investment.types'
 
+// ── Position: the one place investment P&L is worked out ──────────────────
+// Every screen (summary cards, detail page, analytics, export) reads these
+// numbers, so they always agree.
+//   invested      = installments actually paid; the committed amount if none
+//                   were logged (older entries)
+//   current value = the entered market value; otherwise assumed still worth
+//                   what was paid, less any capital already handed back
+//                   (cost basis — an FD isn't a -100% loss before maturity)
+//   profit        = returned + current value − invested
+//   roi           = profit ÷ invested
+export interface Position {
+  invested: number
+  returned: number
+  currentValue: number
+  valueIsEstimate: boolean   // true = no market value entered, valued at cost
+  profit: number
+  roi: number | null         // null when nothing has been invested
+}
+
+export function investmentPosition(inv: Investment): Position {
+  const payments = inv.payments ?? []
+  const returns = inv.returns ?? []
+  const paid = payments.reduce((s, p) => s + p.amount, 0)
+  const invested = round2(payments.length > 0 ? paid : inv.committed_amount ?? 0)
+  const returned = round2(returns.reduce((s, r) => s + r.amount, 0))
+  const capitalBack = returns.filter((r) => r.return_type === 'Capital Return').reduce((s, r) => s + r.amount, 0)
+  const valueIsEstimate = inv.market_value == null
+  const currentValue = round2(valueIsEstimate ? Math.max(0, invested - capitalBack) : inv.market_value!)
+  const profit = round2(returned + currentValue - invested)
+  return { invested, returned, currentValue, valueIsEstimate, profit, roi: invested > 0 ? profit / invested : null }
+}
+
 export interface Cashflow {
   date: string    // YYYY-MM-DD
   amount: number  // negative = money in (you paid), positive = money back to you
@@ -59,8 +91,8 @@ export function xirr(flows: Cashflow[]): number | null {
 
 // An investment's money in and out. Installment payments are the money in;
 // if none were logged (common for older entries), the committed amount on the
-// start date stands in for them. A current market value counts as if
-// cashed out today.
+// start date stands in for them. The current value (investmentPosition)
+// counts as if cashed out today.
 export function investmentCashflows(inv: Investment, today: string): Cashflow[] {
   const flows: Cashflow[] = []
   const payments = inv.payments ?? []
@@ -70,7 +102,8 @@ export function investmentCashflows(inv: Investment, today: string): Cashflow[] 
     flows.push({ date: inv.start_date, amount: -inv.committed_amount })
   }
   for (const r of inv.returns ?? []) flows.push({ date: r.return_date, amount: r.amount })
-  if (inv.market_value != null && inv.market_value > 0) flows.push({ date: today, amount: inv.market_value })
+  const { currentValue } = investmentPosition(inv)
+  if (currentValue > 0) flows.push({ date: today, amount: currentValue })
   return flows
 }
 
@@ -86,37 +119,29 @@ export function annualisedReturn(inv: Investment, today: string): number | null 
   return xirr(flows)
 }
 
-// Total and yearly return for display, with a plain reason when either can't
-// be worked out. Unlike the stored roi_percent (cash returned vs committed,
-// which reads -100% for an FD that simply hasn't paid out yet), both include
-// the current valuation — so they need one, or the money to have come back.
+// Total and per-year return for display, with a note when a figure is
+// estimated or can't be worked out.
 export interface ReturnSummary {
-  total: number | null     // e.g. 0.22 = +22% overall
+  total: number | null     // e.g. 0.22 = +22% overall (= position roi)
   annual: number | null    // XIRR
-  note: string | null      // why a figure is missing
+  note: string | null
 }
 
 export function returnSummary(inv: Investment, today: string): ReturnSummary {
-  const flows = investmentCashflows(inv, today)
-  const paidIn = -flows.filter((f) => f.amount < 0).reduce((s, f) => s + f.amount, 0)
-  const back = flows.filter((f) => f.amount > 0).reduce((s, f) => s + f.amount, 0)
-  if (paidIn <= 0) return { total: null, annual: null, note: 'No money paid in yet' }
-  if (inv.market_value == null) {
-    return { total: null, annual: null, note: 'Add a current value to include it' }
-  }
-  const total = (back - paidIn) / paidIn
+  const pos = investmentPosition(inv)
+  if (pos.roi == null) return { total: null, annual: null, note: 'No money paid in yet' }
   const annual = annualisedReturn(inv, today)
-  return { total, annual, note: annual == null ? `Under ${MIN_DAYS_FOR_ANNUALISED / 30} months of history` : null }
+  const note = annual == null
+    ? `Under ${MIN_DAYS_FOR_ANNUALISED / 30} months of history`
+    : pos.valueIsEstimate ? 'Valued at cost' : null
+  return { total: pos.roi, annual, note }
 }
 
 // ── Allocation ────────────────────────────────────────────────────────────
-// What each investment is "worth" for the allocation donut: its current
-// valuation if one is entered, otherwise the money actually put in, otherwise
-// what was committed.
+// What each investment is worth for the allocation donut — its current value
+// (entered, or at cost; see investmentPosition).
 export function allocationValue(inv: Investment): number {
-  if (inv.market_value != null) return inv.market_value
-  if ((inv.total_paid ?? 0) > 0) return inv.total_paid ?? 0
-  return inv.committed_amount ?? 0
+  return investmentPosition(inv).currentValue
 }
 
 export function allocationByCategory(investments: Investment[]): { name: string; value: number }[] {

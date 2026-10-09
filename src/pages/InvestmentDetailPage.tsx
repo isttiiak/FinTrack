@@ -87,14 +87,11 @@ export default function InvestmentDetailPage() {
   const totalPaid    = inv.total_paid ?? 0
   const totalReturned = inv.total_returned ?? 0
   const remainingToPay = Math.max(0, committed - totalPaid)
-  // ROI/P&L are computed once, against the committed amount, in useInvestments.ts's
-  // enrich() — reused here so the list page and this page never disagree.
+  // P&L/ROI (returned + current value − invested) are computed once in
+  // useInvestments.ts via investmentPosition, so every page agrees.
   const profitLoss   = inv.profit_loss
   const roi          = inv.roi_percent
-  // Only shown when the user has actually entered a market_value — falling
-  // back to totalPaid made this silently equal "Paid in" whenever no
-  // valuation was set, contradicting a correctly negative ROI right next to it.
-  const portfolioValue = inv.market_value ?? null
+  const currentValue = inv.current_value ?? 0
   const paymentProgress = committed > 0 ? Math.min(100, (totalPaid / committed) * 100) : 0
 
   const series = cumulativeSeries(inv)
@@ -189,19 +186,16 @@ export default function InvestmentDetailPage() {
             {profitLoss !== undefined ? <><TrendArrow positive={profitLoss >= 0} />{`${profitLoss >= 0 ? '+' : ''}${formatCurrency(profitLoss)}`}</> : '—'}
           </div>
           <div className="idp-kpi-sub">
-            {/* With a valuation, show the value-inclusive return — the plain ROI only
-                counts cash back, so it can read -92% next to a +45%/yr investment */}
-            {summary.total != null
-              ? `${fmtPct(summary.total)} incl. value${summary.annual != null ? ` · ${fmtPct(summary.annual)}/yr` : ''}`
-              : roi !== undefined ? `${roi >= 0 ? '+' : ''}${roi.toFixed(1)}% ROI` : '—'}
+            {roi !== undefined ? `${roi >= 0 ? '+' : ''}${roi.toFixed(1)}% ROI` : '—'}
+            {summary.annual != null && ` · ${fmtPct(summary.annual)}/yr`}
           </div>
         </motion.div>
 
         <motion.div className="idp-kpi idp-kpi-purple" variants={staggerItem}>
           <div className="idp-kpi-icon"><TrendingUp size={16} /></div>
-          <div className="idp-kpi-label">Portfolio value</div>
-          <div className="idp-kpi-value">{portfolioValue != null ? formatCurrency(portfolioValue) : '—'}</div>
-          <div className="idp-kpi-sub">{portfolioValue != null ? 'Market value' : 'Not valued yet'}</div>
+          <div className="idp-kpi-label">Current value</div>
+          <div className="idp-kpi-value">{formatCurrency(currentValue)}</div>
+          <div className="idp-kpi-sub">{inv.value_is_estimate ? 'At cost — edit to add a market value' : 'Market value'}</div>
         </motion.div>
       </motion.div>
 

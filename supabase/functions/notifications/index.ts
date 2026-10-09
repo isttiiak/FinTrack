@@ -1,7 +1,11 @@
 // Supabase Edge Function — budget/weekly/monthly email notifications.
 //
-// Deployed manually (`supabase functions deploy notifications`), triggered by
-// three pg_cron schedules (see the comment block at the bottom of
+// Deployed manually, and it MUST be with JWT verification off:
+//   supabase functions deploy notifications --project-ref <your-project-ref> --no-verify-jwt
+// pg_cron sends the CRON_SECRET as its bearer token, not a Supabase JWT, so
+// with verification on the gateway rejects every scheduled call (401) before
+// this code runs. The function checks CRON_SECRET itself (see the handler).
+// Triggered by three pg_cron schedules (see the comment block at the bottom of
 // supabase/migrations/004_currency_and_notifications.sql) hitting this same
 // function with a different `?type=` each time. Runs on the Deno runtime, so
 // it cannot import anything from src/ — the small summarization helpers below

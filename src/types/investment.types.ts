@@ -26,8 +26,12 @@ export interface Investment {
   // computed
   total_returned?: number
   total_paid?: number       // sum of installment payments made
-  roi_percent?: number
-  profit_loss?: number
+  // computed by lib/investmentAnalytics.ts investmentPosition — see there
+  invested?: number         // payments made, or committed if none logged
+  current_value?: number    // market value, or at cost when none entered
+  value_is_estimate?: boolean
+  roi_percent?: number      // (returned + current value − invested) ÷ invested
+  profit_loss?: number      // returned + current value − invested
 }
 
 export interface InvestmentReturn {

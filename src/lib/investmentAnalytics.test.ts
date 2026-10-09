@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  allocationByCategory, annualisedReturn, cumulativeSeries, daysBetween, maturitySchedule, returnSummary, xirr,
+  allocationByCategory, annualisedReturn, cumulativeSeries, daysBetween, investmentPosition, maturitySchedule, returnSummary, xirr,
 } from './investmentAnalytics'
 import type { Investment } from '@/types/investment.types'
 
@@ -65,10 +65,10 @@ describe('annualisedReturn', () => {
 })
 
 describe('allocationByCategory', () => {
-  it('uses valuation, else money paid, else commitment', () => {
+  it('uses current value: entered valuation, else at cost', () => {
     const out = allocationByCategory([
-      inv({ category: 'Stocks', market_value: 500, total_paid: 400 }),
-      inv({ category: 'Stocks', total_paid: 300, committed_amount: 1000 }),
+      inv({ category: 'Stocks', market_value: 500, payments: [pay('2026-01-01', 400)] }),
+      inv({ category: 'Stocks', payments: [pay('2026-01-01', 300)], committed_amount: 1000 }),
       inv({ category: 'Fixed Deposit', committed_amount: 2000 }),
       inv({ category: null, committed_amount: 0 }),
     ])
@@ -104,17 +104,47 @@ describe('cumulativeSeries', () => {
   })
 })
 
+describe('investmentPosition', () => {
+  it('counts returns plus current value against what was paid in', () => {
+    // demo DSE: 150k in, 11.2k back, now worth 172k → +33.2k, +22.1%
+    const p = investmentPosition(inv({ committed_amount: 150000, payments: [pay('2026-03-22', 150000)], returns: [ret('2026-07-10', 3200), ret('2026-09-08', 8000)], market_value: 172000 }))
+    expect(p).toMatchObject({ invested: 150000, returned: 11200, currentValue: 172000, valueIsEstimate: false, profit: 33200 })
+    expect(p.roi).toBeCloseTo(0.2213, 3)
+  })
+
+  it('values an un-valued investment at cost, so an unmatured FD is not a loss', () => {
+    const p = investmentPosition(inv({ committed_amount: 300000, payments: [pay('2026-04-11', 300000)] }))
+    expect(p).toMatchObject({ invested: 300000, currentValue: 300000, valueIsEstimate: true, profit: 0, roi: 0 })
+  })
+
+  it('does not count returned capital twice when valued at cost', () => {
+    const matured = inv({ payments: [pay('2025-10-01', 100000)], returns: [
+      { ...ret('2026-10-01', 100000), return_type: 'Capital Return' as const },
+      { ...ret('2026-10-01', 9000), return_type: 'Profit' as const },
+    ] })
+    expect(investmentPosition(matured)).toMatchObject({ currentValue: 0, profit: 9000 })
+  })
+
+  it('uses only installments actually paid, not the full commitment', () => {
+    const p = investmentPosition(inv({ committed_amount: 1000000, payments: [pay('2026-01-01', 400000)], market_value: 450000 }))
+    expect(p).toMatchObject({ invested: 400000, profit: 50000 })
+  })
+
+  it('falls back to the committed amount when no installments were logged', () => {
+    expect(investmentPosition(inv({ committed_amount: 50000, market_value: 60000 })).profit).toBe(10000)
+  })
+})
+
 describe('returnSummary', () => {
-  it('includes the current value in the total return', () => {
+  it('matches the position ROI and adds the yearly rate', () => {
     const stocks = inv({ payments: [pay('2026-03-22', 150000)], returns: [ret('2026-07-10', 3200), ret('2026-09-08', 8000)], market_value: 172000 })
     const out = returnSummary(stocks, '2026-10-08')
     expect(out.total).toBeCloseTo(0.2213, 3)
     expect(out.annual).toBeGreaterThan(0.3)
-    expect(out.note).toBeNull()
   })
 
-  it('asks for a valuation instead of reporting -100% for an FD that has not paid out', () => {
+  it('reports an unmatured FD as 0%, valued at cost', () => {
     const fd = inv({ payments: [pay('2026-04-11', 300000)] })
-    expect(returnSummary(fd, '2026-10-08')).toEqual({ total: null, annual: null, note: 'Add a current value to include it' })
+    expect(returnSummary(fd, '2026-10-08')).toMatchObject({ total: 0, note: 'Valued at cost' })
   })
 })

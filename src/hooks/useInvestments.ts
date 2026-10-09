@@ -6,17 +6,27 @@ import { useUIStore } from '@/stores/uiStore'
 import { useDemoGuard, DemoBlockedError } from '@/hooks/useDemoGuard'
 import type { Investment, InvestmentReturn, InvestmentPayment } from '@/types/investment.types'
 import { toastWithUndo } from '@/lib/undo'
+import { investmentPosition } from '@/lib/investmentAnalytics'
 
 function enrich(inv: Investment & { investment_returns?: InvestmentReturn[]; investment_payments?: InvestmentPayment[] }): Investment {
   const returns: InvestmentReturn[] = inv.investment_returns ?? []
   const payments: InvestmentPayment[] = inv.investment_payments ?? []
   const total_returned = returns.reduce((s, r) => s + r.amount, 0)
   const total_paid = payments.reduce((s, p) => s + p.amount, 0)
-  const committed = inv.committed_amount ?? 0
-  const profit_loss = committed > 0 ? total_returned - committed : undefined
-  const roi_percent = committed > 0 ? ((total_returned - committed) / committed) * 100 : undefined
   const { investment_returns: _r, investment_payments: _p, ...rest } = inv
-  return { ...rest, returns, payments, total_returned, total_paid, profit_loss, roi_percent }
+  const base = { ...rest, returns, payments, total_returned, total_paid }
+  // P&L counts what you put in, what came back AND what it's worth now —
+  // see investmentPosition. (It used to be returned − committed, which read
+  // as a near-total loss for anything that hadn't paid out in cash yet.)
+  const pos = investmentPosition(base)
+  return {
+    ...base,
+    invested: pos.invested,
+    current_value: pos.currentValue,
+    value_is_estimate: pos.valueIsEstimate,
+    profit_loss: pos.invested > 0 ? pos.profit : undefined,
+    roi_percent: pos.roi != null ? pos.roi * 100 : undefined,
+  }
 }
 
 export function useInvestments() {
@@ -56,7 +66,7 @@ export function useCreateInvestment() {
   const guardDemo = useDemoGuard()
 
   return useMutation({
-    mutationFn: async (data: Omit<Investment, 'id' | 'user_id' | 'created_at' | 'returns' | 'total_returned' | 'roi_percent' | 'profit_loss'>) => {
+    mutationFn: async (data: Omit<Investment, 'id' | 'user_id' | 'created_at' | 'returns' | 'total_returned' | 'roi_percent' | 'profit_loss' | 'invested' | 'current_value' | 'value_is_estimate'>) => {
       guardDemo()
       const { data: row, error } = await supabase
         .from('investments')
