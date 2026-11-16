@@ -9,6 +9,7 @@ import { cn, isSafeHttpUrl, toISODateString, getActiveCurrencySymbol } from '@/l
 import { INVESTMENT_CATEGORIES } from '@/types/investment.types'
 import { useCreateInvestment, useUpdateInvestment } from '@/hooks/useInvestments'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
+import { useModalA11y } from '@/hooks/useModalA11y'
 import type { Investment } from '@/types/investment.types'
 import './InvestmentForm.css'
 
@@ -43,6 +44,7 @@ export default function InvestmentForm({ editing, onClose }: InvestmentFormProps
   const { mutateAsync: create, isPending: creating } = useCreateInvestment()
   const { mutateAsync: update, isPending: updating } = useUpdateInvestment()
   const isPending = creating || updating
+  useModalA11y(onClose)
 
   const { register, control, handleSubmit, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -87,9 +89,18 @@ export default function InvestmentForm({ editing, onClose }: InvestmentFormProps
 
   return (
     <div className="invf-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <motion.div className="invf-panel" variants={scaleIn} initial="initial" animate="animate" exit="exit">
+      <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="invf-modal-title"
+        className="invf-panel"
+        variants={scaleIn}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+      >
         <div className="invf-header">
-          <h2 className="invf-title">{editing ? 'Edit investment' : 'Add investment'}</h2>
+          <h2 id="invf-modal-title" className="invf-title">{editing ? 'Edit investment' : 'Add investment'}</h2>
           <button aria-label="Close" className="invf-close" onClick={onClose}><X size={18} /></button>
         </div>
 
@@ -126,7 +137,7 @@ export default function InvestmentForm({ editing, onClose }: InvestmentFormProps
           </div>
 
           <div className="invf-field">
-            <label className="invf-label">Committed amount ({getActiveCurrencySymbol()}) <span className="req">*</span></label>
+            <label className="invf-label">Committed amount ({getActiveCurrencySymbol()}) <span className="invf-optional">(optional)</span></label>
             <Controller
               control={control}
               name="committed_amount"

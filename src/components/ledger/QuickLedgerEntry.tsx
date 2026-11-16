@@ -11,8 +11,7 @@ import { LEDGER_TYPES, RELATIONSHIPS } from '@/lib/constants'
 import type { PaymentMethod, Account } from '@/lib/constants'
 import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
 import { usePersons, useCreatePerson, useCreateLedgerEntry } from '@/hooks/useLedger'
-import { useDemoStore } from '@/stores/demoStore'
-import { useUIStore } from '@/stores/uiStore'
+import { useModalA11y } from '@/hooks/useModalA11y'
 import type { Person } from '@/types/ledger.types'
 import './QuickLedgerEntry.css'
 
@@ -42,8 +41,7 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
   const { data: persons = [] } = usePersons()
   const { mutateAsync: createPerson, isPending: creatingPerson } = useCreatePerson()
   const { mutateAsync: createEntry, isPending: creatingEntry } = useCreateLedgerEntry()
-  const isDemo = useDemoStore((s) => s.isDemo)
-  const addToast = useUIStore((s) => s.addToast)
+  useModalA11y(onClose)
 
   const isPending = creatingPerson || creatingEntry
 
@@ -118,12 +116,6 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
   }
 
   async function onSubmit(values: FormValues) {
-    if (isDemo) {
-      addToast({ type: 'info', message: 'Demo mode — changes are not saved' })
-      onClose()
-      return
-    }
-
     let personId = values.person_id
 
     // The hooks toast any failure; catching keeps the form open with the
@@ -165,11 +157,20 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
 
   return (
     <div className="qle-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <motion.div className="qle-panel" variants={scaleIn} initial="initial" animate="animate" exit="exit">
+      <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="qle-modal-title"
+        className="qle-panel"
+        variants={scaleIn}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+      >
 
         {/* Header */}
         <div className="qle-header">
-          <h2 className="qle-title">Add entry</h2>
+          <h2 id="qle-modal-title" className="qle-title">Add entry</h2>
           <button aria-label="Close" className="qle-close" onClick={onClose}><X size={18} /></button>
         </div>
 

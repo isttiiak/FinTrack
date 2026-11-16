@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
+import { supabase, fetchAllRows } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
@@ -45,13 +45,16 @@ export function useInvestments() {
         }))
       }
 
-      const { data, error } = await supabase
-        .from('investments')
-        .select('*, investment_returns(*), investment_payments(*)')
-        .eq('user_id', userId!)
-        .order('created_at', { ascending: false })
-      if (error) throw error
-      return (data ?? []).map(enrich)
+      const rows = await fetchAllRows<Investment & { investment_returns?: InvestmentReturn[]; investment_payments?: InvestmentPayment[] }>((f, t) =>
+        supabase
+          .from('investments')
+          .select('*, investment_returns(*), investment_payments(*)')
+          .eq('user_id', userId!)
+          .order('created_at', { ascending: false })
+          .order('id')
+          .range(f, t),
+      )
+      return rows.map(enrich)
     },
   })
 }

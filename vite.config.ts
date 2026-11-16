@@ -53,7 +53,17 @@ export default defineConfig({
         // than being inlined into that page's chunk. See TODO.md §4.1.
         manualChunks(id) {
           if (id.includes('/node_modules/recharts/')) return 'recharts'
-          if (id.includes('/node_modules/framer-motion/')) return 'framer-motion'
+          if (
+            id.includes('/node_modules/framer-motion/') ||
+            id.includes('/node_modules/motion-dom/') ||
+            id.includes('/node_modules/motion-utils/')
+          ) {
+            return 'framer-motion'
+          }
+          if (id.includes('/node_modules/@supabase/')) return 'supabase'
+          if (id.includes('/node_modules/@tanstack/')) return 'tanstack'
+          if (id.includes('/node_modules/@radix-ui/')) return 'radix'
+          if (id.includes('/node_modules/lucide-react/')) return 'icons'
         },
       },
     },

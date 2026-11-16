@@ -22,6 +22,7 @@ import { fadeUp, staggerContainer, staggerItem, modalIn } from '@/lib/animations
 import { cn } from '@/lib/utils'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import { useIsExpensesOnly } from '@/hooks/useTrackingMode'
+import { useModalA11y } from '@/hooks/useModalA11y'
 import type { RecurringRule } from '@/types/recurring.types'
 import './RecurringPage.css'
 
@@ -44,6 +45,7 @@ function RecurringRuleForm({ editing, onClose }: { editing?: RecurringRule | nul
   const { mutateAsync: create, isPending: creating } = useCreateRecurringRule()
   const { mutateAsync: update, isPending: updating } = useUpdateRecurringRule()
   const isPending = creating || updating
+  useModalA11y(onClose)
 
   const { register, control, handleSubmit, watch, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -104,9 +106,18 @@ function RecurringRuleForm({ editing, onClose }: { editing?: RecurringRule | nul
 
   return (
     <div className="rf-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <motion.div className="rf-panel" variants={modalIn} initial="initial" animate="animate" exit="exit">
+      <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="rf-modal-title"
+        className="rf-panel"
+        variants={modalIn}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+      >
         <div className="rf-header">
-          <h2 className="rf-title">{editing ? 'Edit recurring rule' : 'New recurring rule'}</h2>
+          <h2 id="rf-modal-title" className="rf-title">{editing ? 'Edit recurring rule' : 'New recurring rule'}</h2>
           <button aria-label="Close" className="rf-close" onClick={onClose}><X size={18} /></button>
         </div>
 

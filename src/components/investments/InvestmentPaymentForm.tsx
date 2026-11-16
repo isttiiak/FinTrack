@@ -8,6 +8,7 @@ import { scaleIn } from '@/lib/animations'
 import { cn, toISODateString, formatCurrency, getActiveCurrencySymbol } from '@/lib/utils'
 import { useCreateInvestmentPayment, useUpdateInvestmentPayment } from '@/hooks/useInvestments'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
+import { useModalA11y } from '@/hooks/useModalA11y'
 import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
 import type { Investment, InvestmentPayment } from '@/types/investment.types'
 import './InvestmentPaymentForm.css'
@@ -35,6 +36,7 @@ export default function InvestmentPaymentForm({ investment, editing, onClose }: 
   const { mutateAsync: createPayment, isPending: creating } = useCreateInvestmentPayment()
   const { mutateAsync: updatePayment, isPending: updating } = useUpdateInvestmentPayment()
   const isPending = creating || updating
+  useModalA11y(onClose)
 
   const committed = investment.committed_amount ?? 0
   const paid = investment.total_paid ?? 0
@@ -89,10 +91,19 @@ export default function InvestmentPaymentForm({ investment, editing, onClose }: 
 
   return (
     <div className="ipf-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <motion.div className="ipf-panel" variants={scaleIn} initial="initial" animate="animate" exit="exit">
+      <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ipf-modal-title"
+        className="ipf-panel"
+        variants={scaleIn}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+      >
         <div className="ipf-header">
           <div>
-            <h2 className="ipf-title">{editing ? 'Edit installment payment' : 'Log installment payment'}</h2>
+            <h2 id="ipf-modal-title" className="ipf-title">{editing ? 'Edit installment payment' : 'Log installment payment'}</h2>
             <p className="ipf-sub">
               <ArrowUpRight size={11} style={{ display: 'inline', color: 'var(--accent-coral)' }} />
               {' '}{investment.name}

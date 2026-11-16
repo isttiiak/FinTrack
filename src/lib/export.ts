@@ -7,9 +7,27 @@ import type { Investment } from '@/types/investment.types'
 // top-level `import * as XLSX` would pull the whole library into the
 // initial bundle even for users who never click an Excel export button.
 // See TODO.md §4.1.
+// Excel/Sheets treats a cell starting with =, +, -, @, tab, or CR as a
+// formula regardless of CSV quoting — a description like
+// =HYPERLINK("http://evil","click") executes on open. Prefixing with a
+// single quote forces it to render as text instead.
+const CSV_FORMULA_PREFIX_RE = /^[=+\-@\t\r]/
+export function sanitizeSpreadsheetCell(value: string): string {
+  return CSV_FORMULA_PREFIX_RE.test(value) ? `'${value}` : value
+}
+
+function sanitizeRow<T extends Record<string, string | number>>(row: T): T {
+  const out = { ...row } as Record<string, string | number>
+  for (const key of Object.keys(out)) {
+    const val = out[key]
+    if (typeof val === 'string') out[key] = sanitizeSpreadsheetCell(val)
+  }
+  return out as T
+}
+
 export async function exportTransactionsExcel(transactions: Transaction[], filename = 'fintrack-expenses') {
   const XLSX = await import('xlsx')
-  const rows = transactions.map((t) => ({
+  const rows = transactions.map((t) => sanitizeRow({
     Date:           t.txn_date,
     Type:           t.type,
     Category:       t.category?.name ?? '',
@@ -26,15 +44,6 @@ export async function exportTransactionsExcel(transactions: Transaction[], filen
   XLSX.writeFile(wb, `${filename}.xlsx`)
 }
 
-// Excel/Sheets treats a cell starting with =, +, -, @, tab, or CR as a
-// formula regardless of CSV quoting — a description like
-// =HYPERLINK("http://evil","click") executes on open. Prefixing with a
-// single quote forces it to render as text instead.
-const CSV_FORMULA_PREFIX_RE = /^[=+\-@\t\r]/
-function sanitizeCsvCell(value: string): string {
-  return CSV_FORMULA_PREFIX_RE.test(value) ? `'${value}` : value
-}
-
 export function exportTransactionsCSV(transactions: Transaction[], filename = 'fintrack-expenses') {
   const headers = ['Date', 'Type', 'Category', 'Main Group', 'Amount', 'Description', 'Payment Method', 'Account']
   const rows = transactions.map((t) => [
@@ -45,7 +54,7 @@ export function exportTransactionsCSV(transactions: Transaction[], filename = 'f
   ])
 
   const csv = [headers, ...rows]
-    .map((row) => row.map((cell) => `"${sanitizeCsvCell(String(cell)).replace(/"/g, '""')}"`).join(','))
+    .map((row) => row.map((cell) => `"${sanitizeSpreadsheetCell(String(cell)).replace(/"/g, '""')}"`).join(','))
     .join('\n')
 
   downloadText(csv, `${filename}.csv`, 'text/csv')
@@ -63,7 +72,7 @@ export async function exportFullExcel(
   const wb = XLSX.utils.book_new()
 
   // Sheet 1: Transactions
-  const txnRows = transactions.map((t) => ({
+  const txnRows = transactions.map((t) => sanitizeRow({
     Date:             t.txn_date,
     Type:             t.type,
     Category:         t.category?.name ?? '',
@@ -85,15 +94,15 @@ export async function exportFullExcel(
   }
   const monthRows = Object.entries(byMonth)
     .sort((a, b) => b[0].localeCompare(a[0]))
-    .map(([month, v]) => ({ Month: month, Income: v.income, Expense: v.expense, Net: v.income - v.expense }))
+    .map(([month, v]) => sanitizeRow({ Month: month, Income: v.income, Expense: v.expense, Net: v.income - v.expense }))
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(monthRows), 'Monthly Summary')
 
   // Sheet 3: Persons
-  const personRows = persons.map((p) => ({ Name: p.name, Relationship: p.relationship ?? '', Phone: p.phone ?? '' }))
+  const personRows = persons.map((p) => sanitizeRow({ Name: p.name, Relationship: p.relationship ?? '', Phone: p.phone ?? '' }))
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(personRows), 'Persons')
 
   // Sheet 4: Ledger Entries
-  const ledgerRows = ledgers.map((l) => ({
+  const ledgerRows = ledgers.map((l) => sanitizeRow({
     Person:           l.person?.name ?? '',
     Type:             l.ledger_type,
     Amount:           l.total_amount,
@@ -109,7 +118,7 @@ export async function exportFullExcel(
 
   // Sheet 5: Payments — payments attach to (person, type), not one entry
   const personById = new Map(persons.map((p) => [p.id, p.name]))
-  const paymentRows = payments.map((p) => ({
+  const paymentRows = payments.map((p) => sanitizeRow({
     Person:           personById.get(p.person_id) ?? '',
     Type:             p.ledger_type,
     Amount:           p.amount,
@@ -121,7 +130,7 @@ export async function exportFullExcel(
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(paymentRows), 'Ledger Payments')
 
   // Sheet 6: Investments
-  const investmentRows = investments.map((inv) => ({
+  const investmentRows = investments.map((inv) => sanitizeRow({
     Name:               inv.name,
     Category:           inv.category ?? '',
     Company:            inv.company_name ?? '',
@@ -143,7 +152,7 @@ export async function exportFullExcel(
 
   // Sheet 7: Investment Returns
   const investmentById = new Map(investments.map((inv) => [inv.id, inv.name]))
-  const returnRows = investments.flatMap((inv) => inv.returns ?? []).map((r) => ({
+  const returnRows = investments.flatMap((inv) => inv.returns ?? []).map((r) => sanitizeRow({
     Investment:       investmentById.get(r.investment_id) ?? '',
     Amount:           r.amount,
     Date:             r.return_date,
@@ -155,7 +164,7 @@ export async function exportFullExcel(
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(returnRows), 'Investment Returns')
 
   // Sheet 8: Investment Payments (installments toward committed_amount)
-  const investmentPaymentRows = investments.flatMap((inv) => inv.payments ?? []).map((p) => ({
+  const investmentPaymentRows = investments.flatMap((inv) => inv.payments ?? []).map((p) => sanitizeRow({
     Investment:       investmentById.get(p.investment_id) ?? '',
     Amount:           p.amount,
     Date:             p.payment_date,

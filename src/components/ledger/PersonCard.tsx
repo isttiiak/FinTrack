@@ -4,8 +4,6 @@ import { ChevronRight, CreditCard, HandCoins } from 'lucide-react'
 import DeleteButton from '@/components/common/DeleteButton'
 import { formatCurrency } from '@/lib/utils'
 import { useDeletePerson } from '@/hooks/useLedger'
-import { useUIStore } from '@/stores/uiStore'
-import { useDemoStore } from '@/stores/demoStore'
 import type { PersonWithLedgers } from '@/types/ledger.types'
 import type { LedgerType } from '@/lib/constants'
 import './PersonCard.css'
@@ -29,15 +27,12 @@ interface PersonCardProps {
 export default function PersonCard({ person, onLogPayment }: PersonCardProps) {
   const navigate = useNavigate()
   const { mutate: deletePerson } = useDeletePerson()
-  const addToast = useUIStore((s) => s.addToast)
-  const isDemo = useDemoStore((s) => s.isDemo)
 
   const hasOutstanding = person.total_outstanding_lent > 0 || person.total_outstanding_debt > 0
   const netPosition = person.total_outstanding_lent - person.total_outstanding_debt
   const relColor = RELATIONSHIP_COLORS[person.relationship ?? ''] ?? '#8A968C'
 
   function handleDelete() {
-    if (isDemo) { addToast({ type: 'info', message: 'Demo mode — changes are not saved' }); return }
     deletePerson(person.id)
   }
 

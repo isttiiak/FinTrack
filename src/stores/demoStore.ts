@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Transaction, Category } from '@/types/expense.types'
+import type { Transaction, Category, BudgetLimit } from '@/types/expense.types'
 import type { Person, PersonLedger, LedgerPayment } from '@/types/ledger.types'
 import type { Investment, InvestmentReturn, InvestmentPayment } from '@/types/investment.types'
 import type { RecurringRule } from '@/types/recurring.types'
@@ -9,6 +9,7 @@ interface DemoState {
   isDemo: boolean
   transactions: Transaction[]
   categories: Category[]
+  budgets: BudgetLimit[]
   persons: Person[]
   ledgers: PersonLedger[]
   payments: LedgerPayment[]
@@ -26,6 +27,11 @@ interface DemoState {
   removeCategory: (id: string) => void
   renameMainGroup: (oldName: string, newName: string) => void
   deleteMainGroup: (groupName: string) => void
+  upsertBudget: (data: { category_id: string; monthly_limit: number; rollover?: boolean }) => BudgetLimit
+  removeBudget: (id: string) => void
+  addRecurringRule: (rule: RecurringRule) => void
+  updateRecurringRule: (id: string, fields: Partial<RecurringRule>) => RecurringRule | undefined
+  removeRecurringRule: (id: string) => void
   addPerson: (person: Person) => void
   updatePerson: (id: string, fields: Partial<Person>) => Person | undefined
   removePerson: (id: string) => void
@@ -158,13 +164,29 @@ function buildDemoData() {
     },
   ]
 
-  return { transactions, categories, persons, ledgers, payments, investments, investmentReturns, investmentPayments, recurringRules }
+  const budgets: BudgetLimit[] = [
+    {
+      id: 'b1', user_id: 'demo', category_id: 'c1', monthly_limit: 5000,
+      rollover: false, created_at: daysAgo(60), category: categories.find((c) => c.id === 'c1') ?? null,
+    },
+    {
+      id: 'b2', user_id: 'demo', category_id: 'c2', monthly_limit: 1500,
+      rollover: false, created_at: daysAgo(60), category: categories.find((c) => c.id === 'c2') ?? null,
+    },
+    {
+      id: 'b3', user_id: 'demo', category_id: 'c5', monthly_limit: 4000,
+      rollover: false, created_at: daysAgo(60), category: categories.find((c) => c.id === 'c5') ?? null,
+    },
+  ]
+
+  return { transactions, categories, budgets, persons, ledgers, payments, investments, investmentReturns, investmentPayments, recurringRules }
 }
 
 export const useDemoStore = create<DemoState>((set, get) => ({
   isDemo: false,
   transactions: [],
   categories: [],
+  budgets: [],
   persons: [],
   ledgers: [],
   payments: [],
@@ -182,6 +204,7 @@ export const useDemoStore = create<DemoState>((set, get) => ({
     isDemo: false,
     transactions: [],
     categories: [],
+    budgets: [],
     persons: [],
     ledgers: [],
     payments: [],
@@ -222,6 +245,7 @@ export const useDemoStore = create<DemoState>((set, get) => ({
   }),
   removeCategory: (id) => set((s) => ({
     categories: s.categories.filter((c) => c.id !== id),
+    budgets: s.budgets.filter((b) => b.category_id !== id),
     transactions: s.transactions.map((t) => (
       t.category_id === id ? { ...t, category_id: null, category: null } : t
     )),
@@ -238,11 +262,58 @@ export const useDemoStore = create<DemoState>((set, get) => ({
     const removedIds = new Set(s.categories.filter((c) => c.main_group === groupName).map((c) => c.id))
     return {
       categories: s.categories.filter((c) => c.main_group !== groupName),
+      budgets: s.budgets.filter((b) => !removedIds.has(b.category_id)),
       transactions: s.transactions.map((t) => (
         t.category_id && removedIds.has(t.category_id) ? { ...t, category_id: null, category: null } : t
       )),
     }
   }),
+
+  upsertBudget: (data) => {
+    let result: BudgetLimit | undefined
+    set((s) => {
+      const cat = s.categories.find((c) => c.id === data.category_id) ?? null
+      const existing = s.budgets.find((b) => b.category_id === data.category_id)
+      if (existing) {
+        result = {
+          ...existing,
+          monthly_limit: data.monthly_limit,
+          ...(data.rollover !== undefined && { rollover: data.rollover }),
+          category: cat,
+        }
+        return { budgets: s.budgets.map((b) => (b.id === existing.id ? result! : b)) }
+      }
+      result = {
+        id: `demo-budget-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        user_id: 'demo',
+        category_id: data.category_id,
+        monthly_limit: data.monthly_limit,
+        rollover: data.rollover ?? false,
+        created_at: new Date().toISOString(),
+        category: cat,
+      }
+      return { budgets: [...s.budgets, result] }
+    })
+    return result!
+  },
+  removeBudget: (id) => set((s) => ({ budgets: s.budgets.filter((b) => b.id !== id) })),
+
+  addRecurringRule: (rule) => set((s) => ({ recurringRules: [rule, ...s.recurringRules] })),
+  updateRecurringRule: (id, fields) => {
+    let updated: RecurringRule | undefined
+    set((s) => ({
+      recurringRules: s.recurringRules.map((r) => {
+        if (r.id !== id) return r
+        const nextCategory = fields.category_id !== undefined
+          ? (s.categories.find((c) => c.id === fields.category_id) ?? null)
+          : r.category
+        updated = { ...r, ...fields, category: nextCategory }
+        return updated
+      }),
+    }))
+    return updated ?? get().recurringRules.find((r) => r.id === id)
+  },
+  removeRecurringRule: (id) => set((s) => ({ recurringRules: s.recurringRules.filter((r) => r.id !== id) })),
 
   addPerson: (person) => set((s) => ({ persons: [...s.persons, person] })),
   updatePerson: (id, fields) => {

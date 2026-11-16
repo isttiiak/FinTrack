@@ -144,7 +144,7 @@ export default function PaymentMethodPicker({
                       disabled={!newMethodName.trim()}>
                       <Check size={13} /> Save
                     </button>
-                    <button type="button" className="pmp-add-cancel"
+                    <button type="button" className="pmp-add-cancel" aria-label="Cancel adding provider"
                       onClick={() => { setAddingMethod(false); setNewMethodName('') }}>
                       <X size={13} />
                     </button>
@@ -177,9 +177,9 @@ export default function PaymentMethodPicker({
                   placeholder="Enter account name…" value={customAccountVal} maxLength={60}
                   onChange={(e) => setCustomAccountVal(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && saveCustomAccount()} autoFocus />
-                <button type="button" className="pmp-add-save" onClick={saveCustomAccount}
+                <button type="button" className="pmp-add-save" aria-label="Save custom account" onClick={saveCustomAccount}
                   disabled={!customAccountVal.trim()}><Check size={13} /></button>
-                <button type="button" className="pmp-add-cancel"
+                <button type="button" className="pmp-add-cancel" aria-label="Cancel custom account"
                   onClick={() => { setCustomAccountMode(false); setCustomAccountVal('') }}>
                   <X size={13} />
                 </button>

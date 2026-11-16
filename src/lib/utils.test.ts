@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { round2, parseDate, getCurrentMonthRange, toISODateString, resolveDateRange, isSafeHttpUrl } from '@/lib/utils'
+import { sanitizeSpreadsheetCell } from '@/lib/export'
 
 describe('round2', () => {
   it('rounds to 2 decimals', () => {
@@ -95,5 +96,22 @@ describe('isSafeHttpUrl', () => {
     expect(isSafeHttpUrl('')).toBe(false)
     expect(isSafeHttpUrl(null)).toBe(false)
     expect(isSafeHttpUrl(undefined)).toBe(false)
+  })
+})
+
+describe('sanitizeSpreadsheetCell', () => {
+  it('prefixes formula-triggering leading characters with a single quote', () => {
+    expect(sanitizeSpreadsheetCell('=SUM(A1)')).toBe("'=SUM(A1)")
+    expect(sanitizeSpreadsheetCell('+cmd|"/c calc"!A0')).toBe("'+cmd|\"/c calc\"!A0")
+    expect(sanitizeSpreadsheetCell('-1+1')).toBe("'-1+1")
+    expect(sanitizeSpreadsheetCell('@SUM(1,2)')).toBe("'@SUM(1,2)")
+    expect(sanitizeSpreadsheetCell('\tcmd')).toBe("'\tcmd")
+    expect(sanitizeSpreadsheetCell('\rcmd')).toBe("'\rcmd")
+  })
+
+  it('leaves safe text unchanged', () => {
+    expect(sanitizeSpreadsheetCell('Lunch at cafe')).toBe('Lunch at cafe')
+    expect(sanitizeSpreadsheetCell('100.50')).toBe('100.50')
+    expect(sanitizeSpreadsheetCell('')).toBe('')
   })
 })
