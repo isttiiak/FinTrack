@@ -162,7 +162,7 @@ export default function Sidebar() {
               <div className="sidebar-user-name">{isDemo ? 'Demo User' : (profile?.full_name ?? 'You')}</div>
               <div className="sidebar-user-email">{isDemo ? 'demo mode' : (profile?.email ?? '')}</div>
             </div>
-            <button className="sidebar-signout-btn" onClick={handleSignOut} title={isDemo ? 'Exit demo' : 'Sign out'}>
+            <button className="sidebar-signout-btn" onClick={handleSignOut} title={isDemo ? 'Exit demo' : 'Sign out'} aria-label={isDemo ? 'Exit demo' : 'Sign out'}>
               <LogOut size={16} />
             </button>
           </div>

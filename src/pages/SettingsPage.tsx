@@ -911,6 +911,8 @@ function DangerSection() {
   const { profile }                 = useAuthStore()
   const userId                      = useAuthStore((s) => s.user?.id)
   const { data: transactions = [] } = useExpenses({ from: '2000-01-01', to: toISODateString(new Date()) })   // all-time for export count
+  const { data: persons = [] } = usePersons()
+  const { data: investments = [] } = useInvestments()
   const confirm                     = useConfirmStore((s) => s.confirm)
   const addToast                    = useUIStore((s) => s.addToast)
   const qc                          = useQueryClient()
@@ -1059,8 +1061,17 @@ function DangerSection() {
               Before you go — you have <strong style={{ color: 'var(--text-primary)' }}>{transactions.length} transactions</strong>. Export your data first?
             </p>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
-              <button className="export-btn" onClick={() => exportTransactionsExcel(transactions)}>
-                <Download size={13} /> Export Excel
+              <button
+                className="export-btn"
+                onClick={() => exportFullExcel(
+                  transactions,
+                  persons,
+                  persons.flatMap((p) => p.ledgers ?? []),
+                  persons.flatMap((p) => p.payments ?? []),
+                  investments,
+                )}
+              >
+                <Download size={13} /> Export Full Backup (Excel)
               </button>
               <button className="export-btn export-btn-secondary" onClick={() => exportTransactionsCSV(transactions)}>
                 <Download size={13} /> Export CSV

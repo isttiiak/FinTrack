@@ -5,7 +5,6 @@ import { round2, toISODateString } from '@/lib/utils'
 import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
-import { useDemoGuard, DemoBlockedError } from '@/hooks/useDemoGuard'
 import type { BudgetLimit } from '@/types/expense.types'
 
 export type BudgetWithLimit = BudgetLimit & { carryover: number; effective_limit: number }
@@ -22,7 +21,37 @@ export function useBudgets(month: string = toISODateString(new Date()).slice(0, 
     queryKey: ['budgets', userId, month],
     enabled: isDemo || !!userId,
     queryFn: async (): Promise<BudgetWithLimit[]> => {
-      if (isDemo) return []
+      const monthStart = `${month}-01`
+      if (isDemo) {
+        const { budgets, transactions } = useDemoStore.getState()
+        const rolling = budgets.filter((b) => b.rollover && b.created_at.slice(0, 10) < monthStart)
+        const lastMonthSpent = new Map<string, number>()
+        if (rolling.length > 0) {
+          const { from, to } = previousMonthRange(month)
+          const rollingIds = new Set(rolling.map((b) => b.category_id))
+          for (const t of transactions) {
+            if (
+              t.type === 'Expense' &&
+              t.category_id &&
+              rollingIds.has(t.category_id) &&
+              t.txn_date >= from &&
+              t.txn_date <= to
+            ) {
+              lastMonthSpent.set(t.category_id, (lastMonthSpent.get(t.category_id) ?? 0) + Number(t.amount))
+            }
+          }
+        }
+        return budgets.map((b) => {
+          const carryover = carryoverAmount({
+            rollover: b.rollover,
+            monthlyLimit: b.monthly_limit,
+            lastMonthSpent: lastMonthSpent.get(b.category_id) ?? 0,
+            createdAt: b.created_at,
+            monthStart,
+          })
+          return { ...b, carryover, effective_limit: round2(b.monthly_limit + carryover) }
+        })
+      }
       const { data, error } = await supabase
         .from('budget_limits')
         .select('*, category:categories(*)')
@@ -30,7 +59,6 @@ export function useBudgets(month: string = toISODateString(new Date()).slice(0, 
       if (error) throw error
       const budgets = (data ?? []) as BudgetLimit[]
 
-      const monthStart = `${month}-01`
       const rolling = budgets.filter((b) => b.rollover && b.created_at.slice(0, 10) < monthStart)
       const lastMonthSpent = new Map<string, number>()
       if (rolling.length > 0) {
@@ -69,11 +97,12 @@ export function useUpsertBudget() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async ({ category_id, monthly_limit, rollover }: { category_id: string; monthly_limit: number; rollover?: boolean }) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        return useDemoStore.getState().upsertBudget({ category_id, monthly_limit, rollover })
+      }
       // rollover only sent when set, so saving a plain budget still works on a
       // database that hasn't run 017_budget_rollover.sql yet
       const row = { user_id: userId!, category_id, monthly_limit, ...(rollover !== undefined && { rollover }) }
@@ -87,7 +116,6 @@ export function useUpsertBudget() {
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['budgets'] }),
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })
@@ -97,11 +125,13 @@ export function useDeleteBudget() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (id: string) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        useDemoStore.getState().removeBudget(id)
+        return
+      }
       const { error } = await supabase
         .from('budget_limits')
         .delete()
@@ -111,7 +141,6 @@ export function useDeleteBudget() {
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['budgets'] }),
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })

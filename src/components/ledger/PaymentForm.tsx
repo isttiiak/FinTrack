@@ -10,6 +10,7 @@ import type { PaymentMethod, Account } from '@/lib/constants'
 import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
 import { useCreatePayment, useUpdatePayment } from '@/hooks/useLedger'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
+import { useModalA11y } from '@/hooks/useModalA11y'
 import type { LedgerType } from '@/lib/constants'
 import type { LedgerPayment } from '@/types/ledger.types'
 import './PaymentForm.css'
@@ -37,6 +38,7 @@ export default function PaymentForm({ personId, personName, ledgerType, remainin
   const { mutateAsync: createPayment, isPending: creating } = useCreatePayment()
   const { mutateAsync: updatePayment, isPending: updating } = useUpdatePayment()
   const isPending = creating || updating
+  useModalA11y(onClose)
   // The payment being edited is already counted in `remaining`, so it can grow back up to it
   const maxAmount = editing ? round2(remaining + editing.amount) : remaining
 
@@ -87,10 +89,19 @@ export default function PaymentForm({ personId, personName, ledgerType, remainin
 
   return (
     <div className="payf-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <motion.div className="payf-panel" variants={scaleIn} initial="initial" animate="animate" exit="exit">
+      <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="payf-modal-title"
+        className="payf-panel"
+        variants={scaleIn}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+      >
         <div className="payf-header">
           <div>
-            <h2 className="payf-title">{editing ? 'Edit payment' : 'Log payment'} — {personName}</h2>
+            <h2 id="payf-modal-title" className="payf-title">{editing ? 'Edit payment' : 'Log payment'} — {personName}</h2>
             <p className="payf-sub">
               {ledgerType === 'Lent' ? 'They paid you back' : 'You paid them'}
               {' · '}
