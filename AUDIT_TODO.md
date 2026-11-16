@@ -481,9 +481,9 @@
 
 ### Category 6: Navigation, Analytics & Settings (`fix/cat-6-nav-analytics-settings`)
 
-- [ ] **6.1 `Sidebar` active state on nested `/settings/*` routes**
+- [x] **6.1 `Sidebar` active state on nested `/settings/*` routes**
   - **Files:** `src/components/layout/Sidebar.tsx`
-- [ ] **6.2 `AnalyticsPage` elapsed-days daily average & formatted payment method labels**
+- [x] **6.2 `AnalyticsPage` elapsed-days daily average & formatted payment method labels**
   - **Files:** `src/pages/AnalyticsPage.tsx`
-- [ ] **6.3 `BudgetSection` in `SettingsPage.tsx` use `SmartAmountInput`**
+- [x] **6.3 `BudgetSection` in `SettingsPage.tsx` use `SmartAmountInput`**
   - **Files:** `src/pages/SettingsPage.tsx`

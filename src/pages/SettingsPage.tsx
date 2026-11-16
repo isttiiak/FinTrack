@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Papa from 'papaparse'
@@ -12,6 +12,7 @@ import {
   Power, Trash2, Lock, Unlock, Bell, Edit2,
 } from 'lucide-react'
 import DeleteButton from '@/components/common/DeleteButton'
+import SmartAmountInput from '@/components/common/SmartAmountInput'
 import { useCategories } from '@/hooks/useCategories'
 import { useBudgets, useUpsertBudget, useDeleteBudget } from '@/hooks/useBudgets'
 import { useExpenses } from '@/hooks/useExpenses'
@@ -52,7 +53,7 @@ function BudgetSection() {
   // there was previously no way to change a budget's amount at all
   const [editingId, setEditingId] = useState<string | null>(null)
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<BudgetForm>({
+  const { register, control, handleSubmit, reset, formState: { errors } } = useForm<BudgetForm>({
     resolver: zodResolver(budgetSchema),
     defaultValues: { category_id: '', rollover: false },
   })
@@ -134,7 +135,19 @@ function BudgetSection() {
 
               <div className="settingspage-pf-field" style={{ width: 160 }}>
                 <label className="pf-label">Monthly limit ({getActiveCurrencySymbol()})</label>
-                <input {...register('monthly_limit', { valueAsNumber: true })} type="number" placeholder="e.g. 5000" className={cn('pf-input', errors.monthly_limit && 'pf-input-error')} />
+                <Controller
+                  control={control}
+                  name="monthly_limit"
+                  render={({ field }) => (
+                    <SmartAmountInput
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="e.g. 5000"
+                      className={cn('pf-input', errors.monthly_limit && 'pf-input-error')}
+                      error={!!errors.monthly_limit}
+                    />
+                  )}
+                />
                 {errors.monthly_limit && <p className="pf-error">{errors.monthly_limit.message}</p>}
               </div>
 
