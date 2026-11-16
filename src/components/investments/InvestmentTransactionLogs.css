@@ -106,9 +106,21 @@
   overflow: hidden;
   overflow-x: auto;
 }
-.itl-edit-btn,
 .itl-edit-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
   color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background 0.15s;
 }
 .itl-edit-btn:hover {
   background: rgba(79, 169, 129, 0.1);

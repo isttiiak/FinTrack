@@ -40,7 +40,8 @@ export default function InvestmentPaymentForm({ investment, editing, onClose }: 
 
   const committed = investment.committed_amount ?? 0
   const paid = investment.total_paid ?? 0
-  const remaining = Math.max(0, committed - paid)
+  const paidExcludingCurrent = Math.max(0, paid - (editing?.amount ?? 0))
+  const remaining = Math.max(0, committed - paidExcludingCurrent)
 
   const lastMethod = localStorage.getItem(LS_METHOD_KEY) ?? 'Cash'
   const lastAccount = localStorage.getItem(LS_ACCOUNT_KEY) ?? 'Cash'

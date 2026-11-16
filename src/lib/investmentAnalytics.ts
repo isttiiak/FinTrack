@@ -198,3 +198,88 @@ export function cumulativeSeries(inv: Investment): { date: string; paid: number;
       return { date, paid, returned }
     })
 }
+
+export interface InvestmentLogRow {
+  id: string
+  invId: string
+  invName: string
+  txType: 'Payment Out' | 'Return In'
+  returnType: string | null
+  date: string
+  seq: number
+  amount: number
+  remainingToPay: number | null // null when the investment has no fixed commitment
+  cumulativePL: number
+  paymentMethod: string | null
+  account: string | null
+  notes: string | null
+}
+
+/**
+ * Flatten payments and returns across investments in reverse chronological order
+ * with deterministic same-date sequence tiebreaking and running balances.
+ */
+export function buildInvestmentLogRows(investments: Investment[]): InvestmentLogRow[] {
+  const rows: InvestmentLogRow[] = []
+
+  for (const inv of investments) {
+    const hasCommitment = inv.committed_amount != null && inv.committed_amount > 0
+    const committed = hasCommitment ? inv.committed_amount! : 0
+
+    const paymentRows = (inv.payments ?? []).map((p, idx) => ({
+      id: p.id,
+      date: p.payment_date,
+      seq: idx,
+      amount: p.amount,
+      type: 'Payment Out' as const,
+      returnType: null,
+      paymentMethod: p.payment_method,
+      account: p.account,
+      notes: p.notes,
+    }))
+    const returnRows = (inv.returns ?? []).map((r, idx) => ({
+      id: r.id,
+      date: r.return_date,
+      seq: (inv.payments?.length ?? 0) + idx,
+      amount: r.amount,
+      type: 'Return In' as const,
+      returnType: r.return_type,
+      paymentMethod: r.payment_method,
+      account: r.account,
+      notes: r.notes,
+    }))
+
+    const chronological = [...paymentRows, ...returnRows].sort(
+      (a, b) => a.date.localeCompare(b.date) || a.seq - b.seq,
+    )
+
+    let totalPaid = 0
+    let totalReturned = 0
+
+    for (const tx of chronological) {
+      if (tx.type === 'Payment Out') totalPaid += tx.amount
+      else totalReturned += tx.amount
+
+      const remainingToPay = hasCommitment ? Math.max(0, round2(committed - totalPaid)) : null
+      const cumulativePL = round2(totalReturned - totalPaid)
+
+      rows.push({
+        id: tx.id,
+        invId: inv.id,
+        invName: inv.name,
+        txType: tx.type,
+        returnType: tx.returnType,
+        date: tx.date,
+        seq: tx.seq,
+        amount: tx.amount,
+        remainingToPay,
+        cumulativePL,
+        paymentMethod: tx.paymentMethod,
+        account: tx.account,
+        notes: tx.notes,
+      })
+    }
+  }
+
+  return rows.sort((a, b) => b.date.localeCompare(a.date) || b.seq - a.seq)
+}

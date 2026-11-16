@@ -12,6 +12,7 @@ import EmptyState from '@/components/common/EmptyState'
 import ErrorBanner from '@/components/common/ErrorBanner'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { formatCurrency, formatDate, formatDateShort, isSafeHttpUrl, toISODateString } from '@/lib/utils'
+import { formatPaymentMeta } from '@/lib/region'
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts'
 import { TOOLTIP_STYLE, AXIS_TICK, GRID_STROKE } from '@/lib/chartTheme'
 import { cumulativeSeries, returnSummary } from '@/lib/investmentAnalytics'
@@ -86,16 +87,17 @@ export default function InvestmentDetailPage() {
     )
   }
 
-  const committed    = inv.committed_amount ?? 0
-  const totalPaid    = inv.total_paid ?? 0
+  const hasCommitment = inv.committed_amount != null && inv.committed_amount > 0
+  const committed     = hasCommitment ? inv.committed_amount! : 0
+  const totalPaid     = inv.total_paid ?? 0
   const totalReturned = inv.total_returned ?? 0
-  const remainingToPay = Math.max(0, committed - totalPaid)
+  const remainingToPay = hasCommitment ? Math.max(0, committed - totalPaid) : 0
   // P&L/ROI (returned + current value − invested) are computed once in
   // useInvestments.ts via investmentPosition, so every page agrees.
   const profitLoss   = inv.profit_loss
   const roi          = inv.roi_percent
   const currentValue = inv.current_value ?? 0
-  const paymentProgress = committed > 0 ? Math.min(100, (totalPaid / committed) * 100) : 0
+  const paymentProgress = hasCommitment ? Math.min(100, (totalPaid / committed) * 100) : 0
 
   const series = cumulativeSeries(inv)
   const summary = returnSummary(inv, toISODateString(new Date()))
@@ -166,22 +168,22 @@ export default function InvestmentDetailPage() {
         <motion.div className="idp-kpi idp-kpi-amber" variants={staggerItem}>
           <div className="idp-kpi-icon"><Wallet size={16} /></div>
           <div className="idp-kpi-label">Committed</div>
-          <div className="idp-kpi-value">{formatCurrency(committed)}</div>
-          <div className="idp-kpi-sub">Total agreed amount</div>
+          <div className="idp-kpi-value">{hasCommitment ? formatCurrency(committed) : '—'}</div>
+          <div className="idp-kpi-sub">{hasCommitment ? 'Total agreed amount' : 'Open-ended investment'}</div>
         </motion.div>
 
         <motion.div className="idp-kpi idp-kpi-coral" variants={staggerItem}>
           <div className="idp-kpi-icon"><ArrowUpRight size={16} /></div>
           <div className="idp-kpi-label">Paid in</div>
           <div className="idp-kpi-value">{formatCurrency(totalPaid)}</div>
-          {remainingToPay > 0 && (
+          {hasCommitment && remainingToPay > 0 && (
             <div className="idp-kpi-sub" style={{ color: '#C2A24E' }}>{formatCurrency(remainingToPay)} still due</div>
           )}
-          {remainingToPay === 0 && committed > 0 && (
+          {hasCommitment && remainingToPay === 0 && (
             <div className="idp-kpi-sub" style={{ color: 'var(--accent-teal)' }}>Fully paid ✓</div>
           )}
           {/* Progress bar */}
-          {committed > 0 && (
+          {hasCommitment && (
             <div className="idp-progress-wrap">
               <div className="idp-progress-bar" style={{ width: `${paymentProgress}%` }} />
             </div>
@@ -260,10 +262,18 @@ export default function InvestmentDetailPage() {
               </button>
             </div>
           ) : (
-            [...payments]
-              .sort((a, b) => b.payment_date.localeCompare(a.payment_date))
-              .map((pay, i, arr) => {
-                const remaining = Math.max(0, committed - (totalPaid - arr.slice(0, i).reduce((s, p) => s + p.amount, 0)))
+            (() => {
+              const chronological = payments
+                .map((pay, seq) => ({ pay, seq }))
+                .sort((a, b) => a.pay.payment_date.localeCompare(b.pay.payment_date) || a.seq - b.seq)
+              let paidSoFar = 0
+              const rows = chronological.map(({ pay }) => {
+                paidSoFar += pay.amount
+                const remaining = hasCommitment ? Math.max(0, committed - paidSoFar) : null
+                return { pay, remaining }
+              }).reverse()
+              return rows.map(({ pay, remaining }) => {
+                const methodMeta = formatPaymentMeta(pay.payment_method, pay.account)
                 return (
                   <div key={pay.id} className="idp-row" style={{ flexWrap: 'wrap' }}>
                     <div className="idp-row-dot" style={{ background: 'var(--accent-coral)' }} />
@@ -271,10 +281,13 @@ export default function InvestmentDetailPage() {
                       <span className="idp-row-amount idp-amount-out">−{formatCurrency(pay.amount)}</span>
                       <span className="idp-row-date">{formatDate(pay.payment_date)}</span>
                       <span className="idp-row-chip idp-chip-out">Payment out</span>
+                      {methodMeta && <span className="idp-row-notes">{methodMeta}</span>}
                       {pay.notes && <span className="idp-row-notes">{pay.notes}</span>}
                     </div>
                     <div className="idp-row-remaining">
-                      {remaining > 0 ? (
+                      {remaining === null ? (
+                        <span className="idp-remaining-label">—</span>
+                      ) : remaining > 0 ? (
                         <>
                           <span className="idp-remaining-label">Remaining</span>
                           <span className="idp-remaining-val">{formatCurrency(remaining)}</span>
@@ -290,6 +303,7 @@ export default function InvestmentDetailPage() {
                   </div>
                 )
               })
+            })()
           )}
         </div>
       )}
@@ -304,10 +318,12 @@ export default function InvestmentDetailPage() {
               </button>
             </div>
           ) : (
-            [...returns]
-              .sort((a, b) => b.return_date.localeCompare(a.return_date))
-              .map((ret) => {
+            returns
+              .map((ret, seq) => ({ ret, seq }))
+              .sort((a, b) => b.ret.return_date.localeCompare(a.ret.return_date) || b.seq - a.seq)
+              .map(({ ret }) => {
                 const color = RETURN_TYPE_COLORS[ret.return_type ?? ''] ?? 'var(--text-muted)'
+                const methodMeta = formatPaymentMeta(ret.payment_method, ret.account)
                 return (
                   <div key={ret.id} className="idp-row" style={{ flexWrap: 'wrap' }}>
                     <div className="idp-row-dot" style={{ background: color }} />
@@ -317,6 +333,7 @@ export default function InvestmentDetailPage() {
                       {ret.return_type && (
                         <span className="idp-row-chip" style={{ color, background: `${color}22` }}>{ret.return_type}</span>
                       )}
+                      {methodMeta && <span className="idp-row-notes">{methodMeta}</span>}
                       {ret.notes && <span className="idp-row-notes">{ret.notes}</span>}
                     </div>
                     <div className="idp-row-remaining" />

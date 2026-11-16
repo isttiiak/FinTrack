@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  allocationByCategory, annualisedReturn, cumulativeSeries, daysBetween, investmentPosition, maturitySchedule, returnSummary, xirr,
+  allocationByCategory, annualisedReturn, buildInvestmentLogRows, cumulativeSeries, daysBetween, investmentPosition, maturitySchedule, returnSummary, xirr,
 } from './investmentAnalytics'
 import type { Investment } from '@/types/investment.types'
 
@@ -146,5 +146,43 @@ describe('returnSummary', () => {
   it('reports an unmatured FD as 0%, valued at cost', () => {
     const fd = inv({ payments: [pay('2026-04-11', 300000)] })
     expect(returnSummary(fd, '2026-10-08')).toMatchObject({ total: 0, note: 'Valued at cost' })
+  })
+})
+
+describe('buildInvestmentLogRows', () => {
+  it('returns null remainingToPay for open-ended investments and preserves same-date order', () => {
+    const openEnded = inv({
+      id: 'open',
+      name: 'Index ETF',
+      committed_amount: null,
+      payments: [
+        { ...pay('2026-05-01', 1000), id: 'p1', payment_method: 'MFS - bKash', account: 'Personal' },
+        { ...pay('2026-05-01', 2000), id: 'p2', payment_method: 'Cash', account: 'Cash' },
+      ],
+      returns: [{ ...ret('2026-05-01', 500), id: 'r1', return_type: 'Dividend' }],
+    })
+    const rows = buildInvestmentLogRows([openEnded])
+    expect(rows.map((r) => r.id)).toEqual(['r1', 'p2', 'p1'])
+    expect(rows.every((r) => r.remainingToPay === null)).toBe(true)
+    expect(rows[0].cumulativePL).toBe(-2500)
+    expect(rows[2].paymentMethod).toBe('MFS - bKash')
+    expect(rows[2].account).toBe('Personal')
+  })
+
+  it('tracks remainingToPay chronologically for fixed-commitment investments', () => {
+    const fixed = inv({
+      id: 'fixed',
+      name: 'Plot',
+      committed_amount: 10000,
+      payments: [
+        { ...pay('2026-01-01', 3000), id: 'p1' },
+        { ...pay('2026-01-01', 4000), id: 'p2' },
+      ],
+    })
+    const rows = buildInvestmentLogRows([fixed])
+    expect(rows.map((r) => ({ id: r.id, remaining: r.remainingToPay }))).toEqual([
+      { id: 'p2', remaining: 3000 },
+      { id: 'p1', remaining: 7000 },
+    ])
   })
 })
