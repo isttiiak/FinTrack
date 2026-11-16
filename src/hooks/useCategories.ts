@@ -70,13 +70,14 @@ function invalidateCategoryViews(qc: QueryClient) {
 
 export function useUpdateCategory() {
   const qc = useQueryClient()
+  const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
   const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async ({ id, ...fields }: Partial<Category> & { id: string }) => {
       guardDemo()
-      const { error } = await supabase.from('categories').update(fields).eq('id', id)
+      const { error } = await supabase.from('categories').update(fields).eq('id', id).eq('user_id', userId!)
       if (error) throw error
     },
     onSuccess: () => invalidateCategoryViews(qc),
@@ -89,13 +90,14 @@ export function useUpdateCategory() {
 
 export function useDeleteCategory() {
   const qc = useQueryClient()
+  const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
   const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (id: string) => {
       guardDemo()
-      const { error } = await supabase.from('categories').delete().eq('id', id)
+      const { error } = await supabase.from('categories').delete().eq('id', id).eq('user_id', userId!)
       if (error) throw error
     },
     onSuccess: () => invalidateCategoryViews(qc),
