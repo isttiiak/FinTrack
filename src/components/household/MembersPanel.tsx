@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Copy, Check, UserPlus, RefreshCw, Share2 } from 'lucide-react'
 import { useAddMember, useRemoveMember, useRotateInviteCode } from '@/hooks/useHousehold'
 import { useUIStore } from '@/stores/uiStore'
+import { useConfirmStore } from '@/stores/confirmStore'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import { inviteLink } from '@/lib/householdInvite'
 import type { Household, HouseholdMember } from '@/types/household.types'
@@ -20,6 +21,7 @@ export default function MembersPanel({ household, members, meId, isOwner, onLeav
   const { mutateAsync: removeMember } = useRemoveMember()
   const { mutateAsync: rotate, isPending: rotating } = useRotateInviteCode()
   const addToast = useUIStore((s) => s.addToast)
+  const confirm = useConfirmStore((s) => s.confirm)
 
   const [name, setName] = useState('')
   const [copied, setCopied] = useState<'link' | 'code' | null>(null)
@@ -38,6 +40,13 @@ export default function MembersPanel({ household, members, meId, isOwner, onLeav
   }
 
   async function handleRemove(m: HouseholdMember) {
+    const ok = await confirm({
+      title: 'Remove this member?',
+      description: 'They will be removed from this household. Members referenced in expenses or payments cannot be removed.',
+      itemName: m.name,
+      confirmLabel: 'Remove member',
+    })
+    if (!ok) return
     try {
       await removeMember({ id: m.id, household_id: household.id })
     } catch { /* toast shown by the hook */ }
@@ -60,6 +69,12 @@ export default function MembersPanel({ household, members, meId, isOwner, onLeav
   }
 
   async function handleRotate() {
+    const ok = await confirm({
+      title: 'Replace invite link?',
+      description: 'The current invite link and code will stop working immediately. Anyone new will need the new link.',
+      confirmLabel: 'Replace link',
+    })
+    if (!ok) return
     try {
       await rotate({ household_id: household.id })
     } catch { /* toast shown by the hook */ }

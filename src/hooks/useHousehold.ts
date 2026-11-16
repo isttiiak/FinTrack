@@ -4,22 +4,23 @@ import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
 import { useDemoGuard, DemoBlockedError } from '@/hooks/useDemoGuard'
-import { DEMO_HOUSEHOLD, DEMO_MEMBER_ID } from '@/lib/demoHousehold'
+import { DEMO_MEMBER_ID } from '@/lib/demoHousehold'
 import type {
   Household, HouseholdDetail, HouseholdMember, HouseholdSettlement, SharedExpense, SharedExpenseInput,
 } from '@/types/household.types'
 
-// Households are read-only in demo mode (mutations hit useDemoGuard).
+// Demo mode households run in memory via useDemoStore; invite joining still
+// requires a signed-in account.
 
 export function useHouseholds() {
   const userId = useAuthStore((s) => s.user?.id)
   const isDemo = useDemoStore((s) => s.isDemo)
 
   return useQuery({
-    queryKey: ['households', userId],
+    queryKey: ['households', userId, isDemo],
     enabled: isDemo || !!userId,
     queryFn: async (): Promise<Household[]> => {
-      if (isDemo) return [DEMO_HOUSEHOLD.household]
+      if (isDemo) return Object.values(useDemoStore.getState().households).map((d) => d.household)
       const { data, error } = await supabase.from('households').select('*').order('created_at')
       if (error) throw error
       return (data ?? []) as Household[]
@@ -32,10 +33,10 @@ export function useHouseholdDetail(householdId: string | null) {
   const isDemo = useDemoStore((s) => s.isDemo)
 
   return useQuery({
-    queryKey: ['household', userId, householdId],
+    queryKey: ['household', userId, isDemo, householdId],
     enabled: !!householdId && (isDemo || !!userId),
-    queryFn: async (): Promise<HouseholdDetail> => {
-      if (isDemo) return DEMO_HOUSEHOLD
+    queryFn: async (): Promise<HouseholdDetail | null> => {
+      if (isDemo) return useDemoStore.getState().households[householdId!] ?? null
 
       const id = householdId!
       const [household, members, expenses, settlements] = await Promise.all([
@@ -108,9 +109,10 @@ function friendly(err: { message?: string; code?: string }): string {
   return err.message ?? 'Something went wrong'
 }
 
-function useMutationBase<TVars>(
-  fn: (vars: TVars, ctx: { userId: string | undefined }) => Promise<unknown>,
+function useMutationBase<TVars, TResult = unknown>(
+  fn: (vars: TVars, ctx: { userId: string | undefined }) => Promise<TResult>,
   success: string | null,
+  demoFn?: (vars: TVars) => Promise<TResult> | TResult,
 ) {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
@@ -119,7 +121,10 @@ function useMutationBase<TVars>(
 
   return useMutation({
     mutationFn: async (vars: TVars) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        if (demoFn) return await demoFn(vars)
+        guardDemo()
+      }
       return fn(vars, { userId })
     },
     onSuccess: () => {
@@ -141,6 +146,7 @@ export function useCreateHousehold() {
       return data as string
     },
     'Household created',
+    (v) => useDemoStore.getState().createHousehold(v),
   )
 }
 
@@ -182,6 +188,7 @@ export function useSaveSharedExpense() {
       return data as string
     },
     'Expense saved',
+    (v) => useDemoStore.getState().saveSharedExpense(v),
   )
 }
 
@@ -192,16 +199,24 @@ export function useDeleteSharedExpense() {
       if (error) throw error
     },
     'Expense deleted',
+    (v) => useDemoStore.getState().deleteSharedExpense({ id: v.id, householdId: v.household_id }),
   )
 }
 
 export function useAddSettlement() {
   return useMutationBase(
-    async (v: Omit<HouseholdSettlement, 'id' | 'created_by' | 'created_at'>, { userId }) => {
+    async (v: Omit<HouseholdSettlement, 'id' | 'created_by' | 'created_at'> & { id?: string }, { userId }) => {
+      if (v.id) {
+        const { id, ...fields } = v
+        const { error } = await supabase.from('household_settlements').update(fields).eq('id', id)
+        if (error) throw error
+        return
+      }
       const { error } = await supabase.from('household_settlements').insert({ ...v, created_by: userId })
       if (error) throw error
     },
-    'Payment recorded',
+    'Payment saved',
+    (v) => useDemoStore.getState().saveSettlement(v),
   )
 }
 
@@ -212,6 +227,7 @@ export function useDeleteSettlement() {
       if (error) throw error
     },
     'Payment removed',
+    (v) => useDemoStore.getState().deleteSettlement({ id: v.id, householdId: v.household_id }),
   )
 }
 
@@ -222,6 +238,7 @@ export function useAddMember() {
       if (error) throw error
     },
     'Member added',
+    (v) => useDemoStore.getState().addHouseholdMember({ householdId: v.household_id, name: v.name }),
   )
 }
 
@@ -232,6 +249,7 @@ export function useRemoveMember() {
       if (error) throw error
     },
     'Member removed',
+    (v) => useDemoStore.getState().removeHouseholdMember({ id: v.id, householdId: v.household_id }),
   )
 }
 
@@ -243,6 +261,7 @@ export function useRotateInviteCode() {
       if (error) throw error
     },
     'Invite code replaced — the old one no longer works',
+    (v) => { useDemoStore.getState().rotateHouseholdInviteCode(v.household_id) },
   )
 }
 
@@ -253,5 +272,6 @@ export function useDeleteHousehold() {
       if (error) throw error
     },
     'Household deleted',
+    (v) => useDemoStore.getState().deleteHousehold(v.household_id),
   )
 }

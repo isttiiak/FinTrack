@@ -3,6 +3,10 @@ import type { Transaction, Category, BudgetLimit } from '@/types/expense.types'
 import type { Person, PersonLedger, LedgerPayment } from '@/types/ledger.types'
 import type { Investment, InvestmentReturn, InvestmentPayment } from '@/types/investment.types'
 import type { RecurringRule } from '@/types/recurring.types'
+import type {
+  HouseholdDetail, HouseholdMember, HouseholdSettlement, SharedExpense, SharedExpenseInput,
+} from '@/types/household.types'
+import { DEMO_HOUSEHOLD, DEMO_MEMBER_ID } from '@/lib/demoHousehold'
 import { toISODateString } from '@/lib/utils'
 
 interface DemoState {
@@ -17,6 +21,7 @@ interface DemoState {
   investmentReturns: InvestmentReturn[]
   investmentPayments: InvestmentPayment[]
   recurringRules: RecurringRule[]
+  households: Record<string, HouseholdDetail>
   enterDemo: () => void
   exitDemo: () => void
   addTransaction: (txn: Transaction) => void
@@ -50,6 +55,15 @@ interface DemoState {
   addInvestmentReturn: (ret: InvestmentReturn) => void
   updateInvestmentReturn: (id: string, fields: Partial<InvestmentReturn>) => InvestmentReturn | undefined
   removeInvestmentReturn: (id: string) => void
+  createHousehold: (v: { name: string; currency: string; myName?: string }) => string
+  saveSharedExpense: (v: SharedExpenseInput) => string
+  deleteSharedExpense: (v: { id: string; householdId: string }) => void
+  saveSettlement: (v: Omit<HouseholdSettlement, 'id' | 'created_by' | 'created_at'> & { id?: string }) => void
+  deleteSettlement: (v: { id: string; householdId: string }) => void
+  addHouseholdMember: (v: { householdId: string; name: string }) => void
+  removeHouseholdMember: (v: { id: string; householdId: string }) => void
+  rotateHouseholdInviteCode: (householdId: string) => string
+  deleteHousehold: (householdId: string) => void
 }
 
 // Demo seed data — realistic BDT transactions over ~3 months
@@ -179,7 +193,11 @@ function buildDemoData() {
     },
   ]
 
-  return { transactions, categories, budgets, persons, ledgers, payments, investments, investmentReturns, investmentPayments, recurringRules }
+  const households: Record<string, HouseholdDetail> = {
+    [DEMO_HOUSEHOLD.household.id]: structuredClone(DEMO_HOUSEHOLD),
+  }
+
+  return { transactions, categories, budgets, persons, ledgers, payments, investments, investmentReturns, investmentPayments, recurringRules, households }
 }
 
 export const useDemoStore = create<DemoState>((set, get) => ({
@@ -194,6 +212,7 @@ export const useDemoStore = create<DemoState>((set, get) => ({
   investmentReturns: [],
   investmentPayments: [],
   recurringRules: [],
+  households: {},
 
   enterDemo: () => {
     const data = buildDemoData()
@@ -212,6 +231,7 @@ export const useDemoStore = create<DemoState>((set, get) => ({
     investmentReturns: [],
     investmentPayments: [],
     recurringRules: [],
+    households: {},
   }),
 
   // Demo mode mutations operate strictly in memory — session changes remain
@@ -425,4 +445,190 @@ export const useDemoStore = create<DemoState>((set, get) => ({
   removeInvestmentReturn: (id) => set((s) => ({
     investmentReturns: s.investmentReturns.filter((r) => r.id !== id),
   })),
+
+  createHousehold: (v) => {
+    const id = `demo-h-${crypto.randomUUID().slice(0, 8)}`
+    const now = new Date().toISOString()
+    const inviteCode = crypto.randomUUID().replace(/-/g, '').slice(0, 10)
+    const owner: HouseholdMember = {
+      id: DEMO_MEMBER_ID,
+      household_id: id,
+      user_id: 'demo',
+      name: v.myName?.trim() || 'You',
+      role: 'owner',
+      created_at: now,
+    }
+    const detail: HouseholdDetail = {
+      household: {
+        id,
+        name: v.name.trim(),
+        currency: v.currency,
+        invite_code: inviteCode,
+        created_by: 'demo',
+        created_at: now,
+      },
+      members: [owner],
+      expenses: [],
+      settlements: [],
+    }
+    set((s) => ({ households: { ...s.households, [id]: detail } }))
+    return id
+  },
+
+  saveSharedExpense: (v) => {
+    const id = v.id ?? `demo-e-${crypto.randomUUID().slice(0, 8)}`
+    const now = new Date().toISOString()
+    set((s) => {
+      const target = s.households[v.household_id]
+      if (!target) return s
+      const existing = v.id ? target.expenses.find((e) => e.id === v.id) : undefined
+      const saved: SharedExpense = {
+        id,
+        household_id: v.household_id,
+        paid_by: v.paid_by,
+        amount: v.amount,
+        description: v.description,
+        category: v.category,
+        expense_date: v.expense_date,
+        notes: v.notes,
+        created_by: existing?.created_by ?? 'demo',
+        created_at: existing?.created_at ?? now,
+        splits: v.splits.map((sp) => ({ ...sp })),
+      }
+      const nextExpenses = existing
+        ? target.expenses.map((e) => (e.id === v.id ? saved : e))
+        : [saved, ...target.expenses]
+      nextExpenses.sort((a, b) => b.expense_date.localeCompare(a.expense_date))
+      return {
+        households: {
+          ...s.households,
+          [v.household_id]: { ...target, expenses: nextExpenses },
+        },
+      }
+    })
+    return id
+  },
+
+  deleteSharedExpense: ({ id, householdId }) => set((s) => {
+    const target = s.households[householdId]
+    if (!target) return s
+    return {
+      households: {
+        ...s.households,
+        [householdId]: {
+          ...target,
+          expenses: target.expenses.filter((e) => e.id !== id),
+        },
+      },
+    }
+  }),
+
+  saveSettlement: (v) => set((s) => {
+    const target = s.households[v.household_id]
+    if (!target) return s
+    const now = new Date().toISOString()
+    const existing = v.id ? target.settlements.find((st) => st.id === v.id) : undefined
+    const saved: HouseholdSettlement = {
+      id: v.id ?? `demo-s-${crypto.randomUUID().slice(0, 8)}`,
+      household_id: v.household_id,
+      from_member: v.from_member,
+      to_member: v.to_member,
+      amount: v.amount,
+      settled_on: v.settled_on,
+      note: v.note,
+      created_by: existing?.created_by ?? 'demo',
+      created_at: existing?.created_at ?? now,
+    }
+    const nextSettlements = existing
+      ? target.settlements.map((st) => (st.id === v.id ? saved : st))
+      : [saved, ...target.settlements]
+    nextSettlements.sort((a, b) => b.settled_on.localeCompare(a.settled_on))
+    return {
+      households: {
+        ...s.households,
+        [v.household_id]: { ...target, settlements: nextSettlements },
+      },
+    }
+  }),
+
+  deleteSettlement: ({ id, householdId }) => set((s) => {
+    const target = s.households[householdId]
+    if (!target) return s
+    return {
+      households: {
+        ...s.households,
+        [householdId]: {
+          ...target,
+          settlements: target.settlements.filter((st) => st.id !== id),
+        },
+      },
+    }
+  }),
+
+  addHouseholdMember: ({ householdId, name }) => set((s) => {
+    const target = s.households[householdId]
+    if (!target) return s
+    const member: HouseholdMember = {
+      id: `demo-m-${crypto.randomUUID().slice(0, 8)}`,
+      household_id: householdId,
+      user_id: null,
+      name: name.trim(),
+      role: 'member',
+      created_at: new Date().toISOString(),
+    }
+    return {
+      households: {
+        ...s.households,
+        [householdId]: { ...target, members: [...target.members, member] },
+      },
+    }
+  }),
+
+  removeHouseholdMember: ({ id, householdId }) => {
+    const target = get().households[householdId]
+    if (!target) return
+    const referenced =
+      target.expenses.some((e) => e.paid_by === id || e.splits.some((sp) => sp.member_id === id)) ||
+      target.settlements.some((st) => st.from_member === id || st.to_member === id)
+    if (referenced) {
+      throw Object.assign(new Error('Member referenced in expenses or settlements'), { code: '23503' })
+    }
+    set((s) => {
+      const current = s.households[householdId]
+      if (!current) return s
+      return {
+        households: {
+          ...s.households,
+          [householdId]: {
+            ...current,
+            members: current.members.filter((m) => m.id !== id),
+          },
+        },
+      }
+    })
+  },
+
+  rotateHouseholdInviteCode: (householdId) => {
+    const code = crypto.randomUUID().replace(/-/g, '').slice(0, 10)
+    set((s) => {
+      const target = s.households[householdId]
+      if (!target) return s
+      return {
+        households: {
+          ...s.households,
+          [householdId]: {
+            ...target,
+            household: { ...target.household, invite_code: code },
+          },
+        },
+      }
+    })
+    return code
+  },
+
+  deleteHousehold: (householdId) => set((s) => {
+    const next = { ...s.households }
+    delete next[householdId]
+    return { households: next }
+  }),
 }))
