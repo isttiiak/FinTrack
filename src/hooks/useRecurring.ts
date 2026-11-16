@@ -4,7 +4,6 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
-import { useDemoGuard, DemoBlockedError } from '@/hooks/useDemoGuard'
 import { getDueOccurrences } from '@/lib/recurring'
 import type { RecurringRule, RecurringRuleFormData } from '@/types/recurring.types'
 import type { Transaction } from '@/types/expense.types'
@@ -12,13 +11,12 @@ import type { Transaction } from '@/types/expense.types'
 export function useRecurringRules() {
   const userId = useAuthStore((s) => s.user?.id)
   const isDemo = useDemoStore((s) => s.isDemo)
-  const demoRules = useDemoStore((s) => s.recurringRules)
 
   return useQuery({
     queryKey: ['recurring_rules', userId],
     enabled: isDemo || !!userId,
     queryFn: async (): Promise<RecurringRule[]> => {
-      if (isDemo) return demoRules
+      if (isDemo) return useDemoStore.getState().recurringRules
 
       const { data, error } = await supabase
         .from('recurring_rules')
@@ -35,7 +33,6 @@ export function useCreateRecurringRule() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     // last_materialized_date defaults to null (never materialized) unless the
@@ -43,8 +40,29 @@ export function useCreateRecurringRule() {
     // see ExpenseForm's "Make recurring" toggle, which passes the just-saved
     // transaction's own date so it isn't immediately re-materialized.
     mutationFn: async (data: RecurringRuleFormData & { last_materialized_date?: string | null }) => {
-      guardDemo()
       const { last_materialized_date, ...rule } = data
+      if (useDemoStore.getState().isDemo) {
+        const categories = useDemoStore.getState().categories
+        const created: RecurringRule = {
+          id: `demo-rec-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          user_id: 'demo',
+          category_id: rule.category_id,
+          type: rule.type,
+          amount: rule.amount,
+          description: rule.description ?? null,
+          cadence: rule.cadence,
+          start_date: rule.start_date,
+          end_date: rule.end_date ?? null,
+          payment_method: rule.payment_method ?? null,
+          account: rule.account ?? null,
+          is_active: true,
+          last_materialized_date: last_materialized_date ?? null,
+          created_at: new Date().toISOString(),
+          category: categories.find((c) => c.id === rule.category_id) ?? null,
+        }
+        useDemoStore.getState().addRecurringRule(created)
+        return created
+      }
       const { data: row, error } = await supabase
         .from('recurring_rules')
         .insert({
@@ -70,7 +88,6 @@ export function useCreateRecurringRule() {
       }
     },
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })
@@ -80,11 +97,14 @@ export function useUpdateRecurringRule() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<RecurringRule> & { id: string }) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        const updated = useDemoStore.getState().updateRecurringRule(id, data)
+        if (!updated) throw new Error('Recurring rule not found')
+        return updated
+      }
       const { data: row, error } = await supabase
         .from('recurring_rules')
         .update(data)
@@ -99,7 +119,6 @@ export function useUpdateRecurringRule() {
       qc.invalidateQueries({ queryKey: ['recurring_rules'] })
     },
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })
@@ -109,11 +128,13 @@ export function useDeleteRecurringRule() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (id: string) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        useDemoStore.getState().removeRecurringRule(id)
+        return
+      }
       const { error } = await supabase
         .from('recurring_rules')
         .delete()
@@ -126,7 +147,6 @@ export function useDeleteRecurringRule() {
       addToast({ type: 'success', message: 'Recurring rule deleted' })
     },
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })

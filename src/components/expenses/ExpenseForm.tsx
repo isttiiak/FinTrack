@@ -19,6 +19,7 @@ import type { Transaction } from '@/types/expense.types'
 import CategoryCombobox from '@/components/expenses/CategoryCombobox'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import { useIsExpensesOnly } from '@/hooks/useTrackingMode'
+import { useModalA11y } from '@/hooks/useModalA11y'
 import './ExpenseForm.css'
 
 const schema = z.object({
@@ -47,6 +48,7 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
   const { mutateAsync: update, isPending: updating } = useUpdateExpense()
   const { mutateAsync: createRule } = useCreateRecurringRule()
   const isPending = creating || updating
+  useModalA11y(onClose)
 
   // In Expenses-only mode, don't offer switching a transaction to Income —
   // except an already-Income transaction being edited, so it stays visible
@@ -149,6 +151,9 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
   return (
     <div className="expense-form-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ef-modal-title"
         className="expense-form-panel"
         variants={scaleIn}
         initial="initial"
@@ -157,7 +162,7 @@ export default function ExpenseForm({ editing, defaultType = 'Expense', onClose 
       >
         {/* Header */}
         <div className="ef-header">
-          <h2 className="ef-title">{editing ? 'Edit transaction' : 'Add transaction'}</h2>
+          <h2 id="ef-modal-title" className="ef-title">{editing ? 'Edit transaction' : 'Add transaction'}</h2>
           <button aria-label="Close" className="ef-close" onClick={onClose}><X size={18} /></button>
         </div>
 

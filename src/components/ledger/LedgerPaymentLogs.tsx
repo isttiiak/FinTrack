@@ -5,8 +5,6 @@ import DeleteButton from '@/components/common/DeleteButton'
 import { formatCurrency, formatDate, round2 } from '@/lib/utils'
 import { useDeletePayment } from '@/hooks/useLedger'
 import PaymentForm from './PaymentForm'
-import { useDemoStore } from '@/stores/demoStore'
-import { useUIStore } from '@/stores/uiStore'
 import type { LedgerPayment, PersonWithLedgers } from '@/types/ledger.types'
 import type { LedgerType } from '@/lib/constants'
 import { fadeUp } from '@/lib/animations'
@@ -43,8 +41,6 @@ function rowColor(row: HistoryRow): string {
 
 export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedgers[] }) {
   const { mutate: deletePayment } = useDeletePayment()
-  const isDemo = useDemoStore((s) => s.isDemo)
-  const addToast = useUIStore((s) => s.addToast)
   const [filterPerson, setFilterPerson] = useState<string | null>(null)
   const [editing, setEditing] = useState<{ person: PersonWithLedgers; payment: LedgerPayment } | null>(null)
 
@@ -103,7 +99,6 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
     : null
 
   function handleDelete(id: string) {
-    if (isDemo) { addToast({ type: 'info', message: 'Demo mode — changes are not saved' }); return }
     deletePayment(id)
   }
 
@@ -191,7 +186,7 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
             exit={{ opacity: 0, height: 0 }}
           >
             <span>Showing history for <strong>{selectedPersonName}</strong></span>
-            <button className="lpl-filter-clear" onClick={() => setFilterPerson(null)}><X size={13} /></button>
+            <button className="lpl-filter-clear" aria-label="Clear person filter" onClick={() => setFilterPerson(null)}><X size={13} /></button>
           </motion.div>
         )}
       </AnimatePresence>

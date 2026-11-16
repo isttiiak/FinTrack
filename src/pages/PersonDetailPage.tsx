@@ -12,8 +12,6 @@ import { formatCurrency, formatDate, isSafeHttpUrl } from '@/lib/utils'
 import { usePerson, useDeleteLedgerEntry, useDeletePerson } from '@/hooks/useLedger'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import { useConfirmStore } from '@/stores/confirmStore'
-import { useDemoStore } from '@/stores/demoStore'
-import { useUIStore } from '@/stores/uiStore'
 import LedgerEntryForm from '@/components/ledger/LedgerEntryForm'
 import PaymentForm from '@/components/ledger/PaymentForm'
 import LedgerPaymentLogs from '@/components/ledger/LedgerPaymentLogs'
@@ -36,8 +34,6 @@ export default function PersonDetailPage() {
   const { mutate: deleteEntry } = useDeleteLedgerEntry()
   const { mutateAsync: deletePerson } = useDeletePerson()
   const confirm = useConfirmStore((s) => s.confirm)
-  const isDemo = useDemoStore((s) => s.isDemo)
-  const addToast = useUIStore((s) => s.addToast)
 
   const [activeTab, setActiveTab] = useState<'timeline' | 'payments'>('timeline')
   const [showAddEntry, setShowAddEntry] = useState(false)
@@ -45,12 +41,10 @@ export default function PersonDetailPage() {
   const [loggingPaymentFor, setLoggingPaymentFor] = useState<{ ledgerType: LedgerType; remaining: number } | null>(null)
 
   function handleAddEntry() {
-    if (isDemo) { addToast({ type: 'info', message: 'Demo mode — changes are not saved' }); return }
     setShowAddEntry(true)
   }
 
   function handleDeleteEntry(id: string) {
-    if (isDemo) { addToast({ type: 'info', message: 'Demo mode — changes are not saved' }); return }
     deleteEntry(id)
   }
 

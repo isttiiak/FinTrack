@@ -163,8 +163,8 @@ function CategoriesTab({ categories }: { categories: Category[] }) {
                 <option value="Expense">Expense</option>
                 {!isExpensesOnly && <option value="Income">Income</option>}
               </select>
-              <button className="dsc-icon-btn dsc-ok" onClick={saveNewGroup} disabled={!newGroupName.trim()}><Check size={13} /></button>
-              <button className="dsc-icon-btn" onClick={() => setAddingGroup(false)}><X size={13} /></button>
+              <button className="dsc-icon-btn dsc-ok" aria-label="Save main category" onClick={saveNewGroup} disabled={!newGroupName.trim()}><Check size={13} /></button>
+              <button className="dsc-icon-btn" aria-label="Cancel adding main category" onClick={() => setAddingGroup(false)}><X size={13} /></button>
             </motion.div>
           ) : (
             <button className="dsc-add-group-btn" style={{ flex: 1 }} onClick={() => setAddingGroup(true)}>
@@ -216,20 +216,20 @@ function CategoriesTab({ categories }: { categories: Category[] }) {
               <div className="dsc-group-actions">
                 {isEditingGroup ? (
                   <>
-                    <button className="dsc-icon-btn dsc-ok" onClick={saveGroupRename}><Check size={13} /></button>
-                    <button className="dsc-icon-btn" onClick={() => setEditingGroupName(null)}><X size={13} /></button>
+                    <button className="dsc-icon-btn dsc-ok" aria-label="Save group name" onClick={saveGroupRename}><Check size={13} /></button>
+                    <button className="dsc-icon-btn" aria-label="Cancel group rename" onClick={() => setEditingGroupName(null)}><X size={13} /></button>
                   </>
                 ) : (
                   <>
-                    <button className="dsc-icon-btn" title="Rename group"
+                    <button className="dsc-icon-btn" title="Rename group" aria-label={`Rename ${group}`}
                       onClick={() => { setEditingGroupName({ old: group, val: group }); setExpanded((p) => new Set([...p, group])) }}>
                       <Edit2 size={13} />
                     </button>
-                    <button className="dsc-icon-btn dsc-add-sub" title="Add sub-category"
+                    <button className="dsc-icon-btn dsc-add-sub" title="Add sub-category" aria-label={`Add sub-category to ${group}`}
                       onClick={() => { setAddingSubTo(isAddingSub ? null : group); setNewSubName(''); setExpanded((p) => new Set([...p, group])) }}>
                       <Plus size={13} />
                     </button>
-                    <button className="dsc-icon-btn dsc-del" title="Delete entire group"
+                    <button className="dsc-icon-btn dsc-del" title="Delete entire group" aria-label={`Delete ${group}`}
                       onClick={() => handleDeleteGroup(group, cats.length)}>
                       <Trash2 size={13} />
                     </button>
@@ -281,15 +281,15 @@ function CategoriesTab({ categories }: { categories: Category[] }) {
                           <div className="dsc-sub-actions">
                             {isEditingSub ? (
                               <>
-                                <button className="dsc-icon-btn dsc-ok" onClick={saveSubEdit}><Check size={12} /></button>
-                                <button className="dsc-icon-btn" onClick={() => setEditingSubcat(null)}><X size={12} /></button>
+                                <button className="dsc-icon-btn dsc-ok" aria-label="Save category" onClick={saveSubEdit}><Check size={12} /></button>
+                                <button className="dsc-icon-btn" aria-label="Cancel category edit" onClick={() => setEditingSubcat(null)}><X size={12} /></button>
                               </>
                             ) : (
                               <>
-                                <button className="dsc-icon-btn" onClick={() => setEditingSubcat({ id: cat.id, name: cat.name, group: cat.main_group })} title="Edit">
+                                <button className="dsc-icon-btn" aria-label={`Edit ${cat.name}`} onClick={() => setEditingSubcat({ id: cat.id, name: cat.name, group: cat.main_group })} title="Edit">
                                   <Edit2 size={12} />
                                 </button>
-                                <button className="dsc-icon-btn dsc-del" onClick={() => handleDeleteSubcat(cat)} title="Delete">
+                                <button className="dsc-icon-btn dsc-del" aria-label={`Delete ${cat.name}`} onClick={() => handleDeleteSubcat(cat)} title="Delete">
                                   <Trash2 size={12} />
                                 </button>
                               </>
@@ -312,9 +312,9 @@ function CategoriesTab({ categories }: { categories: Category[] }) {
                             onKeyDown={(e) => e.key === 'Enter' && saveNewSub(group)} autoFocus
                           />
                           <span className={`dsc-group-type-tag dsc-type-tag-${groupType.toLowerCase()}`}>{groupType}</span>
-                          <button className="dsc-icon-btn dsc-ok" onClick={() => saveNewSub(group)}
+                          <button className="dsc-icon-btn dsc-ok" aria-label="Save sub-category" onClick={() => saveNewSub(group)}
                             disabled={!newSubName.trim()}><Check size={12} /></button>
-                          <button className="dsc-icon-btn" onClick={() => setAddingSubTo(null)}><X size={12} /></button>
+                          <button className="dsc-icon-btn" aria-label="Cancel adding sub-category" onClick={() => setAddingSubTo(null)}><X size={12} /></button>
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -393,8 +393,8 @@ function EditableList({ items, onChange, onReset, placeholder, toDisplay = (v) =
           return (
             <div key={`${item}-${i}`} className="dsc-sub-row">
               <div className="dsc-reorder-btns">
-                <button className="dsc-reorder-btn" disabled={i === 0} onClick={() => move(i, -1)} title="Move up"><ChevronUp size={12} /></button>
-                <button className="dsc-reorder-btn" disabled={i === items.length - 1} onClick={() => move(i, 1)} title="Move down"><ChevronDown size={12} /></button>
+                <button className="dsc-reorder-btn" disabled={i === 0} onClick={() => move(i, -1)} title="Move up" aria-label={`Move ${toDisplay(item)} up`}><ChevronUp size={12} /></button>
+                <button className="dsc-reorder-btn" disabled={i === items.length - 1} onClick={() => move(i, 1)} title="Move down" aria-label={`Move ${toDisplay(item)} down`}><ChevronDown size={12} /></button>
               </div>
               {isEditingThis ? (
                 <input
@@ -410,13 +410,13 @@ function EditableList({ items, onChange, onReset, placeholder, toDisplay = (v) =
               <div className="dsc-sub-actions">
                 {isEditingThis ? (
                   <>
-                    <button className="dsc-icon-btn dsc-ok" onClick={saveEdit}><Check size={12} /></button>
-                    <button className="dsc-icon-btn" onClick={() => setEditingIdx(null)}><X size={12} /></button>
+                    <button className="dsc-icon-btn dsc-ok" aria-label="Save item" onClick={saveEdit}><Check size={12} /></button>
+                    <button className="dsc-icon-btn" aria-label="Cancel item edit" onClick={() => setEditingIdx(null)}><X size={12} /></button>
                   </>
                 ) : (
                   <>
-                    <button className="dsc-icon-btn" title="Edit" onClick={() => startEdit(i)}><Edit2 size={12} /></button>
-                    <button className="dsc-icon-btn dsc-del" title="Remove" onClick={() => removeAt(i)}><Trash2 size={12} /></button>
+                    <button className="dsc-icon-btn" title="Edit" aria-label={`Edit ${toDisplay(item)}`} onClick={() => startEdit(i)}><Edit2 size={12} /></button>
+                    <button className="dsc-icon-btn dsc-del" title="Remove" aria-label={`Remove ${toDisplay(item)}`} onClick={() => removeAt(i)}><Trash2 size={12} /></button>
                   </>
                 )}
               </div>
@@ -438,8 +438,8 @@ function EditableList({ items, onChange, onReset, placeholder, toDisplay = (v) =
                 onChange={(e) => setNewVal(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && addItem()} autoFocus
               />
-              <button className="dsc-icon-btn dsc-ok" onClick={addItem} disabled={!newVal.trim()}><Check size={12} /></button>
-              <button className="dsc-icon-btn" onClick={() => setAdding(false)}><X size={12} /></button>
+              <button className="dsc-icon-btn dsc-ok" aria-label="Save item" onClick={addItem} disabled={!newVal.trim()}><Check size={12} /></button>
+              <button className="dsc-icon-btn" aria-label="Cancel adding item" onClick={() => setAdding(false)}><X size={12} /></button>
             </motion.div>
           )}
         </AnimatePresence>

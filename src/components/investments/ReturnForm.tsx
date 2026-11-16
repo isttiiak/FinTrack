@@ -9,6 +9,7 @@ import { cn, toISODateString, formatCurrency, getActiveCurrencySymbol } from '@/
 import { RETURN_TYPES } from '@/types/investment.types'
 import { useCreateReturn, useUpdateReturn } from '@/hooks/useInvestments'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
+import { useModalA11y } from '@/hooks/useModalA11y'
 import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
 import type { Investment, InvestmentReturn } from '@/types/investment.types'
 import './ReturnForm.css'
@@ -37,6 +38,7 @@ export default function ReturnForm({ investment, editing, onClose }: ReturnFormP
   const { mutateAsync: createReturn, isPending: creating } = useCreateReturn()
   const { mutateAsync: updateReturn, isPending: updating } = useUpdateReturn()
   const isPending = creating || updating
+  useModalA11y(onClose)
 
   const lastMethod = localStorage.getItem(LS_METHOD_KEY) ?? 'Cash'
   const lastAccount = localStorage.getItem(LS_ACCOUNT_KEY) ?? 'Cash'
@@ -86,10 +88,19 @@ export default function ReturnForm({ investment, editing, onClose }: ReturnFormP
 
   return (
     <div className="retf-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <motion.div className="retf-panel" variants={scaleIn} initial="initial" animate="animate" exit="exit">
+      <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="retf-modal-title"
+        className="retf-panel"
+        variants={scaleIn}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+      >
         <div className="retf-header">
           <div>
-            <h2 className="retf-title">{editing ? 'Edit return' : 'Log return'}</h2>
+            <h2 id="retf-modal-title" className="retf-title">{editing ? 'Edit return' : 'Log return'}</h2>
             <p className="retf-sub">
               {investment.name}
               {committed > 0 && (

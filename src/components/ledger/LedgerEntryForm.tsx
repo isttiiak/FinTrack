@@ -11,6 +11,7 @@ import type { PaymentMethod, Account } from '@/lib/constants'
 import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
 import { useCreateLedgerEntry, useUpdateLedgerEntry } from '@/hooks/useLedger'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
+import { useModalA11y } from '@/hooks/useModalA11y'
 import type { PersonLedger } from '@/types/ledger.types'
 import './LedgerEntryForm.css'
 
@@ -37,6 +38,7 @@ export default function LedgerEntryForm({ personId, editing, defaultType = 'Lent
   const { mutateAsync: create, isPending: creating } = useCreateLedgerEntry()
   const { mutateAsync: update, isPending: updating } = useUpdateLedgerEntry()
   const isPending = creating || updating
+  useModalA11y(onClose)
 
   const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -90,9 +92,18 @@ export default function LedgerEntryForm({ personId, editing, defaultType = 'Lent
 
   return (
     <div className="lef-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <motion.div className="lef-panel" variants={scaleIn} initial="initial" animate="animate" exit="exit">
+      <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="lef-modal-title"
+        className="lef-panel"
+        variants={scaleIn}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+      >
         <div className="lef-header">
-          <h2 className="lef-title">{editing ? 'Edit entry' : 'Add ledger entry'}</h2>
+          <h2 id="lef-modal-title" className="lef-title">{editing ? 'Edit entry' : 'Add ledger entry'}</h2>
           <button aria-label="Close" className="lef-close" onClick={onClose}><X size={18} /></button>
         </div>
 

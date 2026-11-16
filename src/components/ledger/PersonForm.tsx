@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import { RELATIONSHIPS } from '@/lib/constants'
 import { useCreatePerson, useUpdatePerson } from '@/hooks/useLedger'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
+import { useModalA11y } from '@/hooks/useModalA11y'
 import type { Person } from '@/types/ledger.types'
 import './PersonForm.css'
 
@@ -29,6 +30,7 @@ export default function PersonForm({ editing, onClose }: PersonFormProps) {
   const { mutateAsync: create, isPending: creating } = useCreatePerson()
   const { mutateAsync: update, isPending: updating } = useUpdatePerson()
   const isPending = creating || updating
+  useModalA11y(onClose)
   const [customRelation, setCustomRelation] = useState(
     editing?.relationship != null && !RELATIONSHIPS.includes(editing.relationship as never),
   )
@@ -64,9 +66,18 @@ export default function PersonForm({ editing, onClose }: PersonFormProps) {
 
   return (
     <div className="pf-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <motion.div className="pf-panel" variants={scaleIn} initial="initial" animate="animate" exit="exit">
+      <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="pf-modal-title"
+        className="pf-panel"
+        variants={scaleIn}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+      >
         <div className="pf-header">
-          <h2 className="pf-title">{editing ? 'Edit person' : 'Add person'}</h2>
+          <h2 id="pf-modal-title" className="pf-title">{editing ? 'Edit person' : 'Add person'}</h2>
           <button aria-label="Close" className="pf-close" onClick={onClose}><X size={18} /></button>
         </div>
 

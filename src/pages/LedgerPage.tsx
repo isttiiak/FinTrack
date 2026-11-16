@@ -5,8 +5,6 @@ import { Plus, Users, TrendingUp, TrendingDown, ArrowRightLeft, ArrowUp, ArrowDo
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
 import { formatCurrency } from '@/lib/utils'
 import { usePersons } from '@/hooks/useLedger'
-import { useDemoStore } from '@/stores/demoStore'
-import { useUIStore } from '@/stores/uiStore'
 import PersonCard from '@/components/ledger/PersonCard'
 import PaymentForm from '@/components/ledger/PaymentForm'
 import QuickLedgerEntry from '@/components/ledger/QuickLedgerEntry'
@@ -23,8 +21,6 @@ export default function LedgerPage() {
   const navigate = useNavigate()
   const personsQ = usePersons()
   const { data: persons = [], isLoading } = personsQ
-  const isDemo = useDemoStore((s) => s.isDemo)
-  const addToast = useUIStore((s) => s.addToast)
 
   const [activeTab, setActiveTab] = useState<Tab>('all')
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
@@ -56,7 +52,6 @@ export default function LedgerPage() {
     })
 
   function handleAddEntry() {
-    if (isDemo) { addToast({ type: 'info', message: 'Demo mode — changes are not saved' }); return }
     setShowAddEntry(true)
   }
 

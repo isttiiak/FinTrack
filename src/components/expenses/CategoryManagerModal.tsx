@@ -2,7 +2,7 @@ import { useState, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Plus, Check, Search } from 'lucide-react'
 import { useCategories, useCreateCategory } from '@/hooks/useCategories'
-import { useDemoStore } from '@/stores/demoStore'
+import { useModalA11y } from '@/hooks/useModalA11y'
 import { scaleIn } from '@/lib/animations'
 import type { TxnType } from '@/lib/constants'
 import './CategoryManagerModal.css'
@@ -20,7 +20,7 @@ export default function CategoryManagerModal({
 }: CategoryManagerModalProps) {
   const { data: allCategories = [] } = useCategories()
   const { mutateAsync: createCategory, isPending: saving } = useCreateCategory()
-  const isDemo = useDemoStore((s) => s.isDemo)
+  useModalA11y(onClose, open)
 
   const [search, setSearch] = useState('')
   const [newName, setNewName] = useState('')
@@ -78,11 +78,6 @@ export default function CategoryManagerModal({
     if (!group) { setFormError('Group is required'); return }
     setFormError(null)
 
-    if (isDemo) {
-      resetForm()
-      return
-    }
-
     try {
       const cat = await createCategory({ name, main_group: group, type: txnType, color_hex: null, is_default: false })
       setJustCreated(cat.id)
@@ -106,6 +101,9 @@ export default function CategoryManagerModal({
       {open && (
         <div className="cmm-overlay" onClick={onClose}>
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cmm-modal-title"
             className="cmm-modal"
             variants={scaleIn}
             initial="initial"
@@ -116,7 +114,7 @@ export default function CategoryManagerModal({
             {/* Header */}
             <div className="cmm-header">
               <div>
-                <h2 className="cmm-title">Manage Categories</h2>
+                <h2 id="cmm-modal-title" className="cmm-title">Manage Categories</h2>
                 <p className="cmm-sub">Add and browse {txnType.toLowerCase()} categories</p>
               </div>
               <button aria-label="Close" className="cmm-close" onClick={onClose}><X size={18} /></button>
@@ -240,7 +238,7 @@ export default function CategoryManagerModal({
                   onChange={(e) => setSearch(e.target.value)}
                 />
                 {search && (
-                  <button type="button" className="cmm-search-clear" onClick={() => setSearch('')}>
+                  <button type="button" className="cmm-search-clear" aria-label="Clear search" onClick={() => setSearch('')}>
                     <X size={12} />
                   </button>
                 )}
