@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
-import { cn } from '@/lib/utils'
+import { cn, isSafeHttpUrl } from '@/lib/utils'
 import { CURRENCIES } from '@/lib/constants'
 
 const TIMEZONES = [
@@ -23,7 +23,7 @@ const TIMEZONES = [
 
 const schema = z.object({
   full_name:  z.string().min(2, 'Name must be at least 2 characters'),
-  avatar_url: z.string().url('Enter a valid URL').or(z.literal('')).optional(),
+  avatar_url: z.string().optional().refine((v) => !v || isSafeHttpUrl(v), 'Enter a valid http(s) URL'),
   currency:   z.string().min(1),
   timezone:   z.string().min(1),
 })
@@ -99,10 +99,10 @@ export default function ProfilePage() {
         {/* Avatar card */}
         <motion.div className="profile-avatar-card" variants={staggerItem}>
           <div className="profile-avatar-wrap">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt={displayName} className="profile-avatar-img" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+            {avatarUrl && isSafeHttpUrl(avatarUrl) ? (
+              <img src={avatarUrl.trim()} alt={displayName} className="profile-avatar-img" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
             ) : null}
-            <div className="profile-avatar-fallback" style={{ display: avatarUrl ? 'none' : 'flex' }}>
+            <div className="profile-avatar-fallback" style={{ display: avatarUrl && isSafeHttpUrl(avatarUrl) ? 'none' : 'flex' }}>
               {displayName[0]?.toUpperCase() ?? '?'}
             </div>
             <div className="profile-avatar-overlay">

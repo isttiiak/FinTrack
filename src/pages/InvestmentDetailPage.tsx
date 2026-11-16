@@ -10,7 +10,7 @@ import DeleteButton from '@/components/common/DeleteButton'
 import EmptyState from '@/components/common/EmptyState'
 import ErrorBanner from '@/components/common/ErrorBanner'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate, isSafeHttpUrl } from '@/lib/utils'
 import { useInvestments, useDeleteReturn, useDeleteInvestmentPayment, useDeleteInvestment, useUpdateInvestmentPayment, useUpdateReturn } from '@/hooks/useInvestments'
 import InvestmentForm from '@/components/investments/InvestmentForm'
 import ReturnForm from '@/components/investments/ReturnForm'
@@ -119,7 +119,7 @@ export default function InvestmentDetailPage() {
               {inv.company_name && <span className="idp-hero-company">{inv.company_name}</span>}
               {inv.start_date && <span className="idp-hero-date">Since {formatDate(inv.start_date)}</span>}
               {inv.end_date && <span className="idp-hero-date">→ {formatDate(inv.end_date)}</span>}
-              {inv.doc_link && (
+              {inv.doc_link && isSafeHttpUrl(inv.doc_link) && (
                 <a href={inv.doc_link} target="_blank" rel="noopener noreferrer" className="idp-doc-link">
                   <ExternalLink size={12} /> Document
                 </a>

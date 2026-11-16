@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 import { scaleIn } from '@/lib/animations'
-import { cn, toISODateString } from '@/lib/utils'
+import { cn, isSafeHttpUrl, toISODateString } from '@/lib/utils'
 import { INVESTMENT_CATEGORIES } from '@/types/investment.types'
 import { useCreateInvestment, useUpdateInvestment } from '@/hooks/useInvestments'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
@@ -18,7 +18,7 @@ const schema = z.object({
   start_date:       z.string().optional(),
   end_date:         z.string().optional(),
   market_value:     z.number().nonnegative().optional().or(z.nan().transform(() => undefined)),
-  doc_link:         z.string().url('Enter a valid URL').or(z.literal('')).optional(),
+  doc_link:         z.string().optional().refine((v) => !v || isSafeHttpUrl(v), 'Enter a valid http(s) URL'),
   notes:            z.string().optional(),
 })
 type FormValues = z.infer<typeof schema>

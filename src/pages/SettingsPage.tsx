@@ -670,6 +670,8 @@ function DangerSection() {
         .update({ deleted_at: new Date().toISOString() })
         .eq('id', profile!.id)
       if (error) throw error
+      localStorage.removeItem('groq_api_key')
+      qc.clear()
       await supabase.auth.signOut()
     } catch {
       addToast({ type: 'error', message: 'Account deletion failed. Please try again.' })
