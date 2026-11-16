@@ -14,6 +14,7 @@ import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import { useConfirmStore } from '@/stores/confirmStore'
 import LedgerEntryForm from '@/components/ledger/LedgerEntryForm'
 import PaymentForm from '@/components/ledger/PaymentForm'
+import PersonForm from '@/components/ledger/PersonForm'
 import LedgerPaymentLogs from '@/components/ledger/LedgerPaymentLogs'
 import ErrorBanner from '@/components/common/ErrorBanner'
 import type { PersonLedger, PersonWithLedgers } from '@/types/ledger.types'
@@ -38,6 +39,7 @@ export default function PersonDetailPage() {
   const [activeTab, setActiveTab] = useState<'timeline' | 'payments'>('timeline')
   const [showAddEntry, setShowAddEntry] = useState(false)
   const [editingEntry, setEditingEntry] = useState<PersonLedger | null>(null)
+  const [editingPerson, setEditingPerson] = useState(false)
   const [loggingPaymentFor, setLoggingPaymentFor] = useState<{ ledgerType: LedgerType; remaining: number } | null>(null)
 
   function handleAddEntry() {
@@ -117,6 +119,7 @@ export default function PersonDetailPage() {
             <h1 className="pd-hero-name">{person.name}</h1>
             {person.relationship && <span className="pd-hero-rel">{person.relationship}</span>}
             {person.phone && <p className="pd-hero-phone">{person.phone}</p>}
+            {person.notes && <p className="pd-hero-phone">{person.notes}</p>}
           </div>
         </div>
         <div className="pd-hero-right">
@@ -150,6 +153,12 @@ export default function PersonDetailPage() {
                 <CreditCard size={13} /> Pay
               </button>
             )}
+            <button
+              className="pd-action-btn pd-edit-btn edit-btn-purple"
+              onClick={() => setEditingPerson(true)}
+            >
+              <Edit2 size={13} /> Edit
+            </button>
             <DeleteButton onConfirm={handleDeletePerson} iconSize={13} />
           </div>
         </div>
@@ -260,6 +269,10 @@ export default function PersonDetailPage() {
                       <span>{formatDate(entry.start_date)}</span>
                       {entry.reason && <span>· {entry.reason}</span>}
                       {entry.payment_method && <span>· {formatPaymentMethod(entry.payment_method)}</span>}
+                      {entry.account && entry.account !== formatPaymentMethod(entry.payment_method ?? '') && (
+                        <span>· {entry.account}</span>
+                      )}
+                      {entry.notes && <span>· {entry.notes}</span>}
                     </div>
 
                     <div className="pd-entry-bottom-row">
@@ -299,6 +312,9 @@ export default function PersonDetailPage() {
             editing={editingEntry}
             onClose={() => { setShowAddEntry(false); setEditingEntry(null) }}
           />
+        )}
+        {editingPerson && (
+          <PersonForm editing={person} onClose={() => setEditingPerson(false)} />
         )}
         {loggingPaymentFor && person && (
           <PaymentForm

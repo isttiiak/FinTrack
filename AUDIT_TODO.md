@@ -437,15 +437,15 @@
 
 ### Category 2: Lent & Debt / People (`fix/cat-2-ledger-people`)
 
-- [ ] **2.1 `LedgerPaymentLogs` same-date sort order & intermediate balance clamping**
+- [x] **2.1 `LedgerPaymentLogs` same-date sort order & intermediate balance clamping**
   - **Files:** `src/components/ledger/LedgerPaymentLogs.tsx`
-- [ ] **2.2 `QuickLedgerEntry` & `PersonForm` combobox duplicate person prevention, new person details & RHF handler fixes**
+- [x] **2.2 `QuickLedgerEntry` & `PersonForm` combobox duplicate person prevention, new person details & RHF handler fixes**
   - **Files:** `src/components/ledger/QuickLedgerEntry.tsx`, `src/components/ledger/PersonForm.tsx`
-- [ ] **2.3 `LedgerEntryForm` notes field & `PersonDetailPage` notes/account metadata + Edit person button**
+- [x] **2.3 `LedgerEntryForm` notes field & `PersonDetailPage` notes/account metadata + Edit person button**
   - **Files:** `src/components/ledger/LedgerEntryForm.tsx`, `src/pages/PersonDetailPage.tsx`
-- [ ] **2.4 `LedgerSummaryTab`, `LedgerPage` & `PeoplePage` activity dates, empty state, navigation & custom relationships filter**
+- [x] **2.4 `LedgerSummaryTab`, `LedgerPage` & `PeoplePage` activity dates, empty state, navigation & custom relationships filter**
   - **Files:** `src/components/ledger/LedgerSummaryTab.tsx`, `src/pages/LedgerPage.tsx`, `src/pages/PeoplePage.tsx`
-- [ ] **2.5 Mobile CSS selector mismatches in `globals.css` & duplicate CSS rules in `PersonDetailPage.css`**
+- [x] **2.5 Mobile CSS selector mismatches in `globals.css` & duplicate CSS rules in `PersonDetailPage.css`**
   - **Files:** `src/styles/globals.css`, `src/pages/PersonDetailPage.css`
 
 ### Category 3: Household (`fix/cat-3-household`)

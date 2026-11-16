@@ -44,6 +44,7 @@ export default function PersonForm({ editing, onClose }: PersonFormProps) {
       notes:        editing?.notes ?? '',
     },
   })
+  const relationshipField = register('relationship')
 
   async function onSubmit(values: FormValues) {
     const payload = {
@@ -111,7 +112,7 @@ export default function PersonForm({ editing, onClose }: PersonFormProps) {
               </div>
             ) : (
               <select aria-label="Relationship"
-                {...register('relationship')}
+                {...relationshipField}
                 className="pf-select"
                 onChange={(e) => {
                   if (e.target.value === '__custom__') {
@@ -119,8 +120,7 @@ export default function PersonForm({ editing, onClose }: PersonFormProps) {
                     setCustomRelation(true)
                     return
                   }
-                  // Overriding onChange replaces register()'s own — forward it, or the pick is never saved
-                  register('relationship').onChange(e)
+                  relationshipField.onChange(e)
                 }}
               >
                 <option value="">— Select —</option>

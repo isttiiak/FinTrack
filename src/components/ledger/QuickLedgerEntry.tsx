@@ -11,6 +11,7 @@ import { LEDGER_TYPES, RELATIONSHIPS } from '@/lib/constants'
 import type { PaymentMethod, Account } from '@/lib/constants'
 import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
 import { usePersons, useCreatePerson, useCreateLedgerEntry } from '@/hooks/useLedger'
+import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import { useModalA11y } from '@/hooks/useModalA11y'
 import type { Person } from '@/types/ledger.types'
 import './QuickLedgerEntry.css'
@@ -87,6 +88,7 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
   const selectedType   = watch('ledger_type')
   const paymentMethod  = watch('payment_method')
   const accountValue   = watch('account')
+  const newPersonRelField = register('new_person_relation')
 
   function selectPerson(person: Person) {
     setSelectedPerson(person)
@@ -150,8 +152,8 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
       })
 
       onClose()
-    } catch {
-      /* toast already shown by the failing hook */
+    } catch (err) {
+      if (err instanceof DemoBlockedError) onClose()
     }
   }
 
@@ -220,11 +222,23 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
                 autoFocus
                 autoComplete="off"
                 onChange={(e) => {
-                  setPersonQuery(e.target.value)
-                  setSelectedPerson(null)
-                  setIsNewPerson(false)
-                  setValue('person_id', undefined)
-                  setValue('new_person_name', e.target.value || undefined)
+                  const val = e.target.value
+                  const trimmed = val.trim()
+                  const exactMatch = trimmed
+                    ? persons.find((p) => p.name.toLowerCase() === trimmed.toLowerCase())
+                    : undefined
+                  setPersonQuery(val)
+                  if (exactMatch) {
+                    setSelectedPerson(exactMatch)
+                    setIsNewPerson(false)
+                    setValue('person_id', exactMatch.id, { shouldValidate: true })
+                    setValue('new_person_name', undefined, { shouldValidate: true })
+                  } else {
+                    setSelectedPerson(null)
+                    setIsNewPerson(trimmed.length > 0)
+                    setValue('person_id', undefined, { shouldValidate: true })
+                    setValue('new_person_name', trimmed || undefined, { shouldValidate: true })
+                  }
                   setShowDropdown(true)
                 }}
                 onFocus={() => setShowDropdown(true)}
@@ -340,7 +354,7 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
                     ) : (
                       <div className="qle-select-wrap">
                         <select aria-label="Relationship"
-                          {...register('new_person_relation')}
+                          {...newPersonRelField}
                           className="qle-select"
                           onChange={(e) => {
                             if (e.target.value === '__custom__') {
@@ -348,8 +362,7 @@ export default function QuickLedgerEntry({ onClose }: QuickLedgerEntryProps) {
                               setCustomRelation(true)
                               return
                             }
-                            // Overriding onChange replaces register()'s own — forward it, or the pick is never saved
-                            register('new_person_relation').onChange(e)
+                            newPersonRelField.onChange(e)
                           }}
                         >
                           <option value="">— Select —</option>

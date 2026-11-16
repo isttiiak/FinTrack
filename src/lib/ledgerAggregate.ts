@@ -1,6 +1,6 @@
 import { round2 } from '@/lib/utils'
-import type { PersonLedger, LedgerPayment } from '@/types/ledger.types'
-import type { LedgerStatus } from '@/lib/constants'
+import type { PersonLedger, LedgerPayment, PersonWithLedgers } from '@/types/ledger.types'
+import type { LedgerStatus, LedgerType } from '@/lib/constants'
 
 // Payments are no longer bound to one specific lend/debt entry — they
 // attach to (person, ledger_type) and reduce that type's aggregate pool.
@@ -28,4 +28,71 @@ export function aggregateForType(entries: PersonLedger[], payments: LedgerPaymen
     ? null
     : remaining === 0 ? 'Settled' : paid > 0 ? 'Partial' : 'Pending'
   return { total, paid, remaining, overpaid, count: entries.length, status }
+}
+
+export interface LedgerHistoryRow {
+  key: string
+  personId: string
+  personName: string
+  ledgerType: LedgerType
+  date: string
+  kind: 'entry' | 'payment'
+  amount: number
+  runningBalance: number
+  reason: string | null
+  paymentMethod: string | null
+  notes: string | null
+  sourceId: string
+  seq: number
+}
+
+// Chronological timeline per (person, type) with a running balance, then
+// returned newest-first with a `seq` tiebreaker so same-day payments stay
+// ordered above the entry they settled.
+export function buildLedgerHistory(persons: Pick<PersonWithLedgers, 'id' | 'name' | 'ledgers' | 'payments'>[]): LedgerHistoryRow[] {
+  const rows: LedgerHistoryRow[] = []
+  for (const person of persons) {
+    for (const type of ['Lent', 'Debt'] as const) {
+      const entries = person.ledgers.filter((l) => l.ledger_type === type)
+      const payments = person.payments.filter((p) => p.ledger_type === type)
+      if (entries.length === 0 && payments.length === 0) continue
+
+      const events = [
+        ...entries.map((e) => ({
+          date: e.start_date, kind: 'entry' as const, amount: e.total_amount, sourceId: e.id,
+          reason: e.reason, paymentMethod: e.payment_method, notes: e.notes,
+        })),
+        ...payments.map((p) => ({
+          date: p.payment_date, kind: 'payment' as const, amount: p.amount, sourceId: p.id,
+          reason: null as string | null, paymentMethod: p.payment_method, notes: p.notes,
+        })),
+      ].sort((a, b) => {
+        const dateCmp = a.date.localeCompare(b.date)
+        if (dateCmp !== 0) return dateCmp
+        if (a.kind === b.kind) return 0
+        return a.kind === 'entry' ? -1 : 1
+      })
+
+      let rawBalance = 0
+      events.forEach((ev, seq) => {
+        rawBalance = round2(rawBalance + (ev.kind === 'entry' ? ev.amount : -ev.amount))
+        rows.push({
+          key: `${person.id}-${type}-${ev.kind}-${ev.sourceId}`,
+          personId: person.id,
+          personName: person.name,
+          ledgerType: type,
+          date: ev.date,
+          kind: ev.kind,
+          amount: ev.amount,
+          runningBalance: Math.max(0, rawBalance),
+          reason: ev.reason,
+          paymentMethod: ev.paymentMethod,
+          notes: ev.notes,
+          sourceId: ev.sourceId,
+          seq,
+        })
+      })
+    }
+  }
+  return rows.sort((a, b) => b.date.localeCompare(a.date) || b.seq - a.seq)
 }

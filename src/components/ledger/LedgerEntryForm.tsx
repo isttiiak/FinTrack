@@ -187,6 +187,16 @@ export default function LedgerEntryForm({ personId, editing, defaultType = 'Lent
             {errors.doc_link && <p className="lef-error">{errors.doc_link.message}</p>}
           </div>
 
+          {/* Notes */}
+          <div className="lef-field">
+            <label className="lef-label">Notes <span className="lef-optional">(optional)</span></label>
+            <input
+              {...register('notes')}
+              className="lef-input"
+              placeholder="Any extra context…"
+            />
+          </div>
+
           <div className="lef-actions">
             <button type="button" className="btn-ghost" onClick={onClose}>Cancel</button>
             <motion.button
