@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { round2, parseDate, getCurrentMonthRange, toISODateString, resolveDateRange, isSafeHttpUrl } from '@/lib/utils'
+import {
+  round2, parseDate, getCurrentMonthRange, toISODateString, resolveDateRange, isSafeHttpUrl,
+  formatCurrency, getActiveCurrencySymbol, setActiveCurrency,
+} from '@/lib/utils'
 import { sanitizeSpreadsheetCell } from '@/lib/export'
 
 describe('round2', () => {
@@ -113,5 +116,19 @@ describe('sanitizeSpreadsheetCell', () => {
     expect(sanitizeSpreadsheetCell('Lunch at cafe')).toBe('Lunch at cafe')
     expect(sanitizeSpreadsheetCell('100.50')).toBe('100.50')
     expect(sanitizeSpreadsheetCell('')).toBe('')
+  })
+})
+
+describe('formatCurrency & active currency', () => {
+  it('uses active currency when currency argument is omitted', () => {
+    setActiveCurrency('USD')
+    try {
+      expect(formatCurrency(1250)).toBe('$1,250')
+      expect(getActiveCurrencySymbol()).toBe('$')
+    } finally {
+      setActiveCurrency('BDT')
+    }
+    expect(formatCurrency(1250)).toBe('৳1,250')
+    expect(getActiveCurrencySymbol()).toBe('৳')
   })
 })

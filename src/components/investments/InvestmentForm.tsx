@@ -17,10 +17,10 @@ const schema = z.object({
   name:             z.string().min(1, 'Name is required'),
   category:         z.enum(INVESTMENT_CATEGORIES).optional(),
   company_name:     z.string().optional(),
-  committed_amount: z.number({ error: 'Enter a valid amount' }).positive().max(9999999999.99, 'Amount exceeds maximum limit').optional().or(z.nan().transform(() => undefined)),
+  committed_amount: z.number({ error: 'Enter a valid amount' }).positive('Amount must be positive').max(9999999999.99, 'Amount exceeds maximum limit').optional(),
   start_date:       z.string().optional(),
   end_date:         z.string().optional(),
-  market_value:     z.number().nonnegative().max(9999999999.99, 'Amount exceeds maximum limit').optional().or(z.nan().transform(() => undefined)),
+  market_value:     z.number({ error: 'Enter a valid amount' }).nonnegative('Market value cannot be negative').max(9999999999.99, 'Amount exceeds maximum limit').optional(),
   doc_link:         z.string().optional().refine((v) => !v || isSafeHttpUrl(v), 'Enter a valid http(s) URL'),
   notes:            z.string().optional(),
 }).refine(
@@ -177,11 +177,12 @@ export default function InvestmentForm({ editing, onClose }: InvestmentFormProps
                   value={field.value}
                   onChange={field.onChange}
                   placeholder="Current value of your investment"
-                  className="invf-input"
+                  className={cn('invf-input', errors.market_value && 'invf-input-error')}
                 />
               )}
             />
             <p className="field-hint">Leave blank if unknown. You can update this later as value changes.</p>
+            {errors.market_value && <p className="invf-error">{errors.market_value.message}</p>}
           </div>
 
           <div className="invf-field">

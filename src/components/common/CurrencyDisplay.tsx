@@ -10,7 +10,7 @@ interface CurrencyDisplayProps {
 
 export default function CurrencyDisplay({
   amount,
-  currency = 'BDT',
+  currency,
   className,
   colored = false,
   type = 'neutral',

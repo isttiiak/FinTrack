@@ -60,7 +60,11 @@ export default function PaymentMethodPicker({
     if (group === 'Cash') {
       onMethodChange('Cash'); onAccountChange('Cash')
     } else if (group === 'MFS') {
-      onMethodChange(undefined); onAccountChange(undefined)
+      if (mfsProviders.length > 0) {
+        selectMFSSub(mfsProviders[0])
+      } else {
+        onMethodChange(undefined); onAccountChange(undefined)
+      }
     } else {
       onMethodChange(group); onAccountChange(undefined)
     }
@@ -76,9 +80,13 @@ export default function PaymentMethodPicker({
     const name = newMethodName.trim()
     if (!name) return
     const fullName = `${WALLET_PREFIX}${name}`
-    if (!mfsProviders.some((m) => m.toLowerCase() === fullName.toLowerCase())) {
+    const existing = mfsProviders.find((m) => m.toLowerCase() === fullName.toLowerCase())
+    if (!existing) {
       const updated = [...mfsProviders, fullName]
       setMfsProvidersState(updated); setMfsProviders(updated)
+      selectMFSSub(fullName)
+    } else {
+      selectMFSSub(existing)
     }
     setAddingMethod(false); setNewMethodName('')
   }
