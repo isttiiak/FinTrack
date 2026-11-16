@@ -295,25 +295,25 @@
 
 **Goal:** Fix all financial calculation bugs, broken form inputs (`SmartAmountInput`, `PaymentMethodPicker`, `PersonForm`, `QuickLedgerEntry`), and wire up `profile.currency` across the entire app.
 
-- [ ] **3.1 Fix `SmartAmountInput.tsx` incomplete/invalid expression submission bug**
+- [x] **3.1 Fix `SmartAmountInput.tsx` incomplete/invalid expression submission bug**
   - **Files:** `src/components/common/SmartAmountInput.tsx`
   - **Tasks:**
     - In `commit(text)`, when `result.ok === false` (`'empty'`, `'invalid'`, or `'div-by-zero'`), emit `onChange(undefined)` so `react-hook-form` + Zod blocks submission of incomplete expressions like `100+` or `500/0` instead of silently submitting the last valid prefix (`100` or `500`).
     - On blur, if `!result.ok && rawText.trim().length > 0`, keep `rawText` visible and show an explicit error hint (`"Invalid expression — finish typing or clear"`).
-- [ ] **3.2 Fix `PaymentMethodPicker` state sync, custom MFS group detection, and form bindings**
+- [x] **3.2 Fix `PaymentMethodPicker` state sync, custom MFS group detection, and form bindings**
   - **Files:** `src/lib/constants.ts`, `src/components/common/PaymentMethodPicker.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/ledger/LedgerEntryForm.tsx`, `src/components/ledger/PaymentForm.tsx`, `src/components/ledger/QuickLedgerEntry.tsx`, `src/components/investments/InvestmentPaymentForm.tsx`, `src/components/investments/ReturnForm.tsx`, `src/pages/DataSettingsPage.tsx`
   - **Tasks:**
     - In `src/lib/constants.ts`, update `getMethodGroup(method)` to return `'MFS'` for any `method.startsWith('MFS - ')`.
     - In `PaymentMethodPicker.tsx`, sync `selectedGroup` when `method` prop changes externally, deduplicate custom MFS providers and custom bank accounts (case-insensitive) in both `PaymentMethodPicker.tsx` and `DataSettingsPage.tsx`, and accept/render `methodError` / `accountError` props.
     - Remove the broken `m ?? 'Cash'` / `v ?? lastMethod` fallbacks in `LedgerEntryForm.tsx`, `PaymentForm.tsx`, `QuickLedgerEntry.tsx`, `InvestmentPaymentForm.tsx`, and `ReturnForm.tsx` so selecting `MFS`, `Card`, `Bank Transfer`, or `None` works properly, and display validation errors when an MFS provider or bank account is required but unselected.
-- [ ] **3.3 Wire `profile.currency` across all pages, components, and AI context**
+- [x] **3.3 Wire `profile.currency` across all pages, components, and AI context**
   - **Files:** `src/lib/utils.ts`, `src/components/common/AnimatedNumber.tsx`, `src/components/common/CurrencyDisplay.tsx`, `src/pages/AnalyticsPage.tsx`, `src/lib/aiContext.ts`
   - **Tasks:**
     - Add `getUserCurrency()` and `getCurrencySymbol(currency?)` in `src/lib/utils.ts` reading `useAuthStore.getState().profile?.currency ?? 'BDT'`.
     - Default `formatCurrency(amount, currency = getUserCurrency())` so all existing `formatCurrency(x)` calls automatically respect the user's selected currency!
     - Update `AnimatedNumber.tsx` to use `formatCurrency(v, currency)` (preserving currency symbol for non-BDT currencies and decimals when present) and update `fmtK` / calendar tooltips in `AnalyticsPage.tsx`.
     - Fix the double `৳৳` typo in `src/components/investments/InvestmentPaymentForm.tsx:99`.
-- [ ] **3.4 Fix `useNoSpendStreak` & `ExpensesPage` totals/budget/streak bugs**
+- [x] **3.4 Fix `useNoSpendStreak` & `ExpensesPage` totals/budget/streak bugs**
   - **Files:** `src/hooks/useNoSpendStreak.ts`, `src/pages/ExpensesPage.tsx`, `src/lib/utils.ts`
   - **Tasks:**
     - Export `parseDate` from `src/lib/utils.ts`.
@@ -322,7 +322,7 @@
       - Query full-month transactions (`{ from, to }`) and apply `typeFilter`, `methodFilter`, and `groupFilter` client-side in `displayedTransactions` so `totalExpense`, `totalIncome`, and `categorySpend` (`BudgetIndicator` progress bars) always reflect true full-month numbers even when filters are active!
       - Fix `useMemo` dependency array from `[displayedTransactions]` to `[transactions]`.
       - Compute `streak` from the all-time query (`{ from: '2000-01-01', to: toISODateString(new Date()) }`) matching `DashboardPage`.
-- [ ] **3.5 Fix `InvestmentDetailPage`, `InvestmentsPage`, `PersonForm`, `QuickLedgerEntry`, `Sidebar`, and `ProfilePage` bugs**
+- [x] **3.5 Fix `InvestmentDetailPage`, `InvestmentsPage`, `PersonForm`, `QuickLedgerEntry`, `Sidebar`, and `ProfilePage` bugs**
   - **Files:** `src/pages/InvestmentDetailPage.tsx`, `src/pages/InvestmentsPage.tsx`, `src/hooks/useInvestments.ts`, `src/components/investments/InvestmentForm.tsx`, `src/components/investments/InvestmentPaymentForm.tsx`, `src/components/ledger/PersonForm.tsx`, `src/components/ledger/QuickLedgerEntry.tsx`, `src/components/layout/Sidebar.tsx`, `src/components/layout/AppShell.tsx`, `src/components/ai/AIHub.tsx`, `src/pages/ProfilePage.tsx`, `src/hooks/useAICategorySuggest.ts`
   - **Tasks:**
     - `InvestmentDetailPage.tsx`: Wrap investment Delete button with `useConfirmStore` confirmation and `await mutateAsync(inv.id)` before `navigate({ to: '/investments' })` (catching `DemoBlockedError`); validate inline payment/return edits (`amount > 0`, valid date) before calling `updatePayment`/`updateReturn`; add missing `.idp-row-edit-btn`, `.idp-inline-*`, and `.idp-action-delete` CSS rules.
@@ -340,13 +340,13 @@
 
 **Goal:** Make CSV import resilient and validated, protect exports against CSV/Excel formula injection, and include Investments in Full Export.
 
-- [ ] **4.1 Harden CSV Import in `SettingsPage.tsx`**
+- [x] **4.1 Harden CSV Import in `SettingsPage.tsx`**
   - **Files:** `src/pages/SettingsPage.tsx`
   - **Tasks:**
     - Case-insensitively validate `Type` (`'expense'` / `'income'`), rejecting or reporting rows with invalid types instead of silently coercing typos to `'Expense'`.
     - Validate `Amount` (`> 0` and `<= 9999999999.99`), `Date` (`isValidIsoDate`), and `Payment Method` / `Account` lengths.
     - Chunk `.insert(txns)` calls into batches of 200 rows and surface detailed error messages if a batch fails.
-- [ ] **4.2 Sanitize CSV/Excel exports against formula injection & add Investments to Full Export**
+- [x] **4.2 Sanitize CSV/Excel exports against formula injection & add Investments to Full Export**
   - **Files:** `src/lib/export.ts`, `src/pages/SettingsPage.tsx`
   - **Tasks:**
     - Add `sanitizeSpreadsheetCell(val)` in `src/lib/export.ts` prefixing string values starting with `=`, `+`, `-`, `@`, `\t`, or `\r` with `'`.

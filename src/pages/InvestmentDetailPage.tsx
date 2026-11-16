@@ -16,6 +16,8 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tool
 import { TOOLTIP_STYLE, AXIS_TICK, GRID_STROKE } from '@/lib/chartTheme'
 import { cumulativeSeries, returnSummary } from '@/lib/investmentAnalytics'
 import { useInvestments, useDeleteReturn, useDeleteInvestmentPayment, useDeleteInvestment } from '@/hooks/useInvestments'
+import { DemoBlockedError } from '@/hooks/useDemoGuard'
+import { useConfirmStore } from '@/stores/confirmStore'
 import InvestmentForm from '@/components/investments/InvestmentForm'
 import ReturnForm from '@/components/investments/ReturnForm'
 import InvestmentPaymentForm from '@/components/investments/InvestmentPaymentForm'
@@ -35,7 +37,8 @@ export default function InvestmentDetailPage() {
   const { data: investments = [], isLoading, isError, refetch } = useInvestments()
   const { mutate: deleteReturn } = useDeleteReturn()
   const { mutate: deletePayment } = useDeleteInvestmentPayment()
-  const { mutate: deleteInvestment } = useDeleteInvestment()
+  const { mutateAsync: deleteInvestment } = useDeleteInvestment()
+  const confirm = useConfirmStore((s) => s.confirm)
 
   const [tab, setTab] = useState<DetailTab>('payments')
   const [editingInv, setEditingInv] = useState<Investment | null>(null)
@@ -138,7 +141,20 @@ export default function InvestmentDetailPage() {
           </button>
           <button
             className="idp-action-btn idp-action-delete"
-            onClick={() => { deleteInvestment(inv.id); navigate({ to: '/investments' }) }}
+            onClick={async () => {
+              const ok = await confirm({
+                title: 'Delete investment?',
+                description: 'This will permanently delete this investment and all its payments and returns.',
+                itemName: inv.name,
+              })
+              if (!ok) return
+              try {
+                await deleteInvestment(inv.id)
+                navigate({ to: '/investments' })
+              } catch (err) {
+                if (!(err instanceof DemoBlockedError)) throw err
+              }
+            }}
           >
             <Trash2 size={14} /> Delete
           </button>

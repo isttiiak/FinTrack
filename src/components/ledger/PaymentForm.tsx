@@ -15,7 +15,7 @@ import type { LedgerPayment } from '@/types/ledger.types'
 import './PaymentForm.css'
 
 const schema = z.object({
-  amount:         z.number({ error: 'Enter a valid amount' }).positive(),
+  amount:         z.number({ error: 'Enter a valid amount' }).positive().max(9999999999.99, 'Amount exceeds maximum limit'),
   payment_date:   z.string().min(1, 'Select a date'),
   payment_method: z.string().optional(),
   account:        z.string().optional(),

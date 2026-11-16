@@ -49,12 +49,9 @@ describe('computeNoSpendStreak', () => {
     expect(computeNoSpendStreak(transactions, today)).toBe(2)
   })
 
-  it('with no transactions at all, still reports today as an in-progress no-spend day (existing behavior)', () => {
-    // earliest defaults to today itself when there's no history, which caps
-    // maxDays at 2 — so this returns 1, not 0. Documented as existing
-    // behavior rather than changed here; not in TODO.md's list of known bugs.
+  it('returns 0 when there are no transactions', () => {
     const today = new Date(2026, 8, 4)
-    expect(computeNoSpendStreak([], today)).toBe(1)
+    expect(computeNoSpendStreak([], today)).toBe(0)
   })
 
   it('stops counting at the earliest known transaction rather than running forever', () => {

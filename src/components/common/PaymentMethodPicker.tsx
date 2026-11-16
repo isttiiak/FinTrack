@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, Plus, Check, X } from 'lucide-react'
 import { getMethodGroup } from '@/lib/constants'
@@ -29,6 +29,10 @@ export default function PaymentMethodPicker({
   const [selectedGroup, setSelectedGroup] = useState<PaymentMethodGroup | null>(
     () => getMethodGroup(method ?? null),
   )
+
+  useEffect(() => {
+    setSelectedGroup(getMethodGroup(method ?? null))
+  }, [method])
   // Custom MFS provider addition — Card/Bank Transfer never use a "methods"
   // list (only Cash/MFS do; Card & Bank Transfer are the method itself, the
   // picker below just needs which bank *account* it went through).
@@ -72,16 +76,20 @@ export default function PaymentMethodPicker({
     const name = newMethodName.trim()
     if (!name) return
     const fullName = `${WALLET_PREFIX}${name}`
-    const updated = [...mfsProviders, fullName]
-    setMfsProvidersState(updated); setMfsProviders(updated)
+    if (!mfsProviders.some((m) => m.toLowerCase() === fullName.toLowerCase())) {
+      const updated = [...mfsProviders, fullName]
+      setMfsProvidersState(updated); setMfsProviders(updated)
+    }
     setAddingMethod(false); setNewMethodName('')
   }
 
   function saveCustomAccount() {
     const val = customAccountVal.trim()
     if (!val || !selectedGroup) return
-    const updated = [...bankAccounts, val]
-    setBankAccountsState(updated); setBankAccounts(updated)
+    if (!bankAccounts.some((a) => a.toLowerCase() === val.toLowerCase())) {
+      const updated = [...bankAccounts, val]
+      setBankAccountsState(updated); setBankAccounts(updated)
+    }
     onAccountChange(val)
     setCustomAccountMode(false); setCustomAccountVal('')
   }

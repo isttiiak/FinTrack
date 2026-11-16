@@ -36,7 +36,7 @@ import './SettingsPage.css'
 
 const budgetSchema = z.object({
   category_id:   z.string().min(1, 'Pick a category'),
-  monthly_limit: z.number({ error: 'Enter an amount' }).positive('Must be > 0'),
+  monthly_limit: z.number({ error: 'Enter an amount' }).positive('Must be > 0').max(9999999999.99, 'Amount exceeds maximum limit'),
   rollover:      z.boolean(),
 })
 type BudgetForm = z.infer<typeof budgetSchema>

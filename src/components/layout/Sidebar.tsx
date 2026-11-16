@@ -155,7 +155,7 @@ export default function Sidebar() {
               {profile?.avatar_url && isSafeHttpUrl(profile.avatar_url) ? (
                 <img src={profile.avatar_url} alt={profile.full_name ?? 'Avatar'} />
               ) : (
-                <span>{(profile?.full_name ?? isDemo ? 'D' : '?')[0].toUpperCase()}</span>
+                <span>{(isDemo ? 'D' : (profile?.full_name?.[0] ?? '?')).toUpperCase()}</span>
               )}
             </div>
             <div className="sidebar-user-info">

@@ -27,7 +27,7 @@ import './RecurringPage.css'
 
 const schema = z.object({
   type:           z.enum(['Expense', 'Income']),
-  amount:         z.number().positive('Amount must be positive'),
+  amount:         z.number().positive('Amount must be positive').max(9999999999.99, 'Amount exceeds maximum limit'),
   category_id:    z.string().min(1, 'Select a category'),
   description:    z.string().optional(),
   cadence:        z.enum(['Weekly', 'Monthly', 'Yearly']),

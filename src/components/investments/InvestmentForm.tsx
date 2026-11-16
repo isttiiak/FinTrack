@@ -16,13 +16,16 @@ const schema = z.object({
   name:             z.string().min(1, 'Name is required'),
   category:         z.enum(INVESTMENT_CATEGORIES).optional(),
   company_name:     z.string().optional(),
-  committed_amount: z.number({ error: 'Enter a valid amount' }).positive().optional().or(z.nan().transform(() => undefined)),
+  committed_amount: z.number({ error: 'Enter a valid amount' }).positive().max(9999999999.99, 'Amount exceeds maximum limit').optional().or(z.nan().transform(() => undefined)),
   start_date:       z.string().optional(),
   end_date:         z.string().optional(),
-  market_value:     z.number().nonnegative().optional().or(z.nan().transform(() => undefined)),
+  market_value:     z.number().nonnegative().max(9999999999.99, 'Amount exceeds maximum limit').optional().or(z.nan().transform(() => undefined)),
   doc_link:         z.string().optional().refine((v) => !v || isSafeHttpUrl(v), 'Enter a valid http(s) URL'),
   notes:            z.string().optional(),
-})
+}).refine(
+  (d) => !d.start_date || !d.end_date || d.end_date >= d.start_date,
+  { message: 'End date must be on or after start date', path: ['end_date'] },
+)
 type FormValues = z.infer<typeof schema>
 
 interface InvestmentFormProps {
@@ -147,7 +150,8 @@ export default function InvestmentForm({ editing, onClose }: InvestmentFormProps
             </div>
             <div className="invf-field">
               <label className="invf-label">Maturity / exit date <span className="invf-optional">(optional)</span></label>
-              <input aria-label="End date" {...register('end_date')} type="date" className="invf-input" />
+              <input aria-label="End date" {...register('end_date')} type="date" className={cn('invf-input', errors.end_date && 'invf-input-error')} />
+              {errors.end_date && <p className="invf-error">{errors.end_date.message}</p>}
               <p className="field-hint">When you expect to exit or get capital back — e.g. lease end date, bond maturity, or planned sale date.</p>
             </div>
           </div>

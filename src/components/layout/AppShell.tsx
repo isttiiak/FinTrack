@@ -1,4 +1,4 @@
-import { Outlet } from '@tanstack/react-router'
+import { Outlet, Link } from '@tanstack/react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, Search } from 'lucide-react'
 import Sidebar from './Sidebar'
@@ -14,6 +14,7 @@ import './AppShell.css'
 
 export default function AppShell() {
   const isDemo = useDemoStore((s) => s.isDemo)
+  const exitDemo = useDemoStore((s) => s.exitDemo)
   const { toggleSidebar, calculatorOpen, setPaletteOpen } = useUIStore()
 
   return (
@@ -33,7 +34,7 @@ export default function AppShell() {
               exit={{ height: 0, opacity: 0 }}
             >
               <span>Demo mode — data is not saved.</span>
-              <a href="/signup" className="demo-banner-cta">Sign up to keep your data →</a>
+              <Link to="/signup" className="demo-banner-cta" onClick={() => exitDemo()}>Sign up to keep your data →</Link>
             </motion.div>
           )}
         </AnimatePresence>

@@ -13,7 +13,7 @@ import type { Investment, InvestmentPayment } from '@/types/investment.types'
 import './InvestmentPaymentForm.css'
 
 const schema = z.object({
-  amount:         z.number().positive('Enter a valid amount'),
+  amount:         z.number().positive('Enter a valid amount').max(9999999999.99, 'Amount exceeds maximum limit'),
   payment_date:   z.string().min(1, 'Select a date'),
   payment_method: z.string().optional(),
   account:        z.string().optional(),
@@ -62,6 +62,7 @@ export default function InvestmentPaymentForm({ investment, editing, onClose }: 
   })
   const watchMethod  = watch('payment_method')
   const watchAccount = watch('account')
+  const watchAmount  = watch('amount')
 
   async function onSubmit(values: FormValues) {
     if (values.payment_method) localStorage.setItem(LS_METHOD_KEY, values.payment_method)
@@ -139,6 +140,11 @@ export default function InvestmentPaymentForm({ investment, editing, onClose }: 
               )}
             />
             {errors.amount && <p className="ipf-error">{errors.amount.message}</p>}
+            {committed > 0 && remaining > 0 && typeof watchAmount === 'number' && watchAmount > remaining && (
+              <p className="ipf-warning" style={{ fontSize: 12, color: '#C2A24E', margin: '4px 0 0' }}>
+                Exceeds remaining committed amount ({formatCurrency(remaining)})
+              </p>
+            )}
           </div>
 
           <div className="ipf-field">
