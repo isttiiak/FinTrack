@@ -936,13 +936,19 @@ function DangerSection() {
         if (error) throw error
         await qc.invalidateQueries({ queryKey: ['expenses'] })
       } else if (type === 'lent') {
+        const { error: payErr } = await supabase.from('ledger_payments').delete().eq('user_id', userId!).eq('ledger_type', 'Lent')
+        if (payErr) throw payErr
         const { error } = await supabase.from('person_ledger').delete().eq('user_id', userId!).eq('ledger_type', 'Lent')
         if (error) throw error
         await qc.invalidateQueries({ queryKey: ['persons'] })
+        await qc.invalidateQueries({ queryKey: ['person'] })
       } else if (type === 'debt') {
+        const { error: payErr } = await supabase.from('ledger_payments').delete().eq('user_id', userId!).eq('ledger_type', 'Debt')
+        if (payErr) throw payErr
         const { error } = await supabase.from('person_ledger').delete().eq('user_id', userId!).eq('ledger_type', 'Debt')
         if (error) throw error
         await qc.invalidateQueries({ queryKey: ['persons'] })
+        await qc.invalidateQueries({ queryKey: ['person'] })
       } else if (type === 'investments') {
         const { error } = await supabase.from('investments').delete().eq('user_id', userId!)
         if (error) throw error

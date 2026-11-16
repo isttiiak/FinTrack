@@ -268,7 +268,7 @@
 
 **Goal:** Fix all PostgreSQL `CHECK` constraint failures, orphaned `ledger_payments`, missing unique indexes, unscheduled cron jobs, RLS policies, and PostgREST 1,000-row truncation.
 
-- [ ] **2.1 Author `supabase/migrations/007_audit_fixes.sql`**
+- [x] **2.1 Author `supabase/migrations/007_audit_fixes.sql`**
   - **Files:** `supabase/migrations/007_audit_fixes.sql`
   - **Tasks:**
     - Drop restrictive `CHECK` constraints on `payment_method` and `account` across `transactions`, `person_ledger`, `ledger_payments`, `investment_payments`, and `investment_returns`; replace with `CHECK (payment_method IS NULL OR length(trim(payment_method)) BETWEEN 1 AND 100)` and `CHECK (account IS NULL OR length(trim(account)) BETWEEN 1 AND 100)`.
@@ -277,14 +277,14 @@
     - Re-assert RLS policies on all user tables with explicit `USING (...) WITH CHECK (...)`, and `REVOKE ALL ON public.budget_alert_log FROM anon, authenticated;`.
     - Schedule `purge_deleted_users()` daily via `pg_cron` (`select cron.schedule('purge-deleted-users', '0 4 * * *', $$ select public.purge_deleted_users() $$);`).
     - Clean up any existing orphaned `ledger_payments` where no matching `person_ledger` rows exist for `(person_id, ledger_type)`, and add a trigger on `person_ledger` `AFTER DELETE` that deletes `ledger_payments` for `(OLD.person_id, OLD.ledger_type)` when no `person_ledger` rows remain for that `(person_id, ledger_type)`.
-- [ ] **2.2 Fix orphaned `ledger_payments` in `SettingsPage.tsx` Danger Zone & harden hooks**
+- [x] **2.2 Fix orphaned `ledger_payments` in `SettingsPage.tsx` Danger Zone & harden hooks**
   - **Files:** `src/pages/SettingsPage.tsx`, `src/hooks/useCategories.ts`, `src/hooks/useBudgets.ts`, `src/hooks/useLedger.ts`
   - **Tasks:**
     - In `SettingsPage.tsx` (`handleDeleteLogs`), when `type === 'lent'` or `'debt'`, also delete from `ledger_payments` (`.eq('user_id', userId!).eq('ledger_type', ...)`), and invalidate both `['persons']` and `['person']`.
     - Add `.eq('user_id', userId!)` to `useUpdateCategory` and `useDeleteCategory` in `src/hooks/useCategories.ts`.
     - Add `guardDemo()`, `DemoBlockedError` handling, and `onError` toast notifications to `useUpsertBudget` and `useDeleteBudget` in `src/hooks/useBudgets.ts`.
     - Change `.single()` to `.maybeSingle()` in `usePerson` (`src/hooks/useLedger.ts:146`).
-- [ ] **2.3 Prevent PostgREST 1,000-row silent truncation**
+- [x] **2.3 Prevent PostgREST 1,000-row silent truncation**
   - **Files:** `src/hooks/useExpenses.ts`, `src/hooks/useLedger.ts`, `src/hooks/useInvestments.ts`
   - **Tasks:**
     - Add a paginated fetch helper `fetchAllPages()` using `.range(from, to)` (page size 1,000) for unbounded/multi-month queries in `useExpenses`, `usePersons` (`person_ledger` and `ledger_payments`), and `useInvestments`.

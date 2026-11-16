@@ -113,8 +113,9 @@ export function usePerson(personId: string) {
         .select('*')
         .eq('id', personId)
         .eq('user_id', userId!)
-        .single()
+        .maybeSingle()
       if (pErr) throw pErr
+      if (!person) return null
 
       // Same 1,000-row cap as usePersons() above — a single person with a
       // long enough history could still exceed it. See TODO.md §3.1.
