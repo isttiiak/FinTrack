@@ -14,7 +14,7 @@ import type { Investment, InvestmentPayment } from '@/types/investment.types'
 import './InvestmentPaymentForm.css'
 
 const schema = z.object({
-  amount:         z.number().positive('Enter a valid amount').max(9999999999.99, 'Amount exceeds maximum limit'),
+  amount:         z.number({ error: 'Enter a valid amount' }).positive('Enter a valid amount').max(9999999999.99, 'Amount exceeds maximum limit'),
   payment_date:   z.string().min(1, 'Select a date'),
   payment_method: z.string().optional(),
   account:        z.string().optional(),

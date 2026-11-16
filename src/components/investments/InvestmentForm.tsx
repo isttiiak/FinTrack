@@ -17,10 +17,10 @@ const schema = z.object({
   name:             z.string().min(1, 'Name is required'),
   category:         z.enum(INVESTMENT_CATEGORIES).optional(),
   company_name:     z.string().optional(),
-  committed_amount: z.number({ error: 'Enter a valid amount' }).positive('Amount must be positive').max(9999999999.99, 'Amount exceeds maximum limit').optional(),
+  committed_amount: z.number({ error: 'Enter a valid amount' }).positive('Amount must be positive').max(9999999999.99, 'Amount exceeds maximum limit').nullable().optional(),
   start_date:       z.string().optional(),
   end_date:         z.string().optional(),
-  market_value:     z.number({ error: 'Enter a valid amount' }).nonnegative('Market value cannot be negative').max(9999999999.99, 'Amount exceeds maximum limit').optional(),
+  market_value:     z.number({ error: 'Enter a valid amount' }).nonnegative('Market value cannot be negative').max(9999999999.99, 'Amount exceeds maximum limit').nullable().optional(),
   doc_link:         z.string().optional().refine((v) => !v || isSafeHttpUrl(v), 'Enter a valid http(s) URL'),
   notes:            z.string().optional(),
 }).refine(

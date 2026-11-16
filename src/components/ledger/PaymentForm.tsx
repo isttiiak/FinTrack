@@ -53,7 +53,7 @@ export default function PaymentForm({ personId, personName, ledgerType, remainin
           notes:          editing.notes ?? '',
         }
       : {
-          amount:         remaining,
+          amount:         remaining > 0 ? remaining : undefined,
           payment_date:   toISODateString(new Date()),
           payment_method: 'Cash',
           account:        'Cash',

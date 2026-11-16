@@ -3,7 +3,7 @@ import { cn, round2 } from '@/lib/utils'
 import { evaluate, hasOperator } from '@/lib/calculator'
 
 interface SmartAmountInputProps {
-  value: number | undefined
+  value: number | null | undefined
   onChange: (value: number | undefined) => void
   placeholder?: string
   className?: string
@@ -41,7 +41,7 @@ export default function SmartAmountInput({
 }: SmartAmountInputProps) {
   const [rawText, setRawText] = useState(value != null && !Number.isNaN(value) ? String(value) : '')
   const [focused, setFocused] = useState(false)
-  const lastEmitted = useRef(value)
+  const lastEmitted = useRef<number | null | undefined>(value)
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Sync in external resets (e.g. edit-mode defaultValues) without fighting
@@ -60,8 +60,11 @@ export default function SmartAmountInput({
       lastEmitted.current = rounded
       onChange(rounded)
     } else if (result.reason === 'empty') {
-      lastEmitted.current = undefined
-      onChange(undefined)
+      // Emit null rather than undefined so React Hook Form <Controller> does not
+      // treat an intentionally cleared field as unset and revert to defaultValues.
+      const emptyValue = null as unknown as number | undefined
+      lastEmitted.current = emptyValue
+      onChange(emptyValue)
     } else {
       lastEmitted.current = Number.NaN
       onChange(Number.NaN)
