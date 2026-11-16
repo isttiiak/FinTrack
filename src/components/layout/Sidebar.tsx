@@ -131,7 +131,7 @@ export default function Sidebar() {
           <div className="sidebar-divider" />
           <CalculatorToggleButton className="sidebar-nav-item sidebar-nav-item-btn" showLabel />
           {BOTTOM_ITEMS.map(({ to, label, icon: Icon }) => {
-            const active = location === to
+            const active = location === to || location.startsWith(to + '/')
             return (
               <Link
                 key={to}

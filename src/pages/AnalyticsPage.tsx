@@ -7,6 +7,7 @@ import {
 } from 'recharts'
 import { staggerContainer, staggerItem } from '@/lib/animations'
 import { formatCurrency, getActiveCurrencySymbol, toISODateString } from '@/lib/utils'
+import { formatPaymentMethod } from '@/lib/region'
 import { useExpenses } from '@/hooks/useExpenses'
 import { useBudgets } from '@/hooks/useBudgets'
 import { useNoSpendStreak } from '@/hooks/useNoSpendStreak'
@@ -115,7 +116,7 @@ export default function AnalyticsPage() {
   const methodData = useMemo(() => {
     const map: Record<string, number> = {}
     thisTxns.filter((t) => t.type === 'Expense').forEach((t) => {
-      const key = t.payment_method ?? 'Unknown'
+      const key = t.payment_method ? formatPaymentMethod(t.payment_method) : 'Unknown'
       map[key] = (map[key] ?? 0) + t.amount
     })
     return Object.entries(map).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
@@ -157,9 +158,10 @@ export default function AnalyticsPage() {
   const thisExpense = useMemo(() => thisTxns.filter((t) => t.type === 'Expense').reduce((s, t) => s + t.amount, 0), [thisTxns])
   const thisIncome  = useMemo(() => thisTxns.filter((t) => t.type === 'Income').reduce((s, t) => s + t.amount, 0), [thisTxns])
   const avgDaily    = useMemo(() => {
+    if (isCurrentMonth) return thisExpense / Math.max(1, new Date().getDate())
     const [y, m] = selectedMonth.split('-').map(Number)
     return thisExpense / new Date(y, m, 0).getDate()
-  }, [thisExpense, selectedMonth])
+  }, [thisExpense, selectedMonth, isCurrentMonth])
   const yearlyExpense = useMemo(() => {
     const year = selectedMonth.slice(0, 4)
     return allTxns.filter((t) => t.type === 'Expense' && t.txn_date.startsWith(year)).reduce((s, t) => s + t.amount, 0)
