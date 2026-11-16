@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { aggregateForType } from '@/lib/ledgerAggregate'
+import { aggregateForType, buildLedgerHistory } from '@/lib/ledgerAggregate'
 import type { PersonLedger, LedgerPayment } from '@/types/ledger.types'
 
 function entry(overrides: Partial<PersonLedger> = {}): PersonLedger {
@@ -92,5 +92,38 @@ describe('aggregateForType', () => {
     const agg = aggregateForType([], [payment({ amount: 50 })])
     expect(agg.status).toBeNull()
     expect(agg.overpaid).toBe(50)
+  })
+})
+
+describe('buildLedgerHistory', () => {
+  it('orders same-day payment above its entry when sorted newest-first', () => {
+    const rows = buildLedgerHistory([
+      {
+        id: 'p1',
+        name: 'Rafiq',
+        ledgers: [entry({ id: 'e1', start_date: '2026-05-10', total_amount: 500 })],
+        payments: [payment({ id: 'pay1', payment_date: '2026-05-10', amount: 500 })],
+      },
+    ])
+    expect(rows).toHaveLength(2)
+    expect(rows[0].kind).toBe('payment')
+    expect(rows[0].runningBalance).toBe(0)
+    expect(rows[1].kind).toBe('entry')
+    expect(rows[1].runningBalance).toBe(500)
+  })
+
+  it('tracks un-clamped intermediate balance when a payment precedes a later entry', () => {
+    const rows = buildLedgerHistory([
+      {
+        id: 'p1',
+        name: 'Rafiq',
+        ledgers: [entry({ id: 'e1', start_date: '2026-05-12', total_amount: 500 })],
+        payments: [payment({ id: 'pay1', payment_date: '2026-05-10', amount: 200 })],
+      },
+    ])
+    expect(rows[0].kind).toBe('entry')
+    expect(rows[0].runningBalance).toBe(300)
+    expect(rows[1].kind).toBe('payment')
+    expect(rows[1].runningBalance).toBe(0)
   })
 })

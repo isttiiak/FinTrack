@@ -11,7 +11,6 @@ import { useConfirmStore } from '@/stores/confirmStore'
 import { formatCurrency } from '@/lib/utils'
 import { RELATIONSHIPS } from '@/lib/constants'
 import type { PersonWithLedgers } from '@/types/ledger.types'
-import type { Relationship } from '@/lib/constants'
 import './PeoplePage.css'
 
 // Literal hex (not CSS vars) — these get a hex-alpha suffix appended below
@@ -30,56 +29,69 @@ type PeopleTab = 'all' | 'lent' | 'debt'
 // ── Person Row ────────────────────────────────────────────────────────────────
 interface PersonRowProps {
   person: PersonWithLedgers
+  onOpen: () => void
   onEdit: () => void
   onDelete: () => void
 }
 
-function PersonRow({ person, onEdit, onDelete }: PersonRowProps) {
+function PersonRow({ person, onOpen, onEdit, onDelete }: PersonRowProps) {
   const relColor = RELATIONSHIP_COLORS[person.relationship ?? ''] ?? '#8A968C'
 
   return (
     <div className="pmp-person-row-wrap">
       <div className="pmp-person-row">
-        {/* Avatar */}
-        <div
-          className="pmp-avatar"
+        <button
+          type="button"
+          onClick={onOpen}
           style={{
-            background: `linear-gradient(135deg, ${relColor}33, ${relColor}55)`,
-            color: relColor,
+            display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0,
+            background: 'none', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer',
           }}
         >
-          {person.name[0]?.toUpperCase()}
-        </div>
+          {/* Avatar */}
+          <div
+            className="pmp-avatar"
+            style={{
+              background: `linear-gradient(135deg, ${relColor}33, ${relColor}55)`,
+              color: relColor,
+            }}
+          >
+            {person.name[0]?.toUpperCase()}
+          </div>
 
-        {/* Info */}
-        <div className="pmp-person-info">
-          <div className="pmp-person-name-row">
-            <span className="pmp-person-name">{person.name}</span>
-            {person.relationship && (
-              <span
-                className="pmp-rel-badge"
-                style={{
-                  background: `${relColor}22`,
-                  color: relColor,
-                  borderColor: `${relColor}44`,
-                }}
-              >
-                {person.relationship}
-              </span>
-            )}
+          {/* Info */}
+          <div className="pmp-person-info">
+            <div className="pmp-person-name-row">
+              <span className="pmp-person-name">{person.name}</span>
+              {person.relationship && (
+                <span
+                  className="pmp-rel-badge"
+                  style={{
+                    background: `${relColor}22`,
+                    color: relColor,
+                    borderColor: `${relColor}44`,
+                  }}
+                >
+                  {person.relationship}
+                </span>
+              )}
+            </div>
+            <div className="pmp-person-amounts">
+              {person.total_outstanding_lent > 0 && (
+                <span className="pmp-lent-amt">+{formatCurrency(person.total_outstanding_lent)} they owe</span>
+              )}
+              {person.total_outstanding_debt > 0 && (
+                <span className="pmp-debt-amt">−{formatCurrency(person.total_outstanding_debt)} you owe</span>
+              )}
+              {person.total_outstanding_lent === 0 && person.total_outstanding_debt === 0 && (
+                <span className="pmp-settled-label">All settled</span>
+              )}
+              {person.phone && (
+                <span className="pmp-settled-label">· {person.phone}</span>
+              )}
+            </div>
           </div>
-          <div className="pmp-person-amounts">
-            {person.total_outstanding_lent > 0 && (
-              <span className="pmp-lent-amt">+{formatCurrency(person.total_outstanding_lent)} they owe</span>
-            )}
-            {person.total_outstanding_debt > 0 && (
-              <span className="pmp-debt-amt">−{formatCurrency(person.total_outstanding_debt)} you owe</span>
-            )}
-            {person.total_outstanding_lent === 0 && person.total_outstanding_debt === 0 && (
-              <span className="pmp-settled-label">All settled</span>
-            )}
-          </div>
-        </div>
+        </button>
 
         {/* Actions */}
         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
@@ -107,8 +119,19 @@ export default function PeoplePage() {
   // notes and custom relationships are editable too
   const [personForm, setPersonForm] = useState<{ editing: PersonWithLedgers | null } | null>(null)
   const [tab, setTab] = useState<PeopleTab>('all')
-  const [relFilter, setRelFilter] = useState<Relationship | ''>('')
+  const [relFilter, setRelFilter] = useState<string>('')
   const [search, setSearch] = useState('')
+
+  const relationshipOptions = useMemo<string[]>(
+    () =>
+      Array.from(
+        new Set<string>([
+          ...RELATIONSHIPS,
+          ...persons.map((p) => p.relationship as string | null).filter((r): r is string => Boolean(r)),
+        ]),
+      ),
+    [persons],
+  )
 
   // ── Stats
   const stats = useMemo(() => ({
@@ -188,10 +211,10 @@ export default function PeoplePage() {
           <select aria-label="Filter by relationship"
             className="pmp-rel-filter"
             value={relFilter}
-            onChange={(e) => setRelFilter(e.target.value as Relationship | '')}
+            onChange={(e) => setRelFilter(e.target.value)}
           >
             <option value="">All relationships</option>
-            {RELATIONSHIPS.map((r) => <option key={r} value={r}>{r}</option>)}
+            {relationshipOptions.map((r) => <option key={r} value={r}>{r}</option>)}
           </select>
           <ChevronDown size={13} className="pmp-rel-filter-icon" />
         </div>
@@ -215,6 +238,7 @@ export default function PeoplePage() {
             <PersonRow
               key={person.id}
               person={person}
+              onOpen={() => navigate({ to: '/ledger/$personId', params: { personId: person.id } })}
               onEdit={() => setPersonForm({ editing: person })}
               onDelete={() => handleDeletePerson(person)}
             />

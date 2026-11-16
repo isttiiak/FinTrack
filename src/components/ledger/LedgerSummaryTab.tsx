@@ -1,13 +1,18 @@
 import { useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate, round2 } from '@/lib/utils'
 import { fadeUp } from '@/lib/animations'
-import type { PersonWithLedgers, PersonLedger } from '@/types/ledger.types'
+import type { PersonWithLedgers, PersonLedger, LedgerPayment } from '@/types/ledger.types'
 import './LedgerSummaryTab.css'
 
-function lastActivity(ledgers: PersonLedger[]): string | null {
-  if (ledgers.length === 0) return null
-  return ledgers.reduce((max, e) => (e.start_date > max ? e.start_date : max), ledgers[0].start_date)
+function lastActivity(ledgers: PersonLedger[], payments: LedgerPayment[]): string | null {
+  const dates = [
+    ...ledgers.map((e) => e.start_date),
+    ...payments.map((p) => p.payment_date),
+  ]
+  if (dates.length === 0) return null
+  return dates.reduce((max, d) => (d > max ? d : max), dates[0])
 }
 
 const STATUS_STYLE = {
@@ -29,6 +34,7 @@ interface SummaryRow {
 }
 
 export default function LedgerSummaryTab({ persons }: { persons: PersonWithLedgers[] }) {
+  const navigate = useNavigate()
   const [sortField, setSortField] = useState<SortField>('remaining')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
@@ -47,20 +53,26 @@ export default function LedgerSummaryTab({ persons }: { persons: PersonWithLedge
       rows.push({
         person, type: 'Lent',
         total: person.total_lent,
-        paid: person.total_lent - person.total_outstanding_lent,
+        paid: round2(person.total_lent - person.total_outstanding_lent + person.overpaid_lent),
         remaining: person.total_outstanding_lent,
         status: person.lent_status,
-        lastDate: lastActivity(person.ledgers.filter((e) => e.ledger_type === 'Lent')),
+        lastDate: lastActivity(
+          person.ledgers.filter((e) => e.ledger_type === 'Lent'),
+          person.payments.filter((p) => p.ledger_type === 'Lent'),
+        ),
       })
     }
     if (person.debt_count > 0 && person.debt_status) {
       rows.push({
         person, type: 'Debt',
         total: person.total_debt,
-        paid: person.total_debt - person.total_outstanding_debt,
+        paid: round2(person.total_debt - person.total_outstanding_debt + person.overpaid_debt),
         remaining: person.total_outstanding_debt,
         status: person.debt_status,
-        lastDate: lastActivity(person.ledgers.filter((e) => e.ledger_type === 'Debt')),
+        lastDate: lastActivity(
+          person.ledgers.filter((e) => e.ledger_type === 'Debt'),
+          person.payments.filter((p) => p.ledger_type === 'Debt'),
+        ),
       })
     }
   }
@@ -79,7 +91,7 @@ export default function LedgerSummaryTab({ persons }: { persons: PersonWithLedge
     return sortDir === 'asc' ? av - bv : bv - av
   })
 
-  if (persons.length === 0) {
+  if (rows.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '40px 16px' }}>
         <p style={{ color: 'var(--text-secondary)', margin: 0, fontWeight: 600 }}>No entries yet</p>
@@ -145,7 +157,20 @@ export default function LedgerSummaryTab({ persons }: { persons: PersonWithLedge
           const st = STATUS_STYLE[row.status]
           const isLent = row.type === 'Lent'
           return (
-            <div key={`${row.person.id}-${row.type}-${i}`} className="lst-row">
+            <div
+              key={`${row.person.id}-${row.type}-${i}`}
+              className="lst-row"
+              style={{ cursor: 'pointer' }}
+              role="button"
+              tabIndex={0}
+              onClick={() => navigate({ to: '/ledger/$personId', params: { personId: row.person.id } })}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  navigate({ to: '/ledger/$personId', params: { personId: row.person.id } })
+                }
+              }}
+            >
               {/* Person */}
               <div className="lst-cell lst-person-cell">
                 <span className="lst-avatar">{row.person.name[0]?.toUpperCase()}</span>

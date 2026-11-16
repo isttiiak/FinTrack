@@ -394,7 +394,8 @@ h3 {
   }
 
   /* PersonCard action buttons: always visible on touch devices */
-  .pc-actions {
+  .pc-actions,
+  .personcard-pc-actions {
     position: static !important;
     transform: none !important;
     opacity: 1 !important;
@@ -422,16 +423,19 @@ h3 {
   }
 
   /* Ledger tabs: horizontal scroll */
-  .ledger-tabs {
+  .ledger-tabs,
+  .ledgerpage-ledger-tabs {
     flex-wrap: nowrap !important;
     overflow-x: auto;
     padding-bottom: 4px;
     scrollbar-width: none;
   }
-  .ledger-tabs::-webkit-scrollbar {
+  .ledger-tabs::-webkit-scrollbar,
+  .ledgerpage-ledger-tabs::-webkit-scrollbar {
     display: none;
   }
-  .ledger-tab {
+  .ledger-tab,
+  .ledgerpage-ledger-tab {
     white-space: nowrap;
     flex-shrink: 0;
   }
@@ -452,7 +456,8 @@ h3 {
   }
 
   /* Settings sections: tighter padding */
-  .settings-section {
+  .settings-section,
+  .settingspage-settings-section {
     padding: 16px !important;
   }
 

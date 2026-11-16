@@ -45,8 +45,13 @@ export default function LedgerPage() {
     .filter((p) => !search.trim() || p.name.toLowerCase().includes(search.trim().toLowerCase()))
     .slice()
     .sort((a, b) => {
-      const latestDate = (p: typeof a) =>
-        p.ledgers.reduce((max, l) => l.start_date > max ? l.start_date : max, '0000-00-00')
+      const latestDate = (p: typeof a) => {
+        const dates = [
+          ...p.ledgers.map((l) => l.start_date),
+          ...p.payments.map((pay) => pay.payment_date),
+        ]
+        return dates.reduce((max, d) => (d > max ? d : max), '0000-00-00')
+      }
       const da = latestDate(a), db = latestDate(b)
       return sortOrder === 'newest' ? db.localeCompare(da) : da.localeCompare(db)
     })

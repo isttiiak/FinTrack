@@ -2,40 +2,21 @@ import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Filter, HandCoins, CreditCard, ArrowDownCircle, ArrowUpCircle, ChevronDown } from 'lucide-react'
 import DeleteButton from '@/components/common/DeleteButton'
-import { formatCurrency, formatDate, round2 } from '@/lib/utils'
+import { formatCurrency, formatDate } from '@/lib/utils'
+import { buildLedgerHistory, type LedgerHistoryRow } from '@/lib/ledgerAggregate'
 import { useDeletePayment } from '@/hooks/useLedger'
 import PaymentForm from './PaymentForm'
 import type { LedgerPayment, PersonWithLedgers } from '@/types/ledger.types'
-import type { LedgerType } from '@/lib/constants'
 import { fadeUp } from '@/lib/animations'
 import { formatPaymentMethod } from '@/lib/region'
 import './LedgerPaymentLogs.css'
 
-// One row per lend/debt entry OR payment, merged into a single
-// chronological timeline per (person, type) with a running balance —
-// this is the "central" view: you can see exactly why the balance
-// changed at each point, instead of a payments-only list.
-interface HistoryRow {
-  key: string
-  personId: string
-  personName: string
-  ledgerType: LedgerType
-  date: string
-  kind: 'entry' | 'payment'
-  amount: number
-  runningBalance: number
-  reason: string | null
-  paymentMethod: string | null
-  notes: string | null
-  sourceId: string
-}
-
-function rowLabel(row: HistoryRow): string {
+function rowLabel(row: LedgerHistoryRow): string {
   if (row.kind === 'entry') return row.ledgerType === 'Lent' ? 'Lent' : 'Borrowed'
   return row.ledgerType === 'Lent' ? 'Collected' : 'Paid'
 }
 
-function rowColor(row: HistoryRow): string {
+function rowColor(row: LedgerHistoryRow): string {
   return row.ledgerType === 'Lent' ? 'var(--accent-teal)' : 'var(--accent-coral)'
 }
 
@@ -44,53 +25,7 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
   const [filterPerson, setFilterPerson] = useState<string | null>(null)
   const [editing, setEditing] = useState<{ person: PersonWithLedgers; payment: LedgerPayment } | null>(null)
 
-  const allRows = useMemo((): HistoryRow[] => {
-    const rows: HistoryRow[] = []
-    for (const person of persons) {
-      for (const type of ['Lent', 'Debt'] as const) {
-        const entries = person.ledgers.filter((l) => l.ledger_type === type)
-        const payments = person.payments.filter((p) => p.ledger_type === type)
-        if (entries.length === 0 && payments.length === 0) continue
-
-        const events = [
-          ...entries.map((e) => ({
-            date: e.start_date, kind: 'entry' as const, amount: e.total_amount, sourceId: e.id,
-            reason: e.reason, paymentMethod: e.payment_method, notes: null as string | null,
-          })),
-          ...payments.map((p) => ({
-            date: p.payment_date, kind: 'payment' as const, amount: p.amount, sourceId: p.id,
-            reason: null as string | null, paymentMethod: p.payment_method, notes: p.notes,
-          })),
-        ].sort((a, b) => {
-          const dateCmp = a.date.localeCompare(b.date)
-          if (dateCmp !== 0) return dateCmp
-          if (a.kind === b.kind) return 0
-          return a.kind === 'entry' ? -1 : 1
-        })
-
-        let balance = 0
-        for (const ev of events) {
-          balance += ev.kind === 'entry' ? ev.amount : -ev.amount
-          balance = round2(Math.max(0, balance))
-          rows.push({
-            key: `${person.id}-${type}-${ev.kind}-${ev.sourceId}`,
-            personId: person.id,
-            personName: person.name,
-            ledgerType: type,
-            date: ev.date,
-            kind: ev.kind,
-            amount: ev.amount,
-            runningBalance: balance,
-            reason: ev.reason,
-            paymentMethod: ev.paymentMethod,
-            notes: ev.notes,
-            sourceId: ev.sourceId,
-          })
-        }
-      }
-    }
-    return rows.sort((a, b) => b.date.localeCompare(a.date))
-  }, [persons])
+  const allRows = useMemo(() => buildLedgerHistory(persons), [persons])
 
   const filtered = filterPerson ? allRows.filter((r) => r.personId === filterPerson) : allRows
 
@@ -102,7 +37,7 @@ export default function LedgerPaymentLogs({ persons }: { persons: PersonWithLedg
     deletePayment(id)
   }
 
-  function startEdit(row: HistoryRow) {
+  function startEdit(row: LedgerHistoryRow) {
     const person = persons.find((p) => p.id === row.personId)
     const payment = person?.payments.find((p) => p.id === row.sourceId)
     if (person && payment) setEditing({ person, payment })

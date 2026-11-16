@@ -1,18 +1,4 @@
 /* Styles for PersonDetailPage.tsx — extracted from an inline <style> block (TODO.md §4.1). */
-.pd-page {
-  max-width: 900px;
-}
-.pd-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 13px;
-  color: var(--text-secondary);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0 0 20px;
-}
 .pd-skeleton-hero {
   height: 120px;
   border-radius: 18px;
@@ -404,54 +390,4 @@
   background: rgba(79, 169, 129, 0.12);
   color: var(--accent-primary);
   border-color: rgba(79, 169, 129, 0.3);
-}
-
-.pd-page {
-  max-width: 900px;
-}
-.pd-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 13px;
-  color: var(--text-secondary);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0 0 20px;
-}
-.pd-skeleton-hero {
-  height: 120px;
-  border-radius: 18px;
-  margin-bottom: 12px;
-  background: linear-gradient(
-    90deg,
-    var(--bg-card) 25%,
-    var(--bg-elevated) 50%,
-    var(--bg-card) 75%
-  );
-  background-size: 200% 100%;
-  animation: persondetailpage-shimmer 1.5s infinite;
-}
-.pd-skeleton-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.pd-skeleton-card {
-  height: 80px;
-  border-radius: 14px;
-  background: linear-gradient(
-    90deg,
-    var(--bg-card) 25%,
-    var(--bg-elevated) 50%,
-    var(--bg-card) 75%
-  );
-  background-size: 200% 100%;
-  animation: persondetailpage-shimmer 1.5s infinite;
-}
-@keyframes persondetailpage-shimmer {
-  to {
-    background-position: -200% 0;
-  }
 }

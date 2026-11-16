@@ -84,6 +84,10 @@
 }
 .lst-row {
   border-bottom: 1px solid rgba(33, 42, 36, 0.5);
+  transition: background 0.1s;
+}
+.lst-row:hover {
+  background: var(--bg-elevated);
 }
 .lst-row:last-child {
   border-bottom: none;
