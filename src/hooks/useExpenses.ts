@@ -177,6 +177,16 @@ export function useDeleteExpense() {
   const addToast = useUIStore((s) => s.addToast)
 
   return useMutation({
+    onMutate: (id: string) => {
+      if (useDemoStore.getState().isDemo) {
+        return { previous: useDemoStore.getState().transactions.find((t) => t.id === id) }
+      }
+      for (const [, rows] of qc.getQueriesData<Transaction[]>({ queryKey: ['expenses'] })) {
+        const found = rows?.find((t) => t.id === id)
+        if (found) return { previous: found }
+      }
+      return { previous: undefined as Transaction | undefined }
+    },
     mutationFn: async (id: string) => {
       if (useDemoStore.getState().isDemo) {
         useDemoStore.getState().removeTransaction(id)
@@ -189,8 +199,32 @@ export function useDeleteExpense() {
         .eq('user_id', userId!)
       if (error) throw error
     },
-    onSuccess: () => {
+    onSuccess: (_data, _id, ctx) => {
       qc.invalidateQueries({ queryKey: ['expenses'] })
+      const prev = ctx?.previous
+      if (!prev) {
+        addToast({ type: 'success', message: 'Transaction deleted' })
+        return
+      }
+      toastWithUndo(addToast, 'Transaction deleted', async () => {
+        if (useDemoStore.getState().isDemo) {
+          useDemoStore.getState().addTransaction(prev)
+        } else {
+          const { error } = await supabase.from('transactions').insert({
+            id: prev.id,
+            user_id: userId!,
+            type: prev.type,
+            amount: prev.amount,
+            category_id: prev.category_id,
+            description: prev.description,
+            txn_date: prev.txn_date,
+            payment_method: prev.payment_method,
+            account: prev.account,
+          })
+          if (error) throw error
+        }
+        qc.invalidateQueries({ queryKey: ['expenses'] })
+      }, 'Transaction restored')
     },
     onError: (err: Error) => {
       addToast({ type: 'error', message: err.message })

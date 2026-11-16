@@ -463,11 +463,11 @@
 
 ### Category 4: Expenses & Recurring (`fix/cat-4-expenses-recurring`)
 
-- [ ] **4.1 `ExpenseCard` mobile touch tap bug & immediate delete with `toastWithUndo`**
+- [x] **4.1 `ExpenseCard` mobile touch tap bug & immediate delete with `toastWithUndo`**
   - **Files:** `src/components/expenses/ExpenseCard.tsx`, `src/hooks/useExpenses.ts`
-- [ ] **4.2 `ExpensesPage` filter consistency, stale category IDs, dynamic method choices & filter-aware empty state**
+- [x] **4.2 `ExpensesPage` filter consistency, stale category IDs, dynamic method choices & filter-aware empty state**
   - **Files:** `src/pages/ExpensesPage.tsx`
-- [ ] **4.3 `RecurringRuleForm` category reset on type toggle & `end_date >= start_date` validation**
+- [x] **4.3 `RecurringRuleForm` category reset on type toggle & `end_date >= start_date` validation**
   - **Files:** `src/pages/RecurringPage.tsx`
 
 ### Category 5: Investments (`fix/cat-5-investments`)

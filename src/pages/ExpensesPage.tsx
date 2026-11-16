@@ -46,8 +46,6 @@ export default function ExpensesPage() {
   const [filterOpen, setFilterOpen] = useState(false)
   const [typeFilter, setTypeFilter] = useState<'All' | 'Expense' | 'Income'>('All')
   const [methodFilter, setMethodFilter] = useState<string>('All')
-  // The user's own wallet list (region preset or customised), not a fixed BD one
-  const methodChoices = useMemo(() => ['All', 'Cash', ...getMfsProviders(), 'Card', 'Bank Transfer'], [])
   const [groupFilter, setGroupFilter] = useState<string>('All')
   const [rangeMode, setRangeMode] = useState(false)
   const [rangeFrom, setRangeFrom] = useState('')
@@ -59,6 +57,13 @@ export default function ExpensesPage() {
   const [sort, setSort] = useState<ExpenseSort>('newest')
   const [editingTxn, setEditingTxn] = useState<Transaction | null>(null)
   const [addOpen, setAddOpen] = useState(false)
+
+  // The user's own wallet list (region preset or customised), refreshed when panels/forms open or close
+  const methodRefreshKey = `${filterOpen}-${addOpen}-${Boolean(editingTxn)}`
+  const methodChoices = useMemo(
+    () => (methodRefreshKey ? ['All', 'Cash', ...getMfsProviders(), 'Card', 'Bank Transfer'] : []),
+    [methodRefreshKey],
+  )
 
   // Command palette hand-offs: "Add expense" opens the form; picking a
   // transaction jumps to its month with its description as the search.
@@ -105,9 +110,29 @@ export default function ExpensesPage() {
     () => allCategories.filter((c) => typeFilter === 'All' || c.type === typeFilter),
     [allCategories, typeFilter],
   )
+
+  useEffect(() => {
+    if (typeFilter === 'All' || allCategories.length === 0) return
+    const validIds = new Set(allCategories.filter((c) => c.type === typeFilter).map((c) => c.id))
+    setCategoryIds((cur) => {
+      const next = cur.filter((id) => validIds.has(id))
+      return next.length === cur.length ? cur : next
+    })
+  }, [typeFilter, allCategories])
+
   const hasActiveFilters =
     typeFilter !== 'All' || methodFilter !== 'All' || groupFilter !== 'All' ||
     categoryIds.length > 0 || minAmount !== '' || maxAmount !== ''
+
+  function clearFilters(includeSearch = false) {
+    setTypeFilter('All')
+    setMethodFilter('All')
+    setGroupFilter('All')
+    setCategoryIds([])
+    setMinAmount('')
+    setMaxAmount('')
+    if (includeSearch) setSearch('')
+  }
 
   function toggleCategory(id: string) {
     setCategoryIds((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]))
@@ -127,11 +152,14 @@ export default function ExpensesPage() {
 
   const mainGroups = useMemo(() => {
     const groups = new Set<string>()
+    for (const c of categoryChoices) {
+      if (c.main_group) groups.add(c.main_group)
+    }
     for (const t of transactions) {
       if (t.category?.main_group) groups.add(t.category.main_group)
     }
     return Array.from(groups).sort()
-  }, [transactions])
+  }, [categoryChoices, transactions])
 
   const displayedTransactions = useMemo(() => {
     if (groupFilter === 'All') return transactions
@@ -152,7 +180,7 @@ export default function ExpensesPage() {
     let totalExpense = 0
     let totalIncome = 0
 
-    for (const t of transactions) {   // always full-month totals, group filter only narrows the list
+    for (const t of displayedTransactions) {
       if (t.type === 'Expense') {
         totalExpense += t.amount
       } else {
@@ -161,7 +189,7 @@ export default function ExpensesPage() {
     }
 
     return { totalExpense, totalIncome }
-  }, [transactions])
+  }, [displayedTransactions])
 
   const budgetsWithSpend = budgets.map((b) => ({
     ...b,
@@ -432,10 +460,7 @@ export default function ExpensesPage() {
               {hasActiveFilters && (
                 <button
                   className="filter-clear-btn"
-                  onClick={() => {
-                    setTypeFilter('All'); setMethodFilter('All'); setGroupFilter('All')
-                    setCategoryIds([]); setMinAmount(''); setMaxAmount('')
-                  }}
+                  onClick={() => clearFilters(false)}
                 >
                   <X size={13} /> Clear filters
                 </button>
@@ -449,17 +474,30 @@ export default function ExpensesPage() {
       <div className="expenses-list-area">
         {isLoading ? (
           <SkeletonList count={6} />
-        ) : transactions.length === 0 ? (
-          <EmptyState
-            icon={<Receipt size={44} />}
-            title="No transactions yet"
-            description="Add your first transaction using the + button above or the floating button."
-            action={
-              <button className="btn-primary" onClick={() => setAddOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Plus size={15} /> Add transaction
-              </button>
-            }
-          />
+        ) : displayedTransactions.length === 0 ? (
+          hasActiveFilters || search.trim() !== '' ? (
+            <EmptyState
+              icon={<Receipt size={44} />}
+              title="No matching transactions"
+              description="No transactions match your current search or filters."
+              action={
+                <button className="btn-ghost" onClick={() => clearFilters(true)} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <X size={15} /> Clear filters
+                </button>
+              }
+            />
+          ) : (
+            <EmptyState
+              icon={<Receipt size={44} />}
+              title="No transactions yet"
+              description="Add your first transaction using the + button above or the floating button."
+              action={
+                <button className="btn-primary" onClick={() => setAddOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Plus size={15} /> Add transaction
+                </button>
+              }
+            />
+          )
         ) : (
           <ExpenseList transactions={displayedTransactions} onEdit={setEditingTxn} sort={sort} />
         )}

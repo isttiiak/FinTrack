@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useForm, Controller } from 'react-hook-form'
 import { z } from 'zod'
@@ -36,6 +36,9 @@ const schema = z.object({
   end_date:       z.string().optional(),
   payment_method: z.string().optional(),
   account:        z.string().optional(),
+}).refine((d) => !d.start_date || !d.end_date || d.end_date >= d.start_date, {
+  message: 'End date must be on or after start date',
+  path: ['end_date'],
 })
 type FormValues = z.infer<typeof schema>
 
@@ -47,7 +50,7 @@ function RecurringRuleForm({ editing, onClose }: { editing?: RecurringRule | nul
   const isPending = creating || updating
   useModalA11y(onClose)
 
-  const { register, control, handleSubmit, watch, formState: { errors } } = useForm<FormValues>({
+  const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: editing
       ? {
@@ -71,6 +74,13 @@ function RecurringRuleForm({ editing, onClose }: { editing?: RecurringRule | nul
   })
 
   const selectedType = watch('type')
+  const prevType = useRef(selectedType)
+  useEffect(() => {
+    if (prevType.current !== selectedType) {
+      prevType.current = selectedType
+      setValue('category_id', '')
+    }
+  }, [selectedType, setValue])
   const filteredCategories = categories.filter((c) => c.type === selectedType)
 
   // Same rule as ExpenseForm: don't offer switching to Income in
@@ -218,7 +228,8 @@ function RecurringRuleForm({ editing, onClose }: { editing?: RecurringRule | nul
             </div>
             <div className="rf-field">
               <label className="rf-label">End date <span className="rf-optional">(optional)</span></label>
-              <input aria-label="End date" {...register('end_date')} type="date" className="rf-input" />
+              <input aria-label="End date" {...register('end_date')} type="date" className={cn('rf-input', errors.end_date && 'rf-input-error')} />
+              {errors.end_date && <p className="rf-error">{errors.end_date.message}</p>}
             </div>
           </div>
 
