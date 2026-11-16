@@ -187,7 +187,15 @@ export default function HouseholdPage() {
               </button>
             ))}
             {tab === 'payments' && (
-              <button className="hh-ghost-btn" style={{ marginLeft: 'auto' }} onClick={() => setSettleForm({})}>Record payment</button>
+              <button
+                className="hh-ghost-btn"
+                style={{ marginLeft: 'auto' }}
+                disabled={detail.members.length < 2}
+                title={detail.members.length < 2 ? 'Add at least one more member to record a payment' : undefined}
+                onClick={() => setSettleForm({})}
+              >
+                Record payment
+              </button>
             )}
           </div>
 
