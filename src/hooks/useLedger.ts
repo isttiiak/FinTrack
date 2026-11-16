@@ -3,7 +3,6 @@ import { supabase, fetchAllRows } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
-import { useDemoGuard, DemoBlockedError } from '@/hooks/useDemoGuard'
 import { aggregateForType } from '@/lib/ledgerAggregate'
 import type { Person, PersonLedger, LedgerPayment, PersonWithLedgers } from '@/types/ledger.types'
 import { toastWithUndo } from '@/lib/undo'
@@ -42,19 +41,17 @@ function enrichPerson(
 export function usePersons() {
   const userId = useAuthStore((s) => s.user?.id)
   const isDemo = useDemoStore((s) => s.isDemo)
-  const demoPersons = useDemoStore((s) => s.persons)
-  const demoLedgers = useDemoStore((s) => s.ledgers)
-  const demoPayments = useDemoStore((s) => s.payments)
 
   return useQuery({
     queryKey: ['persons', userId],
     enabled: isDemo || !!userId,
     queryFn: async (): Promise<PersonWithLedgers[]> => {
       if (isDemo) {
-        return demoPersons.map((p) => enrichPerson(
+        const { persons, ledgers, payments } = useDemoStore.getState()
+        return persons.map((p) => enrichPerson(
           p,
-          demoLedgers.filter((l) => l.person_id === p.id),
-          demoPayments.filter((pay) => pay.person_id === p.id),
+          ledgers.filter((l) => l.person_id === p.id),
+          payments.filter((pay) => pay.person_id === p.id),
         ))
       }
 
@@ -90,21 +87,19 @@ export function usePersons() {
 export function usePerson(personId: string) {
   const userId = useAuthStore((s) => s.user?.id)
   const isDemo = useDemoStore((s) => s.isDemo)
-  const demoPersons = useDemoStore((s) => s.persons)
-  const demoLedgers = useDemoStore((s) => s.ledgers)
-  const demoPayments = useDemoStore((s) => s.payments)
 
   return useQuery({
     queryKey: ['person', personId, userId],
     enabled: isDemo || !!userId,
     queryFn: async (): Promise<PersonWithLedgers | null> => {
       if (isDemo) {
-        const person = demoPersons.find((p) => p.id === personId)
+        const { persons, ledgers, payments } = useDemoStore.getState()
+        const person = persons.find((p) => p.id === personId)
         if (!person) return null
         return enrichPerson(
           person,
-          demoLedgers.filter((l) => l.person_id === personId),
-          demoPayments.filter((pay) => pay.person_id === personId),
+          ledgers.filter((l) => l.person_id === personId),
+          payments.filter((pay) => pay.person_id === personId),
         )
       }
 
@@ -139,11 +134,19 @@ export function useCreatePerson() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (data: Pick<Person, 'name' | 'relationship' | 'phone' | 'notes'>) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        const created: Person = {
+          ...data,
+          id: `demo-person-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          user_id: 'demo',
+          created_at: new Date().toISOString(),
+        }
+        useDemoStore.getState().addPerson(created)
+        return created
+      }
       const { data: row, error } = await supabase
         .from('persons')
         .insert({ ...data, user_id: userId! })
@@ -157,7 +160,6 @@ export function useCreatePerson() {
       addToast({ type: 'success', message: 'Person added' })
     },
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })
@@ -167,11 +169,14 @@ export function useUpdatePerson() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<Person> & { id: string }) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        const updated = useDemoStore.getState().updatePerson(id, data)
+        if (!updated) throw new Error('Person not found')
+        return updated
+      }
       const { data: row, error } = await supabase
         .from('persons')
         .update(data)
@@ -188,7 +193,6 @@ export function useUpdatePerson() {
       addToast({ type: 'success', message: 'Person updated' })
     },
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })
@@ -198,11 +202,13 @@ export function useDeletePerson() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (id: string) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        useDemoStore.getState().removePerson(id)
+        return
+      }
       const { error } = await supabase
         .from('persons')
         .delete()
@@ -215,7 +221,6 @@ export function useDeletePerson() {
       addToast({ type: 'success', message: 'Person removed' })
     },
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })
@@ -226,11 +231,21 @@ export function useCreateLedgerEntry() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (data: Omit<PersonLedger, 'id' | 'user_id' | 'created_at' | 'person'>) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        const person = useDemoStore.getState().persons.find((p) => p.id === data.person_id)
+        const created: PersonLedger = {
+          ...data,
+          id: `demo-ledger-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          user_id: 'demo',
+          created_at: new Date().toISOString(),
+          person,
+        }
+        useDemoStore.getState().addLedger(created)
+        return created
+      }
       const { data: row, error } = await supabase
         .from('person_ledger')
         .insert({ ...data, user_id: userId! })
@@ -245,7 +260,6 @@ export function useCreateLedgerEntry() {
       addToast({ type: 'success', message: 'Entry added' })
     },
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })
@@ -255,11 +269,14 @@ export function useUpdateLedgerEntry() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<PersonLedger> & { id: string }) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        const updated = useDemoStore.getState().updateLedger(id, data)
+        if (!updated) throw new Error('Entry not found')
+        return updated
+      }
       const { data: row, error } = await supabase
         .from('person_ledger')
         .update(data)
@@ -276,7 +293,6 @@ export function useUpdateLedgerEntry() {
       addToast({ type: 'success', message: 'Entry updated' })
     },
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })
@@ -286,11 +302,13 @@ export function useDeleteLedgerEntry() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (id: string) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        useDemoStore.getState().removeLedger(id)
+        return
+      }
       const { error } = await supabase
         .from('person_ledger')
         .delete()
@@ -304,7 +322,6 @@ export function useDeleteLedgerEntry() {
       addToast({ type: 'success', message: 'Entry deleted' })
     },
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })
@@ -317,11 +334,19 @@ export function useCreatePayment() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (data: Omit<LedgerPayment, 'id' | 'user_id' | 'created_at'>) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        const created: LedgerPayment = {
+          ...data,
+          id: `demo-pay-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          user_id: 'demo',
+          created_at: new Date().toISOString(),
+        }
+        useDemoStore.getState().addPayment(created)
+        return created
+      }
       const { data: row, error } = await supabase
         .from('ledger_payments')
         .insert({ ...data, user_id: userId! })
@@ -334,14 +359,17 @@ export function useCreatePayment() {
       qc.invalidateQueries({ queryKey: ['persons'] })
       qc.invalidateQueries({ queryKey: ['person'] })
       toastWithUndo(addToast, 'Payment logged', async () => {
-        const { error } = await supabase.from('ledger_payments').delete().eq('id', created.id).eq('user_id', userId!)
-        if (error) throw error
+        if (useDemoStore.getState().isDemo) {
+          useDemoStore.getState().removePayment(created.id)
+        } else {
+          const { error } = await supabase.from('ledger_payments').delete().eq('id', created.id).eq('user_id', userId!)
+          if (error) throw error
+        }
         qc.invalidateQueries({ queryKey: ['persons'] })
         qc.invalidateQueries({ queryKey: ['person'] })
       }, 'Payment removed')
     },
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })
@@ -351,11 +379,14 @@ export function useUpdatePayment() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<Omit<LedgerPayment, 'id' | 'user_id' | 'created_at'>> & { id: string }) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        const updated = useDemoStore.getState().updatePayment(id, data)
+        if (!updated) throw new Error('Payment not found')
+        return updated
+      }
       const { data: row, error } = await supabase
         .from('ledger_payments')
         .update(data)
@@ -372,7 +403,6 @@ export function useUpdatePayment() {
       addToast({ type: 'success', message: 'Payment updated' })
     },
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })
@@ -382,11 +412,13 @@ export function useDeletePayment() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (id: string) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        useDemoStore.getState().removePayment(id)
+        return
+      }
       const { error } = await supabase
         .from('ledger_payments')
         .delete()
@@ -400,7 +432,6 @@ export function useDeletePayment() {
       addToast({ type: 'success', message: 'Payment removed' })
     },
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })

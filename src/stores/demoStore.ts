@@ -19,7 +19,31 @@ interface DemoState {
   enterDemo: () => void
   exitDemo: () => void
   addTransaction: (txn: Transaction) => void
+  updateTransaction: (id: string, fields: Partial<Transaction>) => Transaction | undefined
   removeTransaction: (id: string) => void
+  addCategory: (cat: Category) => void
+  updateCategory: (id: string, fields: Partial<Category>) => void
+  removeCategory: (id: string) => void
+  renameMainGroup: (oldName: string, newName: string) => void
+  deleteMainGroup: (groupName: string) => void
+  addPerson: (person: Person) => void
+  updatePerson: (id: string, fields: Partial<Person>) => Person | undefined
+  removePerson: (id: string) => void
+  addLedger: (entry: PersonLedger) => void
+  updateLedger: (id: string, fields: Partial<PersonLedger>) => PersonLedger | undefined
+  removeLedger: (id: string) => void
+  addPayment: (payment: LedgerPayment) => void
+  updatePayment: (id: string, fields: Partial<LedgerPayment>) => LedgerPayment | undefined
+  removePayment: (id: string) => void
+  addInvestment: (inv: Investment) => void
+  updateInvestment: (id: string, fields: Partial<Investment>) => Investment | undefined
+  removeInvestment: (id: string) => void
+  addInvestmentPayment: (payment: InvestmentPayment) => void
+  updateInvestmentPayment: (id: string, fields: Partial<InvestmentPayment>) => InvestmentPayment | undefined
+  removeInvestmentPayment: (id: string) => void
+  addInvestmentReturn: (ret: InvestmentReturn) => void
+  updateInvestmentReturn: (id: string, fields: Partial<InvestmentReturn>) => InvestmentReturn | undefined
+  removeInvestmentReturn: (id: string) => void
 }
 
 // Demo seed data — realistic BDT transactions over ~3 months
@@ -137,7 +161,7 @@ function buildDemoData() {
   return { transactions, categories, persons, ledgers, payments, investments, investmentReturns, investmentPayments, recurringRules }
 }
 
-export const useDemoStore = create<DemoState>((set) => ({
+export const useDemoStore = create<DemoState>((set, get) => ({
   isDemo: false,
   transactions: [],
   categories: [],
@@ -167,11 +191,167 @@ export const useDemoStore = create<DemoState>((set) => ({
     recurringRules: [],
   }),
 
-  // Demo mode is otherwise entirely read-only (every other mutation is
-  // blocked by useDemoGuard with a "not saved" toast) — expense creation is
-  // the one exception, so the app's most-tried interaction actually works
-  // in the demo rather than silently faking success. In-memory only, lost
-  // on exitDemo()/reload, same as the rest of the seed data.
+  // Demo mode mutations operate strictly in memory — session changes remain
+  // interactive and reset on exitDemo() or page reload.
   addTransaction: (txn) => set((s) => ({ transactions: [txn, ...s.transactions] })),
+  updateTransaction: (id, fields) => {
+    let updated: Transaction | undefined
+    set((s) => ({
+      transactions: s.transactions.map((t) => {
+        if (t.id !== id) return t
+        const nextCategory = fields.category_id !== undefined
+          ? (s.categories.find((c) => c.id === fields.category_id) ?? null)
+          : t.category
+        updated = { ...t, ...fields, category: nextCategory }
+        return updated
+      }),
+    }))
+    return updated ?? get().transactions.find((t) => t.id === id)
+  },
   removeTransaction: (id) => set((s) => ({ transactions: s.transactions.filter((t) => t.id !== id) })),
+
+  addCategory: (cat) => set((s) => ({ categories: [...s.categories, cat] })),
+  updateCategory: (id, fields) => set((s) => {
+    const categories = s.categories.map((c) => (c.id === id ? { ...c, ...fields } : c))
+    const transactions = s.transactions.map((t) => (
+      t.category_id === id && t.category
+        ? { ...t, category: { ...t.category, ...fields } }
+        : t
+    ))
+    return { categories, transactions }
+  }),
+  removeCategory: (id) => set((s) => ({
+    categories: s.categories.filter((c) => c.id !== id),
+    transactions: s.transactions.map((t) => (
+      t.category_id === id ? { ...t, category_id: null, category: null } : t
+    )),
+  })),
+  renameMainGroup: (oldName, newName) => set((s) => ({
+    categories: s.categories.map((c) => (c.main_group === oldName ? { ...c, main_group: newName } : c)),
+    transactions: s.transactions.map((t) => (
+      t.category?.main_group === oldName
+        ? { ...t, category: { ...t.category, main_group: newName } }
+        : t
+    )),
+  })),
+  deleteMainGroup: (groupName) => set((s) => {
+    const removedIds = new Set(s.categories.filter((c) => c.main_group === groupName).map((c) => c.id))
+    return {
+      categories: s.categories.filter((c) => c.main_group !== groupName),
+      transactions: s.transactions.map((t) => (
+        t.category_id && removedIds.has(t.category_id) ? { ...t, category_id: null, category: null } : t
+      )),
+    }
+  }),
+
+  addPerson: (person) => set((s) => ({ persons: [...s.persons, person] })),
+  updatePerson: (id, fields) => {
+    let updated: Person | undefined
+    set((s) => ({
+      persons: s.persons.map((p) => {
+        if (p.id !== id) return p
+        updated = { ...p, ...fields }
+        return updated
+      }),
+    }))
+    return updated ?? get().persons.find((p) => p.id === id)
+  },
+  removePerson: (id) => set((s) => ({
+    persons: s.persons.filter((p) => p.id !== id),
+    ledgers: s.ledgers.filter((l) => l.person_id !== id),
+    payments: s.payments.filter((pay) => pay.person_id !== id),
+  })),
+
+  addLedger: (entry) => set((s) => ({ ledgers: [entry, ...s.ledgers] })),
+  updateLedger: (id, fields) => {
+    let updated: PersonLedger | undefined
+    set((s) => ({
+      ledgers: s.ledgers.map((l) => {
+        if (l.id !== id) return l
+        updated = { ...l, ...fields }
+        return updated
+      }),
+    }))
+    return updated ?? get().ledgers.find((l) => l.id === id)
+  },
+  removeLedger: (id) => set((s) => {
+    const target = s.ledgers.find((l) => l.id === id)
+    const ledgers = s.ledgers.filter((l) => l.id !== id)
+    if (!target) return { ledgers }
+    const hasRemaining = ledgers.some(
+      (l) => l.person_id === target.person_id && l.ledger_type === target.ledger_type,
+    )
+    const payments = hasRemaining
+      ? s.payments
+      : s.payments.filter((p) => !(p.person_id === target.person_id && p.ledger_type === target.ledger_type))
+    return { ledgers, payments }
+  }),
+
+  addPayment: (payment) => set((s) => ({ payments: [...s.payments, payment] })),
+  updatePayment: (id, fields) => {
+    let updated: LedgerPayment | undefined
+    set((s) => ({
+      payments: s.payments.map((p) => {
+        if (p.id !== id) return p
+        updated = { ...p, ...fields }
+        return updated
+      }),
+    }))
+    return updated ?? get().payments.find((p) => p.id === id)
+  },
+  removePayment: (id) => set((s) => ({ payments: s.payments.filter((p) => p.id !== id) })),
+
+  addInvestment: (inv) => set((s) => ({ investments: [inv, ...s.investments] })),
+  updateInvestment: (id, fields) => {
+    let updated: Investment | undefined
+    set((s) => ({
+      investments: s.investments.map((i) => {
+        if (i.id !== id) return i
+        updated = { ...i, ...fields }
+        return updated
+      }),
+    }))
+    return updated ?? get().investments.find((i) => i.id === id)
+  },
+  removeInvestment: (id) => set((s) => ({
+    investments: s.investments.filter((i) => i.id !== id),
+    investmentPayments: s.investmentPayments.filter((p) => p.investment_id !== id),
+    investmentReturns: s.investmentReturns.filter((r) => r.investment_id !== id),
+  })),
+
+  addInvestmentPayment: (payment) => set((s) => ({
+    investmentPayments: [...s.investmentPayments, payment],
+  })),
+  updateInvestmentPayment: (id, fields) => {
+    let updated: InvestmentPayment | undefined
+    set((s) => ({
+      investmentPayments: s.investmentPayments.map((p) => {
+        if (p.id !== id) return p
+        updated = { ...p, ...fields }
+        return updated
+      }),
+    }))
+    return updated ?? get().investmentPayments.find((p) => p.id === id)
+  },
+  removeInvestmentPayment: (id) => set((s) => ({
+    investmentPayments: s.investmentPayments.filter((p) => p.id !== id),
+  })),
+
+  addInvestmentReturn: (ret) => set((s) => ({
+    investmentReturns: [...s.investmentReturns, ret],
+  })),
+  updateInvestmentReturn: (id, fields) => {
+    let updated: InvestmentReturn | undefined
+    set((s) => ({
+      investmentReturns: s.investmentReturns.map((r) => {
+        if (r.id !== id) return r
+        updated = { ...r, ...fields }
+        return updated
+      }),
+    }))
+    return updated ?? get().investmentReturns.find((r) => r.id === id)
+  },
+  removeInvestmentReturn: (id) => set((s) => ({
+    investmentReturns: s.investmentReturns.filter((r) => r.id !== id),
+  })),
 }))

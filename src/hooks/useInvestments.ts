@@ -3,7 +3,6 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
-import { useDemoGuard, DemoBlockedError } from '@/hooks/useDemoGuard'
 import type { Investment, InvestmentReturn, InvestmentPayment } from '@/types/investment.types'
 import { toastWithUndo } from '@/lib/undo'
 import { investmentPosition } from '@/lib/investmentAnalytics'
@@ -32,19 +31,17 @@ function enrich(inv: Investment & { investment_returns?: InvestmentReturn[]; inv
 export function useInvestments() {
   const userId = useAuthStore((s) => s.user?.id)
   const isDemo = useDemoStore((s) => s.isDemo)
-  const demoInvestments = useDemoStore((s) => s.investments)
-  const demoReturns = useDemoStore((s) => s.investmentReturns)
-  const demoPayments = useDemoStore((s) => s.investmentPayments)
 
   return useQuery({
     queryKey: ['investments', userId],
     enabled: isDemo || !!userId,
     queryFn: async (): Promise<Investment[]> => {
       if (isDemo) {
-        return demoInvestments.map((inv) => enrich({
+        const { investments, investmentReturns, investmentPayments } = useDemoStore.getState()
+        return investments.map((inv) => enrich({
           ...inv,
-          investment_returns: demoReturns.filter((r) => r.investment_id === inv.id),
-          investment_payments: demoPayments.filter((p) => p.investment_id === inv.id),
+          investment_returns: investmentReturns.filter((r) => r.investment_id === inv.id),
+          investment_payments: investmentPayments.filter((p) => p.investment_id === inv.id),
         }))
       }
 
@@ -63,11 +60,19 @@ export function useCreateInvestment() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (data: Omit<Investment, 'id' | 'user_id' | 'created_at' | 'returns' | 'total_returned' | 'roi_percent' | 'profit_loss' | 'invested' | 'current_value' | 'value_is_estimate'>) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        const created: Investment = {
+          ...data,
+          id: `demo-inv-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          user_id: 'demo',
+          created_at: new Date().toISOString(),
+        }
+        useDemoStore.getState().addInvestment(created)
+        return created
+      }
       const { data: row, error } = await supabase
         .from('investments')
         .insert({ ...data, user_id: userId! })
@@ -81,7 +86,6 @@ export function useCreateInvestment() {
       addToast({ type: 'success', message: 'Investment added' })
     },
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })
@@ -91,11 +95,14 @@ export function useUpdateInvestment() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<Investment> & { id: string }) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        const updated = useDemoStore.getState().updateInvestment(id, data)
+        if (!updated) throw new Error('Investment not found')
+        return updated
+      }
       const { data: row, error } = await supabase
         .from('investments')
         .update(data)
@@ -111,7 +118,6 @@ export function useUpdateInvestment() {
       addToast({ type: 'success', message: 'Investment updated' })
     },
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })
@@ -121,11 +127,13 @@ export function useDeleteInvestment() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (id: string) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        useDemoStore.getState().removeInvestment(id)
+        return
+      }
       const { error } = await supabase
         .from('investments')
         .delete()
@@ -138,7 +146,6 @@ export function useDeleteInvestment() {
       addToast({ type: 'success', message: 'Investment deleted' })
     },
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })
@@ -148,11 +155,19 @@ export function useCreateReturn() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (data: Omit<InvestmentReturn, 'id' | 'user_id' | 'created_at'>) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        const created: InvestmentReturn = {
+          ...data,
+          id: `demo-ret-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          user_id: 'demo',
+          created_at: new Date().toISOString(),
+        }
+        useDemoStore.getState().addInvestmentReturn(created)
+        return created
+      }
       const { data: row, error } = await supabase
         .from('investment_returns')
         .insert({ ...data, user_id: userId! })
@@ -164,13 +179,16 @@ export function useCreateReturn() {
     onSuccess: (created) => {
       qc.invalidateQueries({ queryKey: ['investments'] })
       toastWithUndo(addToast, 'Return logged', async () => {
-        const { error } = await supabase.from('investment_returns').delete().eq('id', created.id).eq('user_id', userId!)
-        if (error) throw error
+        if (useDemoStore.getState().isDemo) {
+          useDemoStore.getState().removeInvestmentReturn(created.id)
+        } else {
+          const { error } = await supabase.from('investment_returns').delete().eq('id', created.id).eq('user_id', userId!)
+          if (error) throw error
+        }
         qc.invalidateQueries({ queryKey: ['investments'] })
       }, 'Return removed')
     },
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })
@@ -180,11 +198,24 @@ export function useCreateInvestmentPayment() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (data: { investment_id: string; amount: number; payment_date: string; payment_method?: string | null; account?: string | null; notes: string | null }) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        const created: InvestmentPayment = {
+          id: `demo-ip-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          investment_id: data.investment_id,
+          user_id: 'demo',
+          amount: data.amount,
+          payment_date: data.payment_date,
+          payment_method: data.payment_method ?? null,
+          account: data.account ?? null,
+          notes: data.notes,
+          created_at: new Date().toISOString(),
+        }
+        useDemoStore.getState().addInvestmentPayment(created)
+        return created
+      }
       const { data: row, error } = await supabase
         .from('investment_payments')
         .insert({ ...data, user_id: userId! })
@@ -196,13 +227,16 @@ export function useCreateInvestmentPayment() {
     onSuccess: (created) => {
       qc.invalidateQueries({ queryKey: ['investments'] })
       toastWithUndo(addToast, 'Payment logged', async () => {
-        const { error } = await supabase.from('investment_payments').delete().eq('id', created.id).eq('user_id', userId!)
-        if (error) throw error
+        if (useDemoStore.getState().isDemo) {
+          useDemoStore.getState().removeInvestmentPayment(created.id)
+        } else {
+          const { error } = await supabase.from('investment_payments').delete().eq('id', created.id).eq('user_id', userId!)
+          if (error) throw error
+        }
         qc.invalidateQueries({ queryKey: ['investments'] })
       }, 'Payment removed')
     },
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })
@@ -212,11 +246,14 @@ export function useUpdateInvestmentPayment() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<Omit<InvestmentPayment, 'id' | 'user_id' | 'created_at' | 'investment_id'>> & { id: string }) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        const updated = useDemoStore.getState().updateInvestmentPayment(id, data)
+        if (!updated) throw new Error('Payment not found')
+        return updated
+      }
       const { data: row, error } = await supabase
         .from('investment_payments')
         .update(data)
@@ -232,7 +269,6 @@ export function useUpdateInvestmentPayment() {
       addToast({ type: 'success', message: 'Payment updated' })
     },
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })
@@ -242,11 +278,14 @@ export function useUpdateReturn() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<InvestmentReturn> & { id: string }) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        const updated = useDemoStore.getState().updateInvestmentReturn(id, data)
+        if (!updated) throw new Error('Return not found')
+        return updated
+      }
       const { data: row, error } = await supabase
         .from('investment_returns')
         .update(data)
@@ -262,7 +301,6 @@ export function useUpdateReturn() {
       addToast({ type: 'success', message: 'Return updated' })
     },
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })
@@ -272,11 +310,13 @@ export function useDeleteInvestmentPayment() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (id: string) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        useDemoStore.getState().removeInvestmentPayment(id)
+        return
+      }
       const { error } = await supabase
         .from('investment_payments')
         .delete()
@@ -289,7 +329,6 @@ export function useDeleteInvestmentPayment() {
       addToast({ type: 'success', message: 'Payment deleted' })
     },
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })
@@ -299,11 +338,13 @@ export function useDeleteReturn() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (id: string) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        useDemoStore.getState().removeInvestmentReturn(id)
+        return
+      }
       const { error } = await supabase
         .from('investment_returns')
         .delete()
@@ -316,7 +357,6 @@ export function useDeleteReturn() {
       addToast({ type: 'success', message: 'Return deleted' })
     },
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })
