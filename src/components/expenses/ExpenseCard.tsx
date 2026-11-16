@@ -5,7 +5,6 @@ import DeleteButton from '@/components/common/DeleteButton'
 import type { Transaction } from '@/types/expense.types'
 import { formatCurrency } from '@/lib/utils'
 import { useDeleteExpense } from '@/hooks/useExpenses'
-import { useUIStore } from '@/stores/uiStore'
 import { formatPaymentMethod } from '@/lib/region'
 
 interface ExpenseCardProps {
@@ -24,52 +23,30 @@ const CATEGORY_ICON_MAP: Record<string, string> = {
 
 export default function ExpenseCard({ txn, onEdit }: ExpenseCardProps) {
   const [showActions, setShowActions] = useState(false)
-  const [deleting, setDeleting] = useState(false)
   const { mutate: deleteExpense } = useDeleteExpense()
-  const addToast = useUIStore((s) => s.addToast)
 
   const catName = txn.category?.name ?? 'Uncategorised'
   const icon = CATEGORY_ICON_MAP[catName] ?? '📌'
   const isIncome = txn.type === 'Income'
 
   function handleDelete() {
-    setDeleting(true)
-    const id = txn.id
-    // Undo must cancel the pending delete, not just re-show the card — it
-    // used to do only the latter, so the row was deleted 3.6s later anyway.
-    const timer = setTimeout(() => {
-      // If the mutation is blocked (e.g. demo mode) or fails, the card must
-      // reappear — otherwise it stays hidden forever even though nothing
-      // was actually deleted, contradicting the "Undo" the toast promised.
-      deleteExpense(id, { onError: () => setDeleting(false) })
-    }, 3600)
-    addToast({
-      type: 'info',
-      message: 'Transaction deleted',
-      duration: 3500,
-      action: {
-        label: 'Undo',
-        onClick: () => {
-          clearTimeout(timer)
-          setDeleting(false)
-        },
-      },
-    })
+    deleteExpense(txn.id)
   }
 
   return (
-    <AnimatePresence>
-      {!deleting && (
-        <motion.div
-          layout
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, x: -60, transition: { duration: 0.25 } }}
-          className="expense-card"
-          onHoverStart={() => setShowActions(true)}
-          onHoverEnd={() => setShowActions(false)}
-          onTouchStart={() => setShowActions((v) => !v)}
-        >
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, x: -60, transition: { duration: 0.25 } }}
+      className="expense-card"
+      onHoverStart={() => setShowActions(true)}
+      onHoverEnd={() => setShowActions(false)}
+      onTouchStart={(e) => {
+        if ((e.target as HTMLElement).closest('.expense-card-actions')) return
+        setShowActions((v) => !v)
+      }}
+    >
           <div className="expense-card-icon">{icon}</div>
 
           <div className="expense-card-body">
@@ -107,9 +84,7 @@ export default function ExpenseCard({ txn, onEdit }: ExpenseCardProps) {
               )}
             </AnimatePresence>
           </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    </motion.div>
   )
 }
 
