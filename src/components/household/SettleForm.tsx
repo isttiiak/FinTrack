@@ -38,7 +38,8 @@ export default function SettleForm({ household, members, meId, initial, editing,
   const amountNaN = typeof amount === 'number' && Number.isNaN(amount)
   const amountNum = typeof amount === 'number' && !Number.isNaN(amount) ? round2(amount) : 0
   let error = ''
-  if (from === to) error = 'Pick two different people'
+  if (!from || !to) error = 'Add another member before recording a payment'
+  else if (from === to) error = 'Pick two different people'
   else if (amountNaN) error = 'Invalid calculation'
   else if (amountNum <= 0) error = 'Enter an amount greater than 0'
   else if (amountNum > 9999999999.99) error = 'Amount is too large'
