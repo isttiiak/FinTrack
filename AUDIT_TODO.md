@@ -413,3 +413,77 @@
   - **Tasks:** Support `Transfer` transactions (e.g., Bank → bKash cash-in, ATM withdrawal) so internal transfers don't inflate monthly expenses/income.
 - [x] **7.5 Recurring transactions & Investment valuation history (Future Feature)**
   - **Tasks:** Add recurring bill/salary templates and timestamped `investment_valuations` history for portfolio growth charts.
+
+---
+
+## Part 3 — Feature Enhancement, Stability & Correctness Audit (Categories 1–6)
+
+> Tracked remediation of the 23 logical errors, validation gaps, and UI/UX issues identified across all feature modules. Each category is implemented, tested, and merged via its own branch and Pull Request.
+
+### Category 1: Shared Forms & Common Components (`fix/cat-1-shared-forms`)
+
+- [x] **1.1 `SmartAmountInput` + optional fields (`InvestmentForm`) invalid expression handling & error display**
+  - **Files:** `src/components/common/SmartAmountInput.tsx`, `src/components/investments/InvestmentForm.tsx`
+  - Emit `Number.NaN` on invalid/incomplete expressions (`100+`, `500/0`) while keeping `undefined` for empty inputs; use `Object.is` in `SmartAmountInput` sync effect; remove `.or(z.nan().transform(() => undefined))` in `InvestmentForm` and render `errors.market_value`.
+- [x] **1.2 `PaymentMethodPicker` auto-select on MFS group & custom provider creation**
+  - **Files:** `src/components/common/PaymentMethodPicker.tsx`
+  - Auto-select the first MFS/Wallet provider when clicking the MFS group chip, and auto-select newly created custom providers in `saveCustomMethod()`.
+- [x] **1.3 `ConfirmDialog` support for `config.confirmLabel`**
+  - **Files:** `src/components/common/ConfirmDialog.tsx`
+  - Honor `config.confirmLabel` on Step 1 & Step 2 buttons and adjust Step 2 copy for non-delete confirmations.
+- [x] **1.4 `CurrencyDisplay` active currency default**
+  - **Files:** `src/components/common/CurrencyDisplay.tsx`
+  - Remove hardcoded `= 'BDT'` default so omitting `currency` uses `formatCurrency`'s `getActiveCurrency()` default.
+
+### Category 2: Lent & Debt / People (`fix/cat-2-ledger-people`)
+
+- [ ] **2.1 `LedgerPaymentLogs` same-date sort order & intermediate balance clamping**
+  - **Files:** `src/components/ledger/LedgerPaymentLogs.tsx`
+- [ ] **2.2 `QuickLedgerEntry` & `PersonForm` combobox duplicate person prevention, new person details & RHF handler fixes**
+  - **Files:** `src/components/ledger/QuickLedgerEntry.tsx`, `src/components/ledger/PersonForm.tsx`
+- [ ] **2.3 `LedgerEntryForm` notes field & `PersonDetailPage` notes/account metadata + Edit person button**
+  - **Files:** `src/components/ledger/LedgerEntryForm.tsx`, `src/pages/PersonDetailPage.tsx`
+- [ ] **2.4 `LedgerSummaryTab`, `LedgerPage` & `PeoplePage` activity dates, empty state, navigation & custom relationships filter**
+  - **Files:** `src/components/ledger/LedgerSummaryTab.tsx`, `src/pages/LedgerPage.tsx`, `src/pages/PeoplePage.tsx`
+- [ ] **2.5 Mobile CSS selector mismatches in `globals.css` & duplicate CSS rules in `PersonDetailPage.css`**
+  - **Files:** `src/styles/globals.css`, `src/pages/PersonDetailPage.css`
+
+### Category 3: Household (`fix/cat-3-household`)
+
+- [ ] **3.1 Interactive Demo Mode CRUD for Household**
+  - **Files:** `src/stores/demoStore.ts`, `src/hooks/useHousehold.ts`
+- [ ] **3.2 `SharedExpenseForm` & `SettleForm`: `SmartAmountInput`, `useModalA11y`, date/max validation & negative share check**
+  - **Files:** `src/components/household/SharedExpenseForm.tsx`, `src/components/household/SettleForm.tsx`
+- [ ] **3.3 Confirmation dialogs in `MembersPanel` (remove member & rotate invite code)**
+  - **Files:** `src/components/household/MembersPanel.tsx`
+- [ ] **3.4 Edit recorded settlements in `SettlementList` & `SettleForm`**
+  - **Files:** `supabase/migrations/019_household_settlement_update.sql`, `src/hooks/useHousehold.ts`, `src/components/household/SettleForm.tsx`, `src/components/household/SharedExpenseList.tsx`, `src/pages/HouseholdPage.tsx`
+- [ ] **3.5 `HouseholdSetup` currency default & async profile sync**
+  - **Files:** `src/components/household/HouseholdSetup.tsx`
+
+### Category 4: Expenses & Recurring (`fix/cat-4-expenses-recurring`)
+
+- [ ] **4.1 `ExpenseCard` mobile touch tap bug & immediate delete with `toastWithUndo`**
+  - **Files:** `src/components/expenses/ExpenseCard.tsx`, `src/hooks/useExpenses.ts`
+- [ ] **4.2 `ExpensesPage` filter consistency, stale category IDs, dynamic method choices & filter-aware empty state**
+  - **Files:** `src/pages/ExpensesPage.tsx`
+- [ ] **4.3 `RecurringRuleForm` category reset on type toggle & `end_date >= start_date` validation**
+  - **Files:** `src/pages/RecurringPage.tsx`
+
+### Category 5: Investments (`fix/cat-5-investments`)
+
+- [ ] **5.1 Open-ended investments (`committed_amount == null`) display fixes**
+  - **Files:** `src/pages/InvestmentDetailPage.tsx`, `src/components/investments/InvestmentTransactionLogs.tsx`
+- [ ] **5.2 `InvestmentPaymentForm` overpayment warning on edit**
+  - **Files:** `src/components/investments/InvestmentPaymentForm.tsx`
+- [ ] **5.3 Investment detail & transaction logs CSS, same-date sort order & payment method metadata**
+  - **Files:** `src/pages/InvestmentDetailPage.css`, `src/pages/InvestmentDetailPage.tsx`, `src/components/investments/InvestmentTransactionLogs.css`, `src/components/investments/InvestmentTransactionLogs.tsx`
+
+### Category 6: Navigation, Analytics & Settings (`fix/cat-6-nav-analytics-settings`)
+
+- [ ] **6.1 `Sidebar` active state on nested `/settings/*` routes**
+  - **Files:** `src/components/layout/Sidebar.tsx`
+- [ ] **6.2 `AnalyticsPage` elapsed-days daily average & formatted payment method labels**
+  - **Files:** `src/pages/AnalyticsPage.tsx`
+- [ ] **6.3 `BudgetSection` in `SettingsPage.tsx` use `SmartAmountInput`**
+  - **Files:** `src/pages/SettingsPage.tsx`

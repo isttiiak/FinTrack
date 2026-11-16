@@ -6,6 +6,8 @@ import './ConfirmDialog.css'
 
 export default function ConfirmDialog() {
   const { open, step, config, next, accept, cancel } = useConfirmStore()
+  const confirmLabel = config?.confirmLabel
+  const isDeleteAction = !confirmLabel || /^delete/i.test(confirmLabel)
 
   useEffect(() => {
     if (!open) return
@@ -44,7 +46,7 @@ export default function ConfirmDialog() {
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="cd-icon cd-icon-warn">
-                    <Trash2 size={26} />
+                    {isDeleteAction ? <Trash2 size={26} /> : <AlertTriangle size={26} />}
                   </div>
 
                   <h2 id="cd-title" className="cd-title">{config.title}</h2>
@@ -59,7 +61,7 @@ export default function ConfirmDialog() {
                       Cancel
                     </button>
                     <button className="cd-btn-delete" onClick={next}>
-                      Delete &rarr;
+                      {confirmLabel ? `${confirmLabel} →` : 'Delete →'}
                     </button>
                   </div>
                 </motion.div>
@@ -83,16 +85,22 @@ export default function ConfirmDialog() {
 
                   <h2 id="cd-title" className="cd-title cd-title-danger">Are you absolutely sure?</h2>
                   <p id="cd-desc" className="cd-desc">
-                    This action <strong style={{ color: 'var(--accent-red)' }}>cannot be undone</strong>.
-                    The data will be permanently removed and cannot be recovered.
+                    {isDeleteAction ? (
+                      <>
+                        This action <strong style={{ color: 'var(--accent-red)' }}>cannot be undone</strong>.
+                        The data will be permanently removed and cannot be recovered.
+                      </>
+                    ) : (
+                      'Please confirm that you want to proceed. This action will take effect immediately.'
+                    )}
                   </p>
 
                   <div className="cd-actions">
                     <button className="cd-btn-cancel cd-btn-cancel-lg" onClick={cancel}>
-                      No, keep it
+                      {isDeleteAction ? 'No, keep it' : 'Cancel'}
                     </button>
                     <button className="cd-btn-final" onClick={accept}>
-                      Yes, permanently delete
+                      {confirmLabel ? `Yes, ${confirmLabel.toLowerCase()}` : 'Yes, permanently delete'}
                     </button>
                   </div>
                 </motion.div>

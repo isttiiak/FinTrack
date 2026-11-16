@@ -39,7 +39,7 @@ export default function SmartAmountInput({
   disabled,
   id,
 }: SmartAmountInputProps) {
-  const [rawText, setRawText] = useState(value != null ? String(value) : '')
+  const [rawText, setRawText] = useState(value != null && !Number.isNaN(value) ? String(value) : '')
   const [focused, setFocused] = useState(false)
   const lastEmitted = useRef(value)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -47,8 +47,8 @@ export default function SmartAmountInput({
   // Sync in external resets (e.g. edit-mode defaultValues) without fighting
   // this component's own emitted updates.
   useEffect(() => {
-    if (value !== lastEmitted.current) {
-      setRawText(value != null ? String(value) : '')
+    if (!Object.is(value, lastEmitted.current)) {
+      setRawText(value != null && !Number.isNaN(value) ? String(value) : '')
       lastEmitted.current = value
     }
   }, [value])
@@ -59,9 +59,12 @@ export default function SmartAmountInput({
       const rounded = round2(result.value)
       lastEmitted.current = rounded
       onChange(rounded)
-    } else {
+    } else if (result.reason === 'empty') {
       lastEmitted.current = undefined
       onChange(undefined)
+    } else {
+      lastEmitted.current = Number.NaN
+      onChange(Number.NaN)
     }
   }
 
