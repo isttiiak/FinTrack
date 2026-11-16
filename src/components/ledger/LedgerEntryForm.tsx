@@ -16,7 +16,7 @@ import './LedgerEntryForm.css'
 
 const schema = z.object({
   ledger_type:    z.enum(LEDGER_TYPES),
-  total_amount:   z.number({ error: 'Enter a valid amount' }).positive(),
+  total_amount:   z.number({ error: 'Enter a valid amount' }).positive().max(9999999999.99, 'Amount exceeds maximum limit'),
   start_date:     z.string().min(1, 'Select a date'),
   reason:         z.string().optional(),
   payment_method: z.string().optional(),

@@ -59,11 +59,10 @@ export default function SmartAmountInput({
       const rounded = round2(result.value)
       lastEmitted.current = rounded
       onChange(rounded)
-    } else if (result.reason === 'empty') {
+    } else {
       lastEmitted.current = undefined
       onChange(undefined)
     }
-    // 'invalid' | 'div-by-zero': leave the last committed value alone, let the user keep typing
   }
 
   function handleChange(text: string) {
@@ -105,7 +104,9 @@ export default function SmartAmountInput({
     })
   }
 
-  const preview = hasOperator(rawText) ? evaluate(rawText) : null
+  const evalResult = evaluate(rawText)
+  const preview = hasOperator(rawText) ? evalResult : null
+  const invalidOnBlur = !focused && rawText.trim().length > 0 && !evalResult.ok
 
   return (
     <div className="sai-wrap">
@@ -140,7 +141,11 @@ export default function SmartAmountInput({
         </div>
       )}
 
-      {preview && (
+      {invalidOnBlur ? (
+        <p className="sai-error-hint" style={{ fontSize: 11, color: 'var(--accent-red)', margin: '4px 0 0' }}>
+          Invalid expression — finish typing or clear
+        </p>
+      ) : preview && (
         <p className={cn('sai-preview', !preview.ok && 'sai-preview-error')}>
           {preview.ok
             ? `= ${round2(preview.value)}`

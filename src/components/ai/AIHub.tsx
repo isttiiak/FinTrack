@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
+import { Link } from '@tanstack/react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sparkles, Send, AlertCircle, RefreshCw, Settings } from 'lucide-react'
 import { groqChat, isGroqConfigured, getGroqModel } from '@/lib/groq'
@@ -195,9 +196,9 @@ export default function AIHub({ selectedMonth }: { selectedMonth: string }) {
           Get smart spending analysis powered by Groq (free, no credit card needed).
           <br />Add your free API key in <strong>Settings → AI Insights</strong>.
         </p>
-        <a href="/settings" className="aih-setup-link">
+        <Link to="/settings" className="aih-setup-link">
           <Settings size={14} /> Go to Settings
-        </a>
+        </Link>
       </motion.div>
     )
   }

@@ -378,7 +378,10 @@ function EditableList({ items, onChange, onReset, placeholder, toDisplay = (v) =
   }
   function addItem() {
     const val = newVal.trim(); if (!val) return
-    onChange([...items, toStored(val)])
+    const stored = toStored(val)
+    if (!items.some((x) => x.toLowerCase() === stored.toLowerCase())) {
+      onChange([...items, stored])
+    }
     setAdding(false); setNewVal('')
   }
 

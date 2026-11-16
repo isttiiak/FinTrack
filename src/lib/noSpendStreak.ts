@@ -1,7 +1,9 @@
 import type { Transaction } from '@/types/expense.types'
-import { toISODateString } from '@/lib/utils'
+import { parseDate, toISODateString } from '@/lib/utils'
 
 export function computeNoSpendStreak(transactions: Transaction[], today: Date = new Date()): number {
+  if (transactions.length === 0) return 0
+
   const spendDays = new Set(
     transactions
       .filter((t) => t.type === 'Expense')
@@ -11,10 +13,10 @@ export function computeNoSpendStreak(transactions: Transaction[], today: Date = 
   let streak = 0
 
   // Count back from today; stop at earliest known transaction date (no hard cap)
-  const earliest = transactions.length > 0
-    ? transactions.reduce((min, t) => (t.txn_date < min ? t.txn_date : min), toISODateString(today))
-    : toISODateString(today)
-  const maxDays = Math.ceil((today.getTime() - new Date(earliest).getTime()) / (1000 * 60 * 60 * 24)) + 2
+  const earliest = transactions.reduce((min, t) => (t.txn_date < min ? t.txn_date : min), toISODateString(today))
+  const todayStart = parseDate(toISODateString(today))
+  const earliestDate = parseDate(earliest)
+  const maxDays = Math.max(1, Math.round((todayStart.getTime() - earliestDate.getTime()) / (1000 * 60 * 60 * 24)) + 1)
 
   for (let i = 0; i < maxDays; i++) {
     const d = new Date(today)

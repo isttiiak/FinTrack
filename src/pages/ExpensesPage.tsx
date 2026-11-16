@@ -138,26 +138,34 @@ export default function ExpensesPage() {
     return transactions.filter((t) => t.category?.main_group === groupFilter)
   }, [transactions, groupFilter])
 
-  const { totalExpense, totalIncome, categorySpend } = useMemo(() => {
+  const monthlyCategorySpend = useMemo(() => {
+    const spend: Record<string, number> = {}
+    for (const t of allTxns) {
+      if (t.type === 'Expense' && t.category_id && t.txn_date >= monthFrom && t.txn_date <= monthTo) {
+        spend[t.category_id] = (spend[t.category_id] ?? 0) + t.amount
+      }
+    }
+    return spend
+  }, [allTxns, monthFrom, monthTo])
+
+  const { totalExpense, totalIncome } = useMemo(() => {
     let totalExpense = 0
     let totalIncome = 0
-    const categorySpend: Record<string, number> = {}
 
     for (const t of transactions) {   // always full-month totals, group filter only narrows the list
       if (t.type === 'Expense') {
         totalExpense += t.amount
-        if (t.category_id) categorySpend[t.category_id] = (categorySpend[t.category_id] ?? 0) + t.amount
       } else {
         totalIncome += t.amount
       }
     }
 
-    return { totalExpense, totalIncome, categorySpend }
+    return { totalExpense, totalIncome }
   }, [transactions])
 
   const budgetsWithSpend = budgets.map((b) => ({
     ...b,
-    spent: categorySpend[b.category_id] ?? 0,
+    spent: monthlyCategorySpend[b.category_id] ?? 0,
   })).filter((b) => b.effective_limit > 0)
 
   const isCurrentMonth = !rangeMode && month === `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`

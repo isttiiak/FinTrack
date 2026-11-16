@@ -22,7 +22,7 @@ const schema = z.object({
   new_person_name:     z.string().optional(),
   new_person_relation: z.string().optional(),   // for new person
   new_person_phone:    z.string().optional(),   // for new person
-  total_amount:        z.number({ error: 'Enter a valid amount' }).positive(),
+  total_amount:        z.number({ error: 'Enter a valid amount' }).positive().max(9999999999.99, 'Amount exceeds maximum limit'),
   start_date:          z.string().min(1, 'Select a date'),
   reason:              z.string().optional(),
   payment_method:      z.string().optional(),

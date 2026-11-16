@@ -14,7 +14,7 @@ import type { Investment, InvestmentReturn } from '@/types/investment.types'
 import './ReturnForm.css'
 
 const schema = z.object({
-  amount:         z.number().positive('Enter a valid amount'),
+  amount:         z.number().positive('Enter a valid amount').max(9999999999.99, 'Amount exceeds maximum limit'),
   return_date:    z.string().min(1, 'Select a date'),
   return_type:    z.enum(RETURN_TYPES).optional(),
   payment_method: z.string().optional(),
