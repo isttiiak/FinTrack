@@ -74,10 +74,11 @@ interface SettlementListProps {
   members: HouseholdMember[]
   meId: string | null
   currency: string
+  onEdit?: (s: HouseholdSettlement) => void
   onDelete: (s: HouseholdSettlement) => void
 }
 
-export function SettlementList({ settlements, members, meId, currency, onDelete }: SettlementListProps) {
+export function SettlementList({ settlements, members, meId, currency, onEdit, onDelete }: SettlementListProps) {
   const nameOf = (id: string) => (id === meId ? 'You' : members.find((m) => m.id === id)?.name ?? 'Someone')
 
   if (settlements.length === 0) {
@@ -95,6 +96,9 @@ export function SettlementList({ settlements, members, meId, currency, onDelete 
             </span>
             <span className="hh-row-right" style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <span className="hh-row-amount">{formatMoney(s.amount, currency)}</span>
+              {onEdit && (
+                <button className="hh-ghost-btn" onClick={() => onEdit(s)} aria-label="Edit payment"><Pencil size={13} /></button>
+              )}
               <button className="hh-ghost-btn hh-danger" onClick={() => onDelete(s)} aria-label="Delete payment"><Trash2 size={13} /></button>
             </span>
           </div>

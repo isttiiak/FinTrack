@@ -41,7 +41,7 @@ export default function HouseholdPage() {
   }, [inviteCode, navigate])
   const [tab, setTab] = useState<Tab>('expenses')
   const [expenseForm, setExpenseForm] = useState<{ editing: SharedExpense | null } | null>(null)
-  const [settleForm, setSettleForm] = useState<{ initial?: { from: string; to: string; amount: number } } | null>(null)
+  const [settleForm, setSettleForm] = useState<{ initial?: { from: string; to: string; amount: number }; editing?: HouseholdSettlement | null } | null>(null)
 
   const activeId = households.some((h) => h.id === selectedId) ? selectedId : households[0]?.id ?? null
   const detailQ = useHouseholdDetail(activeId)
@@ -207,6 +207,7 @@ export default function HouseholdPage() {
               members={detail.members}
               meId={meId}
               currency={detail.household.currency}
+              onEdit={(s) => setSettleForm({ editing: s })}
               onDelete={handleDeleteSettlement}
             />
           )}
@@ -236,10 +237,12 @@ export default function HouseholdPage() {
         )}
         {detail && settleForm && (
           <SettleForm
+            key={settleForm.editing?.id ?? 'new'}
             household={detail.household}
             members={detail.members}
             meId={meId}
             initial={settleForm.initial}
+            editing={settleForm.editing}
             onClose={() => setSettleForm(null)}
           />
         )}

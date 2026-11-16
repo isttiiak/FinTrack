@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
 import { useCreateHousehold, useJoinHousehold, lookupInvite } from '@/hooks/useHousehold'
 import { CURRENCIES } from '@/lib/constants'
+import { getActiveCurrency } from '@/lib/utils'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import { normalizeInviteCode } from '@/lib/householdInvite'
 
@@ -22,7 +23,11 @@ export default function HouseholdSetup({ initialCode, onDone }: HouseholdSetupPr
   const { mutateAsync: join, isPending: joining } = useJoinHousehold()
 
   const [name, setName] = useState('')
-  const [currency, setCurrency] = useState<string>(profileCurrency ?? 'USD')
+  const [currency, setCurrency] = useState<string>(() => profileCurrency ?? getActiveCurrency())
+
+  useEffect(() => {
+    if (profileCurrency) setCurrency(profileCurrency)
+  }, [profileCurrency])
 
   const [code, setCode] = useState(initialCode ?? '')
   const [invite, setInvite] = useState<{ name: string; members: { id: string; name: string }[] } | null>(null)

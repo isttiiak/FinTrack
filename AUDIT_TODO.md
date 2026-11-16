@@ -450,15 +450,15 @@
 
 ### Category 3: Household (`fix/cat-3-household`)
 
-- [ ] **3.1 Interactive Demo Mode CRUD for Household**
+- [x] **3.1 Interactive Demo Mode CRUD for Household**
   - **Files:** `src/stores/demoStore.ts`, `src/hooks/useHousehold.ts`
-- [ ] **3.2 `SharedExpenseForm` & `SettleForm`: `SmartAmountInput`, `useModalA11y`, date/max validation & negative share check**
+- [x] **3.2 `SharedExpenseForm` & `SettleForm`: `SmartAmountInput`, `useModalA11y`, date/max validation & negative share check**
   - **Files:** `src/components/household/SharedExpenseForm.tsx`, `src/components/household/SettleForm.tsx`
-- [ ] **3.3 Confirmation dialogs in `MembersPanel` (remove member & rotate invite code)**
+- [x] **3.3 Confirmation dialogs in `MembersPanel` (remove member & rotate invite code)**
   - **Files:** `src/components/household/MembersPanel.tsx`
-- [ ] **3.4 Edit recorded settlements in `SettlementList` & `SettleForm`**
+- [x] **3.4 Edit recorded settlements in `SettlementList` & `SettleForm`**
   - **Files:** `supabase/migrations/019_household_settlement_update.sql`, `src/hooks/useHousehold.ts`, `src/components/household/SettleForm.tsx`, `src/components/household/SharedExpenseList.tsx`, `src/pages/HouseholdPage.tsx`
-- [ ] **3.5 `HouseholdSetup` currency default & async profile sync**
+- [x] **3.5 `HouseholdSetup` currency default & async profile sync**
   - **Files:** `src/components/household/HouseholdSetup.tsx`
 
 ### Category 4: Expenses & Recurring (`fix/cat-4-expenses-recurring`)

@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { splitEqual, computeBalances, suggestSettlements, positionOn, formatMoney } from '@/lib/household'
+import { DEMO_HOUSEHOLD, DEMO_MEMBER_ID } from '@/lib/demoHousehold'
+import { useDemoStore } from '@/stores/demoStore'
 
 const sum = (xs: number[]) => Math.round(xs.reduce((a, b) => a + b, 0) * 100) / 100
 
@@ -96,5 +98,52 @@ describe('formatMoney', () => {
   })
   it('keeps the taka sign for BDT', () => {
     expect(formatMoney(1250.5, 'BDT')).toBe('৳1,250.50')
+  })
+})
+
+describe('demoStore household CRUD', () => {
+  it('supports creating, updating, deleting household items and enforces member FK check', () => {
+    const store = useDemoStore.getState()
+    store.enterDemo()
+    const seedId = DEMO_HOUSEHOLD.household.id
+    expect(useDemoStore.getState().households[seedId]).toBeDefined()
+
+    // Save & edit settlement
+    useDemoStore.getState().saveSettlement({
+      household_id: seedId,
+      from_member: 'demo-m2',
+      to_member: DEMO_MEMBER_ID,
+      amount: 50,
+      settled_on: '2026-09-20',
+      note: 'Lunch payback',
+    })
+    const added = useDemoStore.getState().households[seedId].settlements[0]
+    expect(added.amount).toBe(50)
+
+    useDemoStore.getState().saveSettlement({
+      id: added.id,
+      household_id: seedId,
+      from_member: 'demo-m2',
+      to_member: DEMO_MEMBER_ID,
+      amount: 75,
+      settled_on: '2026-09-20',
+      note: 'Adjusted',
+    })
+    expect(useDemoStore.getState().households[seedId].settlements.find((s) => s.id === added.id)?.amount).toBe(75)
+
+    // Referenced member removal throws FK code 23503
+    expect(() =>
+      useDemoStore.getState().removeHouseholdMember({ id: 'demo-m2', householdId: seedId }),
+    ).toThrow(/referenced/i)
+
+    // Adding & removing unreferenced member succeeds
+    useDemoStore.getState().addHouseholdMember({ householdId: seedId, name: 'Alex' })
+    const alex = useDemoStore.getState().households[seedId].members.find((m) => m.name === 'Alex')!
+    expect(alex).toBeDefined()
+    useDemoStore.getState().removeHouseholdMember({ id: alex.id, householdId: seedId })
+    expect(useDemoStore.getState().households[seedId].members.find((m) => m.id === alex.id)).toBeUndefined()
+
+    store.exitDemo()
+    expect(Object.keys(useDemoStore.getState().households)).toHaveLength(0)
   })
 })

@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { X } from 'lucide-react'
+import SmartAmountInput from '@/components/common/SmartAmountInput'
 import { scaleIn } from '@/lib/animations'
 import { round2, toISODateString } from '@/lib/utils'
 import { formatMoney, splitEqual } from '@/lib/household'
 import { useSaveSharedExpense } from '@/hooks/useHousehold'
+import { useModalA11y } from '@/hooks/useModalA11y'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import type { Household, HouseholdMember, SharedExpense } from '@/types/household.types'
 
@@ -26,11 +28,12 @@ function wasEqual(e: SharedExpense): boolean {
 }
 
 export default function SharedExpenseForm({ household, members, meId, editing, onClose }: SharedExpenseFormProps) {
+  useModalA11y(onClose)
   const { mutateAsync: save, isPending } = useSaveSharedExpense()
   const fmt = (n: number) => formatMoney(n, household.currency)
 
   const [description, setDescription] = useState(editing?.description ?? '')
-  const [amount, setAmount] = useState(editing ? String(editing.amount) : '')
+  const [amount, setAmount] = useState<number | undefined>(editing?.amount)
   const [date, setDate] = useState(editing?.expense_date ?? toISODateString(new Date()))
   const [paidBy, setPaidBy] = useState(editing?.paid_by ?? meId ?? members[0]?.id ?? '')
   const [category, setCategory] = useState(editing?.category ?? '')
@@ -44,7 +47,8 @@ export default function SharedExpenseForm({ household, members, meId, editing, o
   )
   const [submitted, setSubmitted] = useState(false)
 
-  const amountNum = round2(Number(amount) || 0)
+  const amountNaN = typeof amount === 'number' && Number.isNaN(amount)
+  const amountNum = typeof amount === 'number' && !Number.isNaN(amount) ? round2(amount) : 0
 
   const splits = useMemo(() => {
     if (mode === 'equal') {
@@ -57,14 +61,35 @@ export default function SharedExpenseForm({ household, members, meId, editing, o
       .filter((s) => s.share > 0)
   }, [mode, members, included, custom, amountNum])
 
+  const hasNegativeCustom = mode === 'custom' && members.some((m) => {
+    const raw = custom[m.id]
+    return raw !== undefined && raw !== '' && Number(raw) < 0
+  })
+
   const assigned = round2(splits.reduce((sum, s) => sum + s.share, 0))
   const remaining = round2(amountNum - assigned)
 
   let error = ''
   if (!description.trim()) error = 'Add a description'
-  else if (amountNum <= 0) error = 'Enter an amount greater than zero'
+  else if (amountNaN) error = 'Invalid calculation'
+  else if (amountNum <= 0) error = 'Enter an amount greater than 0'
+  else if (amountNum > 9999999999.99) error = 'Amount is too large'
+  else if (!date.trim()) error = 'Date is required'
+  else if (hasNegativeCustom) error = 'Custom split amounts cannot be negative'
   else if (splits.length === 0) error = 'Pick at least one person to split with'
   else if (remaining !== 0) error = remaining > 0 ? `${fmt(remaining)} still unassigned` : `Shares are ${fmt(-remaining)} over the amount`
+
+  function switchToCustom() {
+    const hasCustomValues = Object.values(custom).some((v) => v.trim() !== '')
+    if (!hasCustomValues && amountNum > 0) {
+      const ids = members.filter((m) => included.has(m.id)).map((m) => m.id)
+      if (ids.length > 0) {
+        const shares = splitEqual(amountNum, ids.length)
+        setCustom(Object.fromEntries(ids.map((id, i) => [id, String(shares[i])])))
+      }
+    }
+    setMode('custom')
+  }
 
   function toggle(id: string) {
     setIncluded((cur) => {
@@ -114,7 +139,14 @@ export default function SharedExpenseForm({ household, members, meId, editing, o
           <div className="hh-two">
             <div className="hh-field">
               <label className="hh-label" htmlFor="hx-amount">Amount ({household.currency})</label>
-              <input id="hx-amount" className="hh-input" type="number" inputMode="decimal" min="0" step="any" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" />
+              <SmartAmountInput
+                id="hx-amount"
+                className="hh-input"
+                value={amount}
+                onChange={setAmount}
+                error={submitted && (amountNaN || amountNum <= 0 || amountNum > 9999999999.99)}
+                placeholder="0.00"
+              />
             </div>
             <div className="hh-field">
               <label className="hh-label" htmlFor="hx-date">Date</label>
@@ -142,7 +174,7 @@ export default function SharedExpenseForm({ household, members, meId, editing, o
             <span className="hh-label">Split</span>
             <div className="hh-seg">
               <button type="button" className={mode === 'equal' ? 'hh-seg-active' : ''} onClick={() => setMode('equal')}>Equally</button>
-              <button type="button" className={mode === 'custom' ? 'hh-seg-active' : ''} onClick={() => setMode('custom')}>Custom amounts</button>
+              <button type="button" className={mode === 'custom' ? 'hh-seg-active' : ''} onClick={switchToCustom}>Custom amounts</button>
             </div>
             <div>
               {members.map((m) => {
