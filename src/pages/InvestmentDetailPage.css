@@ -149,6 +149,13 @@
   color: var(--accent-primary);
   border-color: rgba(79, 169, 129, 0.3);
 }
+.idp-action-delete {
+  color: var(--accent-red);
+}
+.idp-action-delete:hover {
+  background: rgba(194, 91, 85, 0.12);
+  border-color: rgba(194, 91, 85, 0.3);
+}
 
 /* KPIs */
 .idp-kpis {
@@ -399,6 +406,30 @@
   font-size: 11px;
   color: var(--accent-teal);
 }
+.idp-row-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 9px;
+  border-radius: 7px;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+}
+.idp-row-edit-btn:hover {
+  background: rgba(79, 169, 129, 0.1);
+  color: var(--accent-primary);
+  border-color: rgba(79, 169, 129, 0.3);
+}
 .idp-del-btn {
   width: 26px;
   height: 26px;
@@ -415,25 +446,6 @@
 .idp-del-btn:hover {
   background: rgba(194, 91, 85, 0.1);
   color: var(--accent-red);
-}
-
-.idp-skeleton-hero {
-  height: 110px;
-  border-radius: 16px;
-  margin-bottom: 16px;
-  background: linear-gradient(
-    90deg,
-    var(--bg-card) 25%,
-    var(--bg-elevated) 50%,
-    var(--bg-card) 75%
-  );
-  background-size: 200% 100%;
-  animation: investmentdetailpage-shimmer 1.5s infinite;
-}
-@keyframes investmentdetailpage-shimmer {
-  to {
-    background-position: -200% 0;
-  }
 }
 
 .idp-chart-card {

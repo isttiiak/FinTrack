@@ -472,11 +472,11 @@
 
 ### Category 5: Investments (`fix/cat-5-investments`)
 
-- [ ] **5.1 Open-ended investments (`committed_amount == null`) display fixes**
+- [x] **5.1 Open-ended investments (`committed_amount == null`) display fixes**
   - **Files:** `src/pages/InvestmentDetailPage.tsx`, `src/components/investments/InvestmentTransactionLogs.tsx`
-- [ ] **5.2 `InvestmentPaymentForm` overpayment warning on edit**
+- [x] **5.2 `InvestmentPaymentForm` overpayment warning on edit**
   - **Files:** `src/components/investments/InvestmentPaymentForm.tsx`
-- [ ] **5.3 Investment detail & transaction logs CSS, same-date sort order & payment method metadata**
+- [x] **5.3 Investment detail & transaction logs CSS, same-date sort order & payment method metadata**
   - **Files:** `src/pages/InvestmentDetailPage.css`, `src/pages/InvestmentDetailPage.tsx`, `src/components/investments/InvestmentTransactionLogs.css`, `src/components/investments/InvestmentTransactionLogs.tsx`
 
 ### Category 6: Navigation, Analytics & Settings (`fix/cat-6-nav-analytics-settings`)

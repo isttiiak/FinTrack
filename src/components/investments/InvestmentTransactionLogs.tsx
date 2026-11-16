@@ -3,25 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Filter, ArrowUpRight, ArrowDownRight, Edit2 } from 'lucide-react'
 import DeleteButton from '@/components/common/DeleteButton'
 import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatPaymentMeta } from '@/lib/region'
+import { buildInvestmentLogRows, type InvestmentLogRow as TxRow } from '@/lib/investmentAnalytics'
 import { useDeleteInvestmentPayment, useDeleteReturn } from '@/hooks/useInvestments'
 import InvestmentPaymentForm from './InvestmentPaymentForm'
 import ReturnForm from './ReturnForm'
 import { fadeUp } from '@/lib/animations'
 import type { Investment, InvestmentPayment, InvestmentReturn } from '@/types/investment.types'
 import './InvestmentTransactionLogs.css'
-
-interface TxRow {
-  id: string
-  invId: string
-  invName: string
-  txType: 'Payment Out' | 'Return In'
-  returnType: string | null
-  date: string
-  amount: number
-  remainingToPay: number   // after this payment/return
-  cumulativePL: number     // running profit/loss
-  notes: string | null
-}
 
 export default function InvestmentTransactionLogs({ investments }: { investments: Investment[] }) {
   const { mutate: deletePayment } = useDeleteInvestmentPayment()
@@ -45,49 +34,7 @@ export default function InvestmentTransactionLogs({ investments }: { investments
     }
   }
 
-  const allRows = useMemo((): TxRow[] => {
-    const rows: TxRow[] = []
-
-    for (const inv of investments) {
-      const committed = inv.committed_amount ?? 0
-
-      // Build chronological transactions
-      const paymentRows = (inv.payments ?? []).map((p) => ({
-        id: p.id, date: p.payment_date, amount: p.amount, type: 'Payment Out' as const, returnType: null, notes: p.notes,
-      }))
-      const returnRows = (inv.returns ?? []).map((r) => ({
-        id: r.id, date: r.return_date, amount: r.amount, type: 'Return In' as const, returnType: r.return_type, notes: r.notes,
-      }))
-
-      const all = [...paymentRows, ...returnRows].sort((a, b) => a.date.localeCompare(b.date))
-
-      let totalPaid = 0
-      let totalReturned = 0
-
-      for (const tx of all) {
-        if (tx.type === 'Payment Out') totalPaid += tx.amount
-        else totalReturned += tx.amount
-
-        const remainingToPay = Math.max(0, committed - totalPaid)
-        const cumulativePL = totalReturned - totalPaid
-
-        rows.push({
-          id:             tx.id,
-          invId:          inv.id,
-          invName:        inv.name,
-          txType:         tx.type,
-          returnType:     tx.returnType,
-          date:           tx.date,
-          amount:         tx.amount,
-          remainingToPay,
-          cumulativePL,
-          notes:          tx.notes,
-        })
-      }
-    }
-
-    return rows.sort((a, b) => b.date.localeCompare(a.date))
-  }, [investments])
+  const allRows = useMemo(() => buildInvestmentLogRows(investments), [investments])
 
   const filtered = filterInv ? allRows.filter((r) => r.invId === filterInv) : allRows
 
@@ -180,7 +127,10 @@ export default function InvestmentTransactionLogs({ investments }: { investments
           <span></span>
         </div>
 
-        {filtered.map((row) => (
+        {filtered.map((row) => {
+          const methodMeta = formatPaymentMeta(row.paymentMethod, row.account)
+          const details = [methodMeta, row.notes].filter(Boolean).join(' · ')
+          return (
           <motion.div key={`${row.txType}-${row.id}`} className="itl-row" initial={{ opacity: 0 }} animate={{ opacity: 1 }} layout>
             {/* Investment name */}
             <div className="itl-cell">
@@ -210,7 +160,9 @@ export default function InvestmentTransactionLogs({ investments }: { investments
 
             {/* Remaining to pay */}
             <div className="itl-cell" data-label="Remaining due">
-              {row.remainingToPay > 0 ? (
+              {row.remainingToPay === null ? (
+                <span className="itl-cell-muted">—</span>
+              ) : row.remainingToPay > 0 ? (
                 <span className="itl-remaining">{formatCurrency(row.remainingToPay)}</span>
               ) : (
                 <span className="itl-remaining-zero">Fully paid</span>
@@ -226,7 +178,7 @@ export default function InvestmentTransactionLogs({ investments }: { investments
 
             {/* Notes */}
             <div className="itl-cell" data-label="Notes">
-              <span className="itl-cell-muted">{row.notes ?? '—'}</span>
+              <span className="itl-cell-muted">{details || '—'}</span>
             </div>
 
             {/* Edit / Delete */}
@@ -241,7 +193,8 @@ export default function InvestmentTransactionLogs({ investments }: { investments
               />
             </div>
           </motion.div>
-        ))}
+          )
+        })}
       </div>
 
       <AnimatePresence>

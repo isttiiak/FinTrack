@@ -34,6 +34,14 @@ export function formatPaymentMethod(method: string): string {
   return method.startsWith(WALLET_PREFIX) ? method.slice(WALLET_PREFIX.length) : method
 }
 
+/** Combine formatted payment method and distinct account label for compact metadata display. */
+export function formatPaymentMeta(method?: string | null, account?: string | null): string | null {
+  const methodLabel = method ? formatPaymentMethod(method) : null
+  const accountLabel = account && account !== method ? account : null
+  const parts = [methodLabel, accountLabel].filter(Boolean)
+  return parts.length > 0 ? parts.join(' · ') : null
+}
+
 // ── Detection (used once, on a new account's first sign-in) ──────────────
 
 // ISO 3166 country → ISO 4217 currency for the countries FinTrack users most
