@@ -3,21 +3,20 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
-import { useDemoGuard, DemoBlockedError } from '@/hooks/useDemoGuard'
 import type { Category } from '@/types/expense.types'
 import type { TxnType } from '@/lib/constants'
 
 export function useCategories(type?: TxnType) {
   const userId = useAuthStore((s) => s.user?.id)
   const isDemo = useDemoStore((s) => s.isDemo)
-  const demoCategories = useDemoStore((s) => s.categories)
 
   return useQuery({
     queryKey: ['categories', userId, type],
     enabled: isDemo || !!userId,
     queryFn: async (): Promise<Category[]> => {
       if (isDemo) {
-        return type ? demoCategories.filter((c) => c.type === type) : demoCategories
+        const cats = useDemoStore.getState().categories
+        return type ? cats.filter((c) => c.type === type) : cats
       }
       const query = supabase
         .from('categories')
@@ -38,11 +37,19 @@ export function useCreateCategory() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (cat: Omit<Category, 'id' | 'user_id' | 'created_at'>) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        const created: Category = {
+          ...cat,
+          id: `demo-cat-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          user_id: 'demo',
+          created_at: new Date().toISOString(),
+        }
+        useDemoStore.getState().addCategory(created)
+        return created
+      }
       const { data, error } = await supabase
         .from('categories')
         .insert({ ...cat, user_id: userId! })
@@ -53,7 +60,6 @@ export function useCreateCategory() {
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['categories'] }),
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })
@@ -72,17 +78,18 @@ export function useUpdateCategory() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async ({ id, ...fields }: Partial<Category> & { id: string }) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        useDemoStore.getState().updateCategory(id, fields)
+        return
+      }
       const { error } = await supabase.from('categories').update(fields).eq('id', id).eq('user_id', userId!)
       if (error) throw error
     },
     onSuccess: () => invalidateCategoryViews(qc),
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })
@@ -92,17 +99,18 @@ export function useDeleteCategory() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (id: string) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        useDemoStore.getState().removeCategory(id)
+        return
+      }
       const { error } = await supabase.from('categories').delete().eq('id', id).eq('user_id', userId!)
       if (error) throw error
     },
     onSuccess: () => invalidateCategoryViews(qc),
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })
@@ -112,11 +120,13 @@ export function useRenameMainGroup() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async ({ oldName, newName }: { oldName: string; newName: string }) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        useDemoStore.getState().renameMainGroup(oldName, newName)
+        return
+      }
       const { error } = await supabase
         .from('categories')
         .update({ main_group: newName })
@@ -126,7 +136,6 @@ export function useRenameMainGroup() {
     },
     onSuccess: () => invalidateCategoryViews(qc),
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })
@@ -136,11 +145,13 @@ export function useDeleteMainGroup() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (groupName: string) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        useDemoStore.getState().deleteMainGroup(groupName)
+        return
+      }
       const { error } = await supabase
         .from('categories')
         .delete()
@@ -150,7 +161,6 @@ export function useDeleteMainGroup() {
     },
     onSuccess: () => invalidateCategoryViews(qc),
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })

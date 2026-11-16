@@ -5,7 +5,6 @@ import { useDemoStore } from '@/stores/demoStore'
 import type { Transaction, TransactionFilters } from '@/types/expense.types'
 import { resolveDateRange } from '@/lib/utils'
 import { useUIStore } from '@/stores/uiStore'
-import { useDemoGuard, DemoBlockedError } from '@/hooks/useDemoGuard'
 import { toastWithUndo } from '@/lib/undo'
 
 export function useExpenses(filters?: TransactionFilters) {
@@ -117,7 +116,6 @@ export function useUpdateExpense() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     // Snapshot the row from the cache first, so the success toast can offer
@@ -130,7 +128,11 @@ export function useUpdateExpense() {
       return { previous: undefined as Transaction | undefined }
     },
     mutationFn: async ({ id, ...txn }: Partial<Transaction> & { id: string }) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        const updated = useDemoStore.getState().updateTransaction(id, txn)
+        if (!updated) throw new Error('Transaction not found')
+        return updated
+      }
       const { data, error } = await supabase
         .from('transactions')
         .update(txn)
@@ -146,20 +148,24 @@ export function useUpdateExpense() {
       const prev = ctx?.previous
       if (!prev) { addToast({ type: 'success', message: 'Transaction updated' }); return }
       toastWithUndo(addToast, 'Transaction updated', async () => {
-        const { error } = await supabase
-          .from('transactions')
-          .update({
-            type: prev.type, amount: prev.amount, category_id: prev.category_id, description: prev.description,
-            txn_date: prev.txn_date, payment_method: prev.payment_method, account: prev.account,
-          })
-          .eq('id', prev.id)
-          .eq('user_id', userId!)
-        if (error) throw error
+        const rollback = {
+          type: prev.type, amount: prev.amount, category_id: prev.category_id, description: prev.description,
+          txn_date: prev.txn_date, payment_method: prev.payment_method, account: prev.account,
+        }
+        if (useDemoStore.getState().isDemo) {
+          useDemoStore.getState().updateTransaction(prev.id, rollback)
+        } else {
+          const { error } = await supabase
+            .from('transactions')
+            .update(rollback)
+            .eq('id', prev.id)
+            .eq('user_id', userId!)
+          if (error) throw error
+        }
         qc.invalidateQueries({ queryKey: ['expenses'] })
       }, 'Change undone')
     },
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })
@@ -169,11 +175,13 @@ export function useDeleteExpense() {
   const qc = useQueryClient()
   const userId = useAuthStore((s) => s.user?.id)
   const addToast = useUIStore((s) => s.addToast)
-  const guardDemo = useDemoGuard()
 
   return useMutation({
     mutationFn: async (id: string) => {
-      guardDemo()
+      if (useDemoStore.getState().isDemo) {
+        useDemoStore.getState().removeTransaction(id)
+        return
+      }
       const { error } = await supabase
         .from('transactions')
         .delete()
@@ -185,7 +193,6 @@ export function useDeleteExpense() {
       qc.invalidateQueries({ queryKey: ['expenses'] })
     },
     onError: (err: Error) => {
-      if (err instanceof DemoBlockedError) return
       addToast({ type: 'error', message: err.message })
     },
   })

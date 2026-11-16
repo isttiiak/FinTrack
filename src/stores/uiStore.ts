@@ -34,6 +34,7 @@ export interface Toast {
 }
 
 let toastCounter = 0
+const toastTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
 export const useUIStore = create<UIState>((set) => ({
   // false: only gates the mobile drawer transform (see Sidebar.tsx's
@@ -69,11 +70,20 @@ export const useUIStore = create<UIState>((set) => ({
     set((s) => ({ toasts: [...s.toasts, { ...toast, id }] }))
     const duration = toast.duration ?? 4000
     if (duration > 0) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
+        toastTimers.delete(id)
         set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }))
       }, duration)
+      toastTimers.set(id, timer)
     }
   },
 
-  removeToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
+  removeToast: (id) => {
+    const timer = toastTimers.get(id)
+    if (timer) {
+      clearTimeout(timer)
+      toastTimers.delete(id)
+    }
+    set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }))
+  },
 }))

@@ -358,20 +358,20 @@
 
 **Goal:** Fix broken `pnpm lint`, untrack `supabase/.temp/`, split the 2.07 MB bundle so initial load is fast and well below Workbox's 2 MiB precache limit, and add GitHub Actions CI + Vitest unit tests.
 
-- [ ] **5.1 Fix ESLint v9 flat config & `pnpm lint`**
+- [x] **5.1 Fix ESLint v9 flat config & `pnpm lint`**
   - **Files:** `eslint.config.js`, `package.json`
   - **Tasks:**
     - Install `@eslint/js`, `typescript-eslint`, `eslint-plugin-react-hooks`, `eslint-plugin-react-refresh`, and `globals` (or configure flat config with installed packages), create `eslint.config.js`, update `"lint": "eslint . --max-warnings 0"` in `package.json`, and ensure `pnpm lint` exits with `0`.
-- [ ] **5.2 Untrack `supabase/.temp/` and update `.gitignore`**
+- [x] **5.2 Untrack `supabase/.temp/` and update `.gitignore`**
   - **Files:** `.gitignore`, `supabase/.temp/*`
   - **Tasks:**
     - Add `supabase/.temp/` to `.gitignore` and run `git rm -r --cached supabase/.temp`.
-- [ ] **5.3 Code-split routes in `src/App.tsx` and configure `manualChunks` in `vite.config.ts`**
+- [x] **5.3 Code-split routes in `src/App.tsx` and configure `manualChunks` in `vite.config.ts`**
   - **Files:** `src/App.tsx`, `vite.config.ts`
   - **Tasks:**
     - Lazy-load route page components in `src/App.tsx` with `React.lazy` + `<Suspense>`.
     - Configure `build.rollupOptions.output.manualChunks` in `vite.config.ts` to separate `recharts`, `xlsx`, `supabase`, and `framer-motion` into dedicated vendor chunks so no chunk exceeds 500 kB.
-- [ ] **5.4 Add GitHub Actions CI, Dependabot, `SECURITY.md`, and Vitest unit tests**
+- [x] **5.4 Add GitHub Actions CI, Dependabot, `SECURITY.md`, and Vitest unit tests**
   - **Files:** `.github/workflows/ci.yml`, `.github/dependabot.yml`, `SECURITY.md`, `package.json`, `src/lib/__tests__/calculator.test.ts`, `src/lib/__tests__/utils.test.ts`, `src/hooks/__tests__/useNoSpendStreak.test.ts`
   - **Tasks:**
     - Add `.github/workflows/ci.yml` running `pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm test`, and `pnpm build`.
@@ -384,11 +384,11 @@
 
 **Goal:** Bring modals, icon-only controls, and toast timers up to production accessibility standards.
 
-- [ ] **6.1 Modal keyboard (`Escape`), `role="dialog"`, `aria-modal="true"`, and focus management**
+- [x] **6.1 Modal keyboard (`Escape`), `role="dialog"`, `aria-modal="true"`, and focus management**
   - **Files:** `src/components/common/ConfirmDialog.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/CategoryManagerModal.tsx`, `src/components/ledger/PersonForm.tsx`, `src/components/ledger/LedgerEntryForm.tsx`, `src/components/ledger/PaymentForm.tsx`, `src/components/ledger/QuickLedgerEntry.tsx`, `src/components/investments/InvestmentForm.tsx`, `src/components/investments/InvestmentPaymentForm.tsx`, `src/components/investments/ReturnForm.tsx`
   - **Tasks:**
     - Add a shared `useModalA11y(onClose)` hook (or `<Modal>` wrapper) that handles `Escape` key closing, body scroll lock, and `role="dialog"` + `aria-modal="true"` across all 10 modal components.
-- [ ] **6.2 Add `aria-label` to all icon-only buttons & clean up `uiStore` toast timers**
+- [x] **6.2 Add `aria-label` to all icon-only buttons & clean up `uiStore` toast timers**
   - **Files:** `src/stores/uiStore.ts`, `src/components/common/DeleteButton.tsx`, `src/components/common/FloatingCalculatorPanel.tsx`, `src/pages/SettingsPage.tsx`, `src/pages/DataSettingsPage.tsx`, `src/pages/PeoplePage.tsx`, `src/pages/InvestmentsPage.tsx`
   - **Tasks:**
     - Track toast timeout IDs in a `Map<string, ReturnType<typeof setTimeout>>` in `src/stores/uiStore.ts` and clear on `removeToast`.
@@ -400,16 +400,16 @@
 
 **Goal:** High-impact user-facing improvements to existing FinTrack modules.
 
-- [ ] **7.1 Search & description filter on `ExpensesPage.tsx`**
+- [x] **7.1 Search & description filter on `ExpensesPage.tsx`**
   - **Files:** `src/pages/ExpensesPage.tsx`
   - **Tasks:** Add a search bar on `ExpensesPage` to filter transactions in real time by description, category name, main group, payment method, or account.
-- [ ] **7.2 Interactive Demo Mode CRUD across all modules**
+- [x] **7.2 Interactive Demo Mode CRUD across all modules**
   - **Files:** `src/stores/demoStore.ts`, `src/hooks/useExpenses.ts`, `src/hooks/useBudgets.ts`, `src/hooks/useCategories.ts`, `src/hooks/useLedger.ts`, `src/hooks/useInvestments.ts`
   - **Tasks:** Extend `demoStore` with in-memory update/delete/create actions for expenses, budgets, categories, persons, ledger entries/payments, and investments so visitors trying the live demo can experience full app interactivity.
-- [ ] **7.3 Richer `LedgerPayment` & `Investment` inline/modal editing**
+- [x] **7.3 Richer `LedgerPayment` & `Investment` inline/modal editing**
   - **Files:** `src/components/ledger/LedgerPaymentLogs.tsx`, `src/pages/InvestmentDetailPage.tsx`
   - **Tasks:** Allow editing `payment_date`, `payment_method`, `account`, and `notes` (not just `amount`) when editing an existing `LedgerPayment` or `InvestmentPayment`/`InvestmentReturn`.
-- [ ] **7.4 Account-to-account Transfers & per-account balance summary (Future Feature)**
+- [x] **7.4 Account-to-account Transfers & per-account balance summary (Future Feature)**
   - **Tasks:** Support `Transfer` transactions (e.g., Bank → bKash cash-in, ATM withdrawal) so internal transfers don't inflate monthly expenses/income.
-- [ ] **7.5 Recurring transactions & Investment valuation history (Future Feature)**
+- [x] **7.5 Recurring transactions & Investment valuation history (Future Feature)**
   - **Tasks:** Add recurring bill/salary templates and timestamped `investment_valuations` history for portfolio growth charts.
