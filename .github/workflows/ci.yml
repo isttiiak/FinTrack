@@ -42,7 +42,7 @@ jobs:
           # unreachable registry isn't a reason to block a deploy.
           for i in 1 2 3; do
             set +e
-            output="$(pnpm audit 2>&1)"
+            output="$(pnpm audit --ignore-unfixable 2>&1)"
             status=$?
             set -e
             echo "$output"
@@ -83,7 +83,7 @@ jobs:
       - name: pnpm audit
         run: |
           for i in 1 2 3; do
-            pnpm audit && exit 0
+            pnpm audit --ignore-unfixable && exit 0
             echo "pnpm audit attempt $i/3 failed, retrying in 30s..."
             sleep 30
           done

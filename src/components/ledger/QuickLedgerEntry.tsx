@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ChevronDown, Search, UserPlus } from 'lucide-react'
 import { scaleIn } from '@/lib/animations'
-import { cn, toISODateString, getActiveCurrencySymbol } from '@/lib/utils'
+import { cn, isSafeHttpUrl, toISODateString, getActiveCurrencySymbol } from '@/lib/utils'
 import { LEDGER_TYPES, RELATIONSHIPS } from '@/lib/constants'
 import type { PaymentMethod, Account } from '@/lib/constants'
 import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
@@ -27,7 +27,7 @@ const schema = z.object({
   reason:              z.string().optional(),
   payment_method:      z.string().optional(),
   account:             z.string().optional(),
-  doc_link:            z.string().url('Enter a valid URL').or(z.literal('')).optional(),
+  doc_link:            z.string().optional().refine((v) => !v || isSafeHttpUrl(v), 'Enter a valid http(s) URL'),
 }).refine(
   (d) => !!(d.person_id || (d.new_person_name && d.new_person_name.trim().length >= 1)),
   { message: 'Select a person or enter a new name', path: ['new_person_name'] },

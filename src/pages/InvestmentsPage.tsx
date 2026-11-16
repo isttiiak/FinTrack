@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate, isSafeHttpUrl } from '@/lib/utils'
 import { useInvestments } from '@/hooks/useInvestments'
 import InvestmentForm from '@/components/investments/InvestmentForm'
 import InvestmentTransactionLogs from '@/components/investments/InvestmentTransactionLogs'
@@ -243,7 +243,7 @@ export default function InvestmentsPage() {
                         <span className="inv-roi-label">ROI</span>
                       </div>
                     )}
-                    {inv.doc_link && (
+                    {inv.doc_link && isSafeHttpUrl(inv.doc_link) && (
                       <a
                         href={inv.doc_link}
                         target="_blank"

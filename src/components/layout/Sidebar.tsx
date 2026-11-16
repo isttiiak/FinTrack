@@ -17,7 +17,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
 import { useUIStore } from '@/stores/uiStore'
-import { cn } from '@/lib/utils'
+import { cn, isSafeHttpUrl } from '@/lib/utils'
 import { Logo } from '@/components/common/Logo'
 import CalculatorToggleButton from '@/components/common/CalculatorToggleButton'
 import './Sidebar.css'
@@ -152,7 +152,7 @@ export default function Sidebar() {
           <div className="sidebar-divider" />
           <div className="sidebar-user">
             <div className="sidebar-avatar">
-              {profile?.avatar_url ? (
+              {profile?.avatar_url && isSafeHttpUrl(profile.avatar_url) ? (
                 <img src={profile.avatar_url} alt={profile.full_name ?? 'Avatar'} />
               ) : (
                 <span>{(profile?.full_name ?? isDemo ? 'D' : '?')[0].toUpperCase()}</span>

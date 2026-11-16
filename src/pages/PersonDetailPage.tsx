@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import DeleteButton from '@/components/common/DeleteButton'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate, isSafeHttpUrl } from '@/lib/utils'
 import { usePerson, useDeleteLedgerEntry, useDeletePerson } from '@/hooks/useLedger'
 import { DemoBlockedError } from '@/hooks/useDemoGuard'
 import { useConfirmStore } from '@/stores/confirmStore'
@@ -269,7 +269,7 @@ export default function PersonDetailPage() {
                     </div>
 
                     <div className="pd-entry-bottom-row">
-                      {entry.doc_link && (
+                      {entry.doc_link && isSafeHttpUrl(entry.doc_link) && (
                         <a href={entry.doc_link} target="_blank" rel="noopener noreferrer" className="pd-doc-link" onClick={(e) => e.stopPropagation()}>
                           <ExternalLink size={12} /> Doc
                         </a>
