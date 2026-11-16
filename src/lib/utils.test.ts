@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { round2, parseDate, getCurrentMonthRange, toISODateString, resolveDateRange } from '@/lib/utils'
+import { round2, parseDate, getCurrentMonthRange, toISODateString, resolveDateRange, isSafeHttpUrl } from '@/lib/utils'
 
 describe('round2', () => {
   it('rounds to 2 decimals', () => {
@@ -76,5 +76,24 @@ describe('resolveDateRange', () => {
   it('defaults each side independently', () => {
     const month = getCurrentMonthRange()
     expect(resolveDateRange({ from: '2026-02-01' })).toEqual({ from: '2026-02-01', to: month.to })
+  })
+})
+
+describe('isSafeHttpUrl', () => {
+  it('accepts valid http and https URLs', () => {
+    expect(isSafeHttpUrl('https://example.com/doc.pdf')).toBe(true)
+    expect(isSafeHttpUrl('http://localhost:3000/test')).toBe(true)
+    expect(isSafeHttpUrl('  https://drive.google.com/file/d/123  ')).toBe(true)
+  })
+
+  it('rejects javascript:, data:, vbscript:, and invalid or empty values', () => {
+    expect(isSafeHttpUrl('javascript:alert(1)')).toBe(false)
+    expect(isSafeHttpUrl('JAVASCRIPT:alert(document.domain)')).toBe(false)
+    expect(isSafeHttpUrl('data:text/html,<script>alert(1)</script>')).toBe(false)
+    expect(isSafeHttpUrl('vbscript:msgbox(1)')).toBe(false)
+    expect(isSafeHttpUrl('not a url')).toBe(false)
+    expect(isSafeHttpUrl('')).toBe(false)
+    expect(isSafeHttpUrl(null)).toBe(false)
+    expect(isSafeHttpUrl(undefined)).toBe(false)
   })
 })

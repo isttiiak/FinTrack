@@ -23,7 +23,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
 import { supabase } from '@/lib/supabase'
 import { exportTransactionsExcel, exportTransactionsCSV, exportFullExcel } from '@/lib/export'
-import { getCurrentMonthRange, toISODateString } from '@/lib/utils'
+import { clearLocalUserData, getCurrentMonthRange, toISODateString } from '@/lib/utils'
 import ErrorBanner from '@/components/common/ErrorBanner'
 import { formatCurrency, getActiveCurrencySymbol } from '@/lib/utils'
 import { fadeUp, staggerContainer, staggerItem } from '@/lib/animations'
@@ -966,6 +966,8 @@ function DangerSection() {
         .update({ deleted_at: new Date().toISOString() })
         .eq('id', profile!.id)
       if (error) throw error
+      clearLocalUserData()
+      qc.clear()
       await supabase.auth.signOut()
     } catch {
       addToast({ type: 'error', message: 'Account deletion failed. Please try again.' })

@@ -54,6 +54,8 @@ export default function ResetPasswordPage() {
       setLoading(false)
     } else {
       setDone(true)
+      setLoading(false)
+      await supabase.auth.signOut()
     }
   }
 

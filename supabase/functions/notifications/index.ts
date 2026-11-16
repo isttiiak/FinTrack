@@ -15,15 +15,13 @@
 //   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY — service-role client, bypasses RLS
 //   RESEND_API_KEY, RESEND_FROM_EMAIL       — outbound email
 //   CRON_SECRET                             — bearer token checked below
-import { createClient } from 'npm:@supabase/supabase-js@2'
+import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2'
 
-const SUPABASE_URL          = Deno.env.get('SUPABASE_URL')!
-const SERVICE_ROLE_KEY      = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const RESEND_API_KEY        = Deno.env.get('RESEND_API_KEY')!
+const SUPABASE_URL          = Deno.env.get('SUPABASE_URL') ?? ''
+const SERVICE_ROLE_KEY      = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+const RESEND_API_KEY        = Deno.env.get('RESEND_API_KEY') ?? ''
 const RESEND_FROM_EMAIL     = Deno.env.get('RESEND_FROM_EMAIL') ?? 'FinTrack <notifications@resend.dev>'
-const CRON_SECRET           = Deno.env.get('CRON_SECRET')!
-
-const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
+const CRON_SECRET           = Deno.env.get('CRON_SECRET') ?? ''
 
 // Amounts go out in the user's own Profile → Currency (it used to be ৳ for
 // everyone, which was wrong for anyone outside Bangladesh). Same rules as the
@@ -63,12 +61,23 @@ function escapeHtml(s: string): string {
     .replace(/'/g, '&#39;')
 }
 
-function timingSafeEqual(a: string, b: string): boolean {
-  const aBytes = new TextEncoder().encode(a)
-  const bBytes = new TextEncoder().encode(b)
-  if (aBytes.length !== bBytes.length) return false
+function sanitizeSubject(s: string): string {
+  return s.replace(/[\r\n]+/g, ' ').trim()
+}
+
+async function verifyBearerToken(authHeader: string | null, expectedSecret: string): Promise<boolean> {
+  if (!authHeader || !expectedSecret) return false
+  const encoder = new TextEncoder()
+  const actualDigest = new Uint8Array(
+    await crypto.subtle.digest('SHA-256', encoder.encode(authHeader)),
+  )
+  const expectedDigest = new Uint8Array(
+    await crypto.subtle.digest('SHA-256', encoder.encode(`Bearer ${expectedSecret}`)),
+  )
   let diff = 0
-  for (let i = 0; i < aBytes.length; i++) diff |= aBytes[i] ^ bBytes[i]
+  for (let i = 0; i < actualDigest.length; i++) {
+    diff |= actualDigest[i] ^ expectedDigest[i]
+  }
   return diff === 0
 }
 
@@ -76,7 +85,7 @@ async function sendEmail(to: string, subject: string, html: string) {
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${RESEND_API_KEY}` },
-    body: JSON.stringify({ from: RESEND_FROM_EMAIL, to, subject, html }),
+    body: JSON.stringify({ from: RESEND_FROM_EMAIL, to, subject: sanitizeSubject(subject), html }),
   })
   if (!res.ok) {
     const body = await res.text().catch(() => '')
@@ -85,7 +94,7 @@ async function sendEmail(to: string, subject: string, html: string) {
 }
 
 // ── Budget-exceeded alerts ──────────────────────────────────────────────────
-async function runBudgetAlerts() {
+async function runBudgetAlerts(supabase: SupabaseClient) {
   const currentMonth = todayISO().slice(0, 7) // 'YYYY-MM'
   const monthStart = `${currentMonth}-01`
 
@@ -170,7 +179,7 @@ async function runBudgetAlerts() {
 }
 
 // ── Weekly digest ────────────────────────────────────────────────────────────
-async function runWeeklyDigest() {
+async function runWeeklyDigest(supabase: SupabaseClient) {
   const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7)
   const from = weekAgo.toISOString().slice(0, 10)
 
@@ -214,13 +223,14 @@ async function runWeeklyDigest() {
 }
 
 // ── Monthly digest ───────────────────────────────────────────────────────────
-async function runMonthlyDigest() {
+async function runMonthlyDigest(supabase: SupabaseClient) {
   const now = new Date()
   const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
   const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
   const from = prevMonthStart.toISOString().slice(0, 10)
   const to = prevMonthEnd.toISOString().slice(0, 10)
   const monthLabel = prevMonthStart.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+  const safeMonthLabel = escapeHtml(monthLabel)
 
   const { data: users, error: usersErr } = await supabase
     .from('profiles').select('id, email, currency').eq('notify_monthly_digest', true).is('deleted_at', null)
@@ -249,7 +259,7 @@ async function runMonthlyDigest() {
       await sendEmail(
         user.email,
         `Your ${monthLabel} summary`,
-        `<p><strong>${monthLabel}</strong></p>
+        `<p><strong>${safeMonthLabel}</strong></p>
          <p>Income: ${formatMoney(income, user.currency)}<br>Expenses: ${formatMoney(expense, user.currency)}<br>Net: ${formatMoney(income - expense, user.currency)}</p>
          <p>Top categories:</p><ul>${topHtml}</ul>
          <p>— FinTrack</p>`,
@@ -264,16 +274,21 @@ async function runMonthlyDigest() {
 }
 
 Deno.serve(async (req) => {
-  const authHeader = req.headers.get('authorization') ?? ''
-  if (!timingSafeEqual(authHeader, `Bearer ${CRON_SECRET}`)) {
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY || !RESEND_API_KEY || !CRON_SECRET) {
+    return Response.json({ error: 'Server misconfigured: missing required environment variables' }, { status: 500 })
+  }
+
+  const authHeader = req.headers.get('authorization')
+  if (!(await verifyBearerToken(authHeader, CRON_SECRET))) {
     return new Response('Unauthorized', { status: 401 })
   }
 
+  const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
   const type = new URL(req.url).searchParams.get('type')
   try {
-    const result = type === 'budget' ? await runBudgetAlerts()
-      : type === 'weekly'  ? await runWeeklyDigest()
-      : type === 'monthly' ? await runMonthlyDigest()
+    const result = type === 'budget' ? await runBudgetAlerts(supabase)
+      : type === 'weekly'  ? await runWeeklyDigest(supabase)
+      : type === 'monthly' ? await runMonthlyDigest(supabase)
       : null
     if (!result) return Response.json({ error: 'type must be budget, weekly, or monthly' }, { status: 400 })
     return Response.json({ type, ...result, ran_at: new Date().toISOString() })

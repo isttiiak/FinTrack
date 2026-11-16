@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import {
   RouterProvider,
   createRouter,
@@ -13,7 +13,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 import { useDemoStore } from '@/stores/demoStore'
-import { clearLocalUserData, setActiveCurrency } from '@/lib/utils'
+import { clearLocalUserData, formatDate, setActiveCurrency } from '@/lib/utils'
 import { Logo } from '@/components/common/Logo'
 import ToastContainer from '@/components/common/ToastContainer'
 import type { UserProfile } from '@/types/database.types'
@@ -62,7 +62,9 @@ const rootRoute = createRootRoute({
 })
 
 function Root() {
-  const { setSession, setLoading, setProfile, loading, profile } = useAuthStore()
+  const { setSession, setLoading, setProfile, loading, session, profile } = useAuthStore()
+  const [restoring, setRestoring] = useState(false)
+  const [restoreError, setRestoreError] = useState<string | null>(null)
 
   // Keeps every formatCurrency(amount) call across the app (the vast
   // majority never pass a currency explicitly) in sync with the signed-in
@@ -124,29 +126,56 @@ function Root() {
       setSession(session)
       setLoading(false)
 
+      if (event === 'PASSWORD_RECOVERY') {
+        router.navigate({ to: '/reset-password', replace: true })
+        return
+      }
+
       if (event === 'SIGNED_IN') {
         if (session?.user) loadProfile(session.user.id)
-        // Only redirect when on a public/auth page.
+        // Only redirect when on a public/auth page and not handling a password recovery link.
         // Token refreshes also fire SIGNED_IN — don't kick the user to /dashboard mid-session.
         const currentPath = router.state.location.pathname
+        const isRecoveryHash = window.location.hash.includes('type=recovery')
         if (getPendingInvite() && currentPath !== '/household') {
           // Signed in after opening a household invite link (the OAuth return
           // lands on /dashboard) — finish what they came for. The page
           // consumes the stash, so later token refreshes don't re-trigger this.
           router.navigate({ to: '/household', replace: true })
-        } else if (AUTH_PATHS.includes(currentPath)) {
+        } else if (AUTH_PATHS.includes(currentPath) && !isRecoveryHash && currentPath !== '/reset-password') {
           router.navigate({ to: '/dashboard', replace: true })
         }
       } else if (event === 'SIGNED_OUT') {
         useAuthStore.getState().clear()
         queryClient.clear()
         clearLocalUserData()
-        router.navigate({ to: '/login', replace: true })
+        if (router.state.location.pathname !== '/reset-password') {
+          router.navigate({ to: '/login', replace: true })
+        }
       }
     })
 
     return () => subscription.unsubscribe()
   }, [setSession, setLoading, setProfile])
+
+  async function handleRestoreAccount() {
+    if (!profile) return
+    setRestoring(true)
+    setRestoreError(null)
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ deleted_at: null })
+      .eq('id', profile.id)
+      .select()
+      .single()
+    setRestoring(false)
+    if (error) {
+      setRestoreError(error.message)
+      return
+    }
+    if (data) setProfile(data as UserProfile)
+    router.navigate({ to: '/dashboard', replace: true })
+  }
 
   // Splash screen while we wait for the initial getSession() call.
   // Prevents flash of wrong page (login vs dashboard) on hard refresh.
@@ -180,6 +209,67 @@ function Root() {
             animation: 'spin 0.7s linear infinite',
           }} />
         </motion.div>
+      </div>
+    )
+  }
+
+  if (session && profile?.deleted_at) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--bg-page)',
+        padding: 20,
+      }}>
+        <div style={{
+          width: '100%',
+          maxWidth: 440,
+          background: 'var(--bg-card)',
+          border: '1px solid rgba(194, 91, 85, 0.35)',
+          borderRadius: 20,
+          padding: 32,
+          textAlign: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 14,
+          boxShadow: '0 24px 60px rgba(0, 0, 0, 0.45)',
+        }}>
+          <Logo size={42} />
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+            Account Scheduled for Deletion
+          </h1>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
+            Your account was marked for deletion on <strong style={{ color: 'var(--text-primary)' }}>{formatDate(profile.deleted_at)}</strong>.
+            Restore your account to cancel deletion and continue using FinTrack, or sign out.
+          </p>
+          {restoreError && (
+            <p style={{ fontSize: 12, color: '#FCA5A5', margin: 0 }}>{restoreError}</p>
+          )}
+          <div style={{ display: 'flex', gap: 10, width: '100%', marginTop: 8, flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="btn-primary"
+              style={{ flex: 1, minWidth: 160 }}
+              onClick={handleRestoreAccount}
+              disabled={restoring}
+            >
+              {restoring ? 'Restoring…' : 'Restore My Account'}
+            </button>
+            <button
+              type="button"
+              className="btn-ghost"
+              style={{ flex: 1, minWidth: 120 }}
+              onClick={() => supabase.auth.signOut()}
+              disabled={restoring}
+            >
+              Sign Out
+            </button>
+          </div>
+        </div>
+        <ToastContainer />
       </div>
     )
   }

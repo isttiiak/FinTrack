@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 import { scaleIn } from '@/lib/animations'
-import { cn, toISODateString, getActiveCurrencySymbol } from '@/lib/utils'
+import { cn, isSafeHttpUrl, toISODateString, getActiveCurrencySymbol } from '@/lib/utils'
 import { LEDGER_TYPES } from '@/lib/constants'
 import type { PaymentMethod, Account } from '@/lib/constants'
 import PaymentMethodPicker from '@/components/common/PaymentMethodPicker'
@@ -21,7 +21,7 @@ const schema = z.object({
   reason:         z.string().optional(),
   payment_method: z.string().optional(),
   account:        z.string().optional(),
-  doc_link:       z.string().url('Enter a valid URL').or(z.literal('')).optional(),
+  doc_link:       z.string().optional().refine((v) => !v || isSafeHttpUrl(v), 'Enter a valid http(s) URL'),
   notes:          z.string().optional(),
 })
 type FormValues = z.infer<typeof schema>
